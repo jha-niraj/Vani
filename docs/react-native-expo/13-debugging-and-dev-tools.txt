@@ -1,0 +1,991 @@
+================================================================================
+        REACT NATIVE WITH EXPO - COMPREHENSIVE LEARNING GUIDE
+        PART 13: DEBUGGING AND DEVELOPMENT TOOLS
+================================================================================
+
+Effective debugging is crucial for productive development. This document
+covers all the tools and techniques for debugging React Native apps.
+
+================================================================================
+                            TABLE OF CONTENTS
+================================================================================
+
+1. Development Mode Overview
+2. Expo Dev Tools
+3. React DevTools
+4. Console Logging
+5. Debugging JavaScript
+6. React Native Debugger
+7. Flipper (Advanced)
+8. Network Debugging
+9. Performance Debugging
+10. Common Issues and Solutions
+
+================================================================================
+                1. DEVELOPMENT MODE OVERVIEW
+================================================================================
+
+When running in development mode, you have access to many debugging tools.
+
+STARTING DEVELOPMENT SERVER:
+----------------------------
+
+    # Start the development server
+    npx expo start
+    
+    # Alternative options
+    npx expo start --clear      # Clear cache
+    npx expo start --tunnel     # Use tunnel for remote devices
+    npx expo start --lan        # Use LAN (faster, same network only)
+
+
+DEVELOPMENT MODE FEATURES:
+--------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    DEVELOPMENT MODE FEATURES                             │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   FAST REFRESH                                                           │
+    │   └── Code changes appear instantly without losing state                │
+    │                                                                          │
+    │   ERROR OVERLAY (RED BOX)                                               │
+    │   └── Shows detailed error messages with stack traces                   │
+    │                                                                          │
+    │   WARNING OVERLAY (YELLOW BOX)                                          │
+    │   └── Shows warnings that might cause issues                            │
+    │                                                                          │
+    │   DEV MENU                                                               │
+    │   └── Access debugging tools via shake or keyboard shortcut            │
+    │                                                                          │
+    │   CONSOLE OUTPUT                                                         │
+    │   └── console.log appears in terminal                                   │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+ACCESSING THE DEV MENU:
+-----------------------
+
+    iOS Simulator:    Cmd + D
+    Android Emulator: Cmd + M (Mac) or Ctrl + M (Windows)
+    Physical Device:  Shake the device
+    
+    Or press 'm' in the terminal running Expo
+
+
+DEV MENU OPTIONS:
+-----------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    DEV MENU OPTIONS                                      │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   Reload                    - Refresh the app                           │
+    │   Copy Link                 - Copy deep link to app                     │
+    │   Go Home                   - Return to Expo Go home                    │
+    │   Toggle Performance Mon.   - Show FPS and RAM usage                    │
+    │   Toggle Element Inspector  - Inspect UI elements                       │
+    │   Open React DevTools       - Launch React component inspector          │
+    │   Open JS Debugger          - Open Chrome/VS Code debugger              │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                    2. EXPO DEV TOOLS
+================================================================================
+
+Expo provides a web-based interface for development.
+
+ACCESSING EXPO DEV TOOLS:
+-------------------------
+When you run `npx expo start`, a QR code appears along with a URL
+(typically http://localhost:8081).
+
+Press 'w' to open web interface, or visit the URL.
+
+
+TERMINAL KEYBOARD SHORTCUTS:
+----------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    TERMINAL SHORTCUTS                                    │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   a     - Open on Android device/emulator                               │
+    │   i     - Open on iOS Simulator                                         │
+    │   w     - Open in web browser                                           │
+    │   r     - Reload the app                                                │
+    │   m     - Open dev menu on device                                       │
+    │   j     - Open JS debugger                                              │
+    │   o     - Open project in editor                                        │
+    │   c     - Show QR code                                                  │
+    │   ?     - Show all commands                                             │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                    3. REACT DEVTOOLS
+================================================================================
+
+React DevTools lets you inspect the React component tree.
+
+INSTALLATION:
+-------------
+
+    # Install globally
+    npm install -g react-devtools
+    
+    # Or use npx
+    npx react-devtools
+
+
+USING REACT DEVTOOLS:
+---------------------
+
+    # 1. Start React DevTools
+    npx react-devtools
+    
+    # 2. Start your app
+    npx expo start
+    
+    # 3. DevTools will automatically connect
+
+
+WHAT YOU CAN DO:
+----------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    REACT DEVTOOLS FEATURES                               │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   COMPONENTS TAB                                                         │
+    │   ├── View component hierarchy                                          │
+    │   ├── Inspect props and state                                           │
+    │   ├── Edit props/state live                                             │
+    │   ├── Search for components                                             │
+    │   └── See which component rendered                                      │
+    │                                                                          │
+    │   PROFILER TAB                                                           │
+    │   ├── Record performance                                                │
+    │   ├── See render times                                                  │
+    │   ├── Find unnecessary re-renders                                       │
+    │   └── Flame graph visualization                                         │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+INSPECTING COMPONENTS:
+----------------------
+
+    Component Tree:
+    
+    └── App
+        └── ThemeProvider
+            └── NavigationContainer
+                └── TabNavigator
+                    └── HomeScreen
+                        └── ScrollView
+                            ├── Text (props: children="Hello")
+                            └── Button (props: onPress=fn, title="Click")
+    
+    Selected: Button
+    Props:
+    ├── title: "Click"
+    ├── onPress: ƒ handlePress()
+    └── disabled: false
+    
+    State:
+    └── (no state)
+
+
+================================================================================
+                    4. CONSOLE LOGGING
+================================================================================
+
+The simplest debugging tool - use console methods effectively.
+
+CONSOLE METHODS:
+----------------
+
+    // Basic logging
+    console.log('Simple message');
+    console.log('User:', user);
+    console.log('Items:', items, 'Count:', items.length);
+    
+    // Warnings (yellow)
+    console.warn('This might be a problem');
+    
+    // Errors (red)
+    console.error('Something went wrong:', error);
+    
+    // Information
+    console.info('FYI:', info);
+    
+    // Grouped output
+    console.group('User Details');
+    console.log('Name:', user.name);
+    console.log('Email:', user.email);
+    console.groupEnd();
+    
+    // Table format (great for arrays/objects)
+    console.table(users);
+    console.table(user, ['name', 'email']); // Specific columns
+    
+    // Timing
+    console.time('fetchUsers');
+    await fetchUsers();
+    console.timeEnd('fetchUsers'); // "fetchUsers: 234ms"
+    
+    // Count occurrences
+    function render() {
+      console.count('render'); // "render: 1", "render: 2", etc.
+    }
+    
+    // Stack trace
+    console.trace('How did we get here?');
+    
+    // Clear console
+    console.clear();
+
+
+EFFECTIVE LOGGING TIPS:
+-----------------------
+
+    // 1. Use labels for context
+    console.log('[AuthService] User logged in:', user.id);
+    console.log('[HomeScreen] Rendering with items:', items.length);
+    
+    // 2. Use emoji for visibility 👀
+    console.log('🔥 Hot reload triggered');
+    console.log('✅ User authenticated');
+    console.log('❌ Error:', error);
+    console.log('⏱️ API call took:', duration);
+    
+    // 3. Log objects properly
+    // ❌ Doesn't show object details
+    console.log('User: ' + user);
+    
+    // ✅ Shows full object
+    console.log('User:', user);
+    console.log('User:', JSON.stringify(user, null, 2));
+    
+    // 4. Conditional logging
+    const DEBUG = __DEV__;
+    DEBUG && console.log('Debug info:', data);
+
+
+REMOVING LOGS IN PRODUCTION:
+----------------------------
+
+    // babel.config.js
+    module.exports = function (api) {
+      api.cache(true);
+      return {
+        presets: ['babel-preset-expo'],
+        plugins: [
+          'react-native-reanimated/plugin',
+          // Remove console.* in production
+          process.env.NODE_ENV === 'production' && 
+            ['transform-remove-console', { exclude: ['error', 'warn'] }],
+        ].filter(Boolean),
+      };
+    };
+
+Install: `npm install babel-plugin-transform-remove-console --save-dev`
+
+
+================================================================================
+                    5. DEBUGGING JAVASCRIPT
+================================================================================
+
+Debug JavaScript with browser developer tools or VS Code.
+
+METHOD 1: CHROME DEVTOOLS
+-------------------------
+
+    # 1. Press 'j' in Expo terminal
+    # Or open dev menu → "Open JS Debugger"
+    
+    # 2. Chrome opens at chrome://inspect
+    
+    # 3. Use Sources panel to:
+    #    - Set breakpoints
+    #    - Step through code
+    #    - Inspect variables
+
+
+CHROME DEVTOOLS FEATURES:
+-------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    CHROME DEVTOOLS PANELS                                │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   CONSOLE                                                                │
+    │   └── View logs, run JavaScript                                         │
+    │                                                                          │
+    │   SOURCES                                                                │
+    │   ├── View source code                                                  │
+    │   ├── Set breakpoints (click line number)                               │
+    │   ├── Conditional breakpoints (right-click)                             │
+    │   ├── Step Over (F10)                                                   │
+    │   ├── Step Into (F11)                                                   │
+    │   ├── Step Out (Shift+F11)                                              │
+    │   └── Watch expressions                                                 │
+    │                                                                          │
+    │   NETWORK                                                                │
+    │   └── Monitor API calls                                                 │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+METHOD 2: VS CODE DEBUGGING
+---------------------------
+
+    // .vscode/launch.json
+    {
+      "version": "0.2.0",
+      "configurations": [
+        {
+          "name": "Debug Expo",
+          "request": "launch",
+          "type": "reactnative",
+          "cwd": "${workspaceFolder}",
+          "platform": "exponent"
+        },
+        {
+          "name": "Attach to Expo",
+          "request": "attach",
+          "type": "reactnative",
+          "cwd": "${workspaceFolder}",
+          "platform": "exponent"
+        }
+      ]
+    }
+
+Requires: "React Native Tools" VS Code extension
+
+
+USING BREAKPOINTS:
+------------------
+
+    function handleLogin(email: string, password: string) {
+      // Click the line number in VS Code/Chrome to set breakpoint
+      debugger; // Or use debugger statement
+      
+      const user = validateCredentials(email, password);
+      // Execution will pause here if breakpoint is set
+      
+      if (!user) {
+        throw new Error('Invalid credentials');
+      }
+      
+      return user;
+    }
+
+
+DEBUGGING ASYNC CODE:
+---------------------
+
+    async function fetchUserData() {
+      try {
+        console.log('1. Starting fetch...');
+        debugger; // Pause here
+        
+        const response = await fetch('/api/user');
+        console.log('2. Got response:', response.status);
+        
+        const data = await response.json();
+        console.log('3. Parsed data:', data);
+        
+        return data;
+      } catch (error) {
+        console.log('ERROR:', error);
+        debugger; // Pause on error
+        throw error;
+      }
+    }
+
+
+================================================================================
+                    6. REACT NATIVE DEBUGGER
+================================================================================
+
+React Native Debugger combines React DevTools + Redux DevTools + Chrome DevTools.
+
+INSTALLATION:
+-------------
+
+    # macOS
+    brew install react-native-debugger
+    
+    # Or download from:
+    https://github.com/jhen0409/react-native-debugger/releases
+
+
+USING REACT NATIVE DEBUGGER:
+----------------------------
+
+    1. Close Chrome debugger if open
+    2. Open React Native Debugger
+    3. Start your app: npx expo start
+    4. Open dev menu → Debug Remote JS
+
+
+FEATURES:
+---------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    REACT NATIVE DEBUGGER                                 │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   ┌─────────────────────┬───────────────────────┐                       │
+    │   │   REACT DEVTOOLS    │    REDUX DEVTOOLS     │                       │
+    │   │   Component tree    │    Action history     │                       │
+    │   │   Props/State       │    State timeline     │                       │
+    │   │   Profiler          │    Time travel        │                       │
+    │   ├─────────────────────┴───────────────────────┤                       │
+    │   │            CHROME DEVTOOLS                   │                       │
+    │   │            Console, Sources, Network         │                       │
+    │   └─────────────────────────────────────────────┘                       │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+REDUX DEVTOOLS INTEGRATION:
+---------------------------
+
+    // store.ts
+    import { configureStore } from '@reduxjs/toolkit';
+    
+    const store = configureStore({
+      reducer: rootReducer,
+      devTools: __DEV__, // Automatically connects to Redux DevTools
+    });
+
+
+================================================================================
+                    7. FLIPPER (ADVANCED)
+================================================================================
+
+Flipper is Facebook's desktop debugging tool with advanced features.
+
+INSTALLATION:
+-------------
+Download from: https://fbflipper.com/
+
+FEATURES:
+---------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    FLIPPER FEATURES                                      │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   LOGS                                                                   │
+    │   └── View device logs with filtering                                   │
+    │                                                                          │
+    │   LAYOUT INSPECTOR                                                       │
+    │   └── Inspect view hierarchy visually                                   │
+    │                                                                          │
+    │   NETWORK                                                                │
+    │   └── Monitor all network requests                                      │
+    │                                                                          │
+    │   DATABASES                                                              │
+    │   └── View SQLite databases                                             │
+    │                                                                          │
+    │   SHARED PREFERENCES                                                    │
+    │   └── View AsyncStorage data                                            │
+    │                                                                          │
+    │   REACT DEVTOOLS                                                         │
+    │   └── Built-in React component inspector                                │
+    │                                                                          │
+    │   HERMES DEBUGGER                                                        │
+    │   └── Debug Hermes JavaScript engine                                    │
+    │                                                                          │
+    │   CRASH REPORTER                                                         │
+    │   └── View crash logs                                                   │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+FLIPPER SETUP FOR EXPO:
+-----------------------
+Flipper works with development builds (not Expo Go).
+
+    # Create development build with Flipper
+    eas build --profile development --platform android
+    
+    # Install and open Flipper
+    # Connect your device/emulator
+
+
+================================================================================
+                    8. NETWORK DEBUGGING
+================================================================================
+
+Debug API calls and network requests.
+
+LOGGING NETWORK REQUESTS:
+-------------------------
+
+    // Enable network request logging
+    // Add to your entry file (e.g., index.js or App.tsx)
+    if (__DEV__) {
+      // XMLHttpRequest logging
+      const originalXHROpen = XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open = function(...args) {
+        console.log('[XHR]', args[0], args[1]);
+        return originalXHROpen.apply(this, args);
+      };
+    }
+
+
+USING AXIOS INTERCEPTORS:
+-------------------------
+
+    // Debug all axios requests
+    import axios from 'axios';
+    
+    if (__DEV__) {
+      axios.interceptors.request.use((config) => {
+        console.log('🌐 Request:', config.method?.toUpperCase(), config.url);
+        console.log('   Body:', config.data);
+        return config;
+      });
+      
+      axios.interceptors.response.use(
+        (response) => {
+          console.log('✅ Response:', response.status, response.config.url);
+          return response;
+        },
+        (error) => {
+          console.log('❌ Error:', error.response?.status, error.config?.url);
+          console.log('   Message:', error.message);
+          return Promise.reject(error);
+        }
+      );
+    }
+
+
+REACT QUERY DEVTOOLS:
+---------------------
+
+    import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+    
+    function App() {
+      return (
+        <QueryClientProvider client={queryClient}>
+          {/* Your app */}
+          {__DEV__ && <ReactQueryDevtools />}
+        </QueryClientProvider>
+      );
+    }
+
+
+NETWORK DEBUGGING TOOLS:
+------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    NETWORK DEBUGGING OPTIONS                             │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   Chrome DevTools Network Tab                                           │
+    │   └── When using remote debugging                                       │
+    │                                                                          │
+    │   Flipper Network Plugin                                                │
+    │   └── Best for development builds                                       │
+    │                                                                          │
+    │   Reactotron                                                             │
+    │   └── Desktop app for RN debugging                                      │
+    │                                                                          │
+    │   Charles Proxy / Proxyman                                              │
+    │   └── Intercept all device network traffic                              │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+SETTING UP REACTOTRON:
+----------------------
+
+    # Install
+    npm install reactotron-react-native
+    
+    // ReactotronConfig.js
+    import Reactotron from 'reactotron-react-native';
+    
+    if (__DEV__) {
+      Reactotron
+        .configure()
+        .useReactNative()
+        .connect();
+      
+      // Reactotron.log() instead of console.log()
+      console.tron = Reactotron;
+    }
+    
+    // Usage
+    console.tron.log('Hello Reactotron!');
+
+
+================================================================================
+                    9. PERFORMANCE DEBUGGING
+================================================================================
+
+Find and fix performance issues.
+
+ENABLING PERFORMANCE MONITOR:
+-----------------------------
+
+    1. Open Dev Menu (shake device or Cmd+D)
+    2. Select "Perf Monitor" or "Toggle Performance Monitor"
+    
+    Shows:
+    - JS thread FPS
+    - UI thread FPS
+    - RAM usage
+
+
+UNDERSTANDING FPS:
+------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    FPS EXPLAINED                                         │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   60 FPS = SMOOTH                                                        │
+    │   └── Each frame takes ~16ms or less                                    │
+    │                                                                          │
+    │   < 60 FPS = JANKY                                                       │
+    │   └── Noticeable stuttering/lag                                         │
+    │                                                                          │
+    │   UI THREAD (Native)                                                     │
+    │   └── Handles animations, gestures, layout                              │
+    │   └── If low: Animation/scroll issues                                   │
+    │                                                                          │
+    │   JS THREAD (JavaScript)                                                │
+    │   └── Runs your React code                                              │
+    │   └── If low: UI becomes unresponsive                                   │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+REACT DEVTOOLS PROFILER:
+------------------------
+
+    1. Open React DevTools
+    2. Go to "Profiler" tab
+    3. Click record (circle button)
+    4. Interact with your app
+    5. Click stop
+    6. Analyze the flame graph
+
+
+PROFILING RESULTS:
+------------------
+
+    Component Render Times:
+    
+    HomeScreen              50ms  ████████████████████
+    ├── Header              5ms   ██
+    ├── ItemList            35ms  ██████████████
+    │   ├── Item[0]         2ms   █
+    │   ├── Item[1]         2ms   █  
+    │   ├── Item[2]         2ms   █
+    │   └── Item[...]       29ms  ████████████  ← Problem!
+    └── Footer              10ms  ████
+    
+    Why did this render?
+    └── Props changed: items
+
+
+WHY-DID-YOU-RENDER:
+-------------------
+Library to detect unnecessary re-renders.
+
+    # Install
+    npm install @welldone-software/why-did-you-render --save-dev
+    
+    // wdyr.js (create this file)
+    import React from 'react';
+    
+    if (__DEV__) {
+      const whyDidYouRender = require('@welldone-software/why-did-you-render');
+      whyDidYouRender(React, {
+        trackAllPureComponents: true,
+      });
+    }
+    
+    // Import at the top of your entry file
+    import './wdyr';
+    
+    // Mark components to track
+    MyComponent.whyDidYouRender = true;
+
+
+COMMON PERFORMANCE ISSUES:
+--------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    PERFORMANCE ISSUES & FIXES                            │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   ISSUE: Too many re-renders                                            │
+    │   FIX: Use React.memo, useMemo, useCallback                             │
+    │                                                                          │
+    │   ISSUE: Large list slow                                                │
+    │   FIX: Use FlatList instead of ScrollView + map                         │
+    │                                                                          │
+    │   ISSUE: Images loading slowly                                          │
+    │   FIX: Use expo-image, optimize image sizes                             │
+    │                                                                          │
+    │   ISSUE: Animations janky                                               │
+    │   FIX: Use Reanimated (runs on UI thread)                               │
+    │                                                                          │
+    │   ISSUE: JS thread blocked                                              │
+    │   FIX: Move heavy work off main thread (web workers, native modules)    │
+    │                                                                          │
+    │   ISSUE: Memory growing                                                 │
+    │   FIX: Clean up effects, remove listeners                               │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+OPTIMIZING LISTS:
+-----------------
+
+    // ❌ Bad - renders all items
+    <ScrollView>
+      {items.map(item => <Item key={item.id} data={item} />)}
+    </ScrollView>
+    
+    // ✅ Good - virtualizes, only renders visible items
+    <FlatList
+      data={items}
+      renderItem={({ item }) => <Item data={item} />}
+      keyExtractor={item => item.id}
+      getItemLayout={(data, index) => ({
+        length: ITEM_HEIGHT,
+        offset: ITEM_HEIGHT * index,
+        index,
+      })}
+      maxToRenderPerBatch={10}
+      windowSize={5}
+      removeClippedSubviews={true}
+    />
+
+
+MEMOIZATION:
+------------
+
+    import { memo, useMemo, useCallback } from 'react';
+    
+    // Memoize component to prevent re-renders
+    const ExpensiveItem = memo(function ExpensiveItem({ data, onPress }) {
+      return (
+        <Pressable onPress={onPress}>
+          <Text>{data.title}</Text>
+        </Pressable>
+      );
+    });
+    
+    function ParentComponent({ items }) {
+      // Memoize computed values
+      const sortedItems = useMemo(() => {
+        return [...items].sort((a, b) => a.name.localeCompare(b.name));
+      }, [items]);
+      
+      // Memoize callbacks
+      const handlePress = useCallback((id) => {
+        console.log('Pressed:', id);
+      }, []);
+      
+      return (
+        <FlatList
+          data={sortedItems}
+          renderItem={({ item }) => (
+            <ExpensiveItem 
+              data={item} 
+              onPress={() => handlePress(item.id)} 
+            />
+          )}
+        />
+      );
+    }
+
+
+================================================================================
+                10. COMMON ISSUES AND SOLUTIONS
+================================================================================
+
+RED SCREEN ERRORS:
+------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    COMMON RED SCREEN ERRORS                              │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   "Text strings must be rendered within a <Text> component"             │
+    │   └── You have text outside <Text> tags                                 │
+    │       ❌ <View>Hello</View>                                             │
+    │       ✅ <View><Text>Hello</Text></View>                                │
+    │                                                                          │
+    │   "Invariant Violation: Invalid hook call"                              │
+    │   └── Hook used outside component or conditionally                      │
+    │       ❌ if (x) { const [a, b] = useState() }                           │
+    │       ✅ const [a, b] = useState()                                      │
+    │                                                                          │
+    │   "Cannot read property 'X' of undefined"                               │
+    │   └── Accessing property of undefined variable                          │
+    │       ❌ user.name (when user is undefined)                             │
+    │       ✅ user?.name or user && user.name                                │
+    │                                                                          │
+    │   "Maximum call stack size exceeded"                                    │
+    │   └── Infinite loop or recursion                                        │
+    │       Check useEffect dependencies, recursive calls                     │
+    │                                                                          │
+    │   "Network request failed"                                              │
+    │   └── Can't reach API (check URL, network, CORS)                        │
+    │       iOS: Allow HTTP if not HTTPS (App Transport Security)             │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+METRO BUNDLER ISSUES:
+---------------------
+
+    # Clear Metro cache
+    npx expo start --clear
+    
+    # Reset npm cache
+    npm cache clean --force
+    
+    # Delete node_modules and reinstall
+    rm -rf node_modules
+    npm install
+    
+    # Delete watchman cache (if using watchman)
+    watchman watch-del-all
+
+
+DEPENDENCY ISSUES:
+------------------
+
+    # Check Expo compatibility
+    npx expo-doctor
+    
+    # Fix incompatible versions
+    npx expo install --fix
+    
+    # Check for outdated packages
+    npx expo install --check
+
+
+SIMULATOR/EMULATOR ISSUES:
+--------------------------
+
+    iOS Simulator:
+    - Reset: Device → Erase All Content and Settings
+    - Clean build: Cmd+Shift+K in Xcode
+    
+    Android Emulator:
+    - Cold boot: AVD Manager → Cold Boot Now
+    - Wipe data: AVD Manager → Wipe Data
+    - Check ADB: adb devices
+
+
+HOT RELOAD NOT WORKING:
+-----------------------
+
+    1. Check file is saved
+    2. Check for syntax errors
+    3. Check Fast Refresh is enabled (Dev Menu)
+    4. Restart Metro: npx expo start --clear
+    5. Reinstall app on device
+
+
+DEBUG VS PRODUCTION DIFFERENCES:
+--------------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    DEV VS PRODUCTION                                     │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   Works in DEV, fails in PROD:                                          │
+    │   ├── Check for __DEV__ only code                                       │
+    │   ├── Check console.log usage (might be stripped)                       │
+    │   ├── Check environment variables                                       │
+    │   ├── Check for missing dependencies                                    │
+    │   └── Build a preview version first                                     │
+    │                                                                          │
+    │   Slow in DEV, fast in PROD:                                            │
+    │   └── Normal! DEV has extra checks and no optimization                  │
+    │                                                                          │
+    │   Fast in DEV, slow in PROD:                                            │
+    │   └── Investigate Hermes, bundle size, initial load                     │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+DEBUGGING CHECKLIST:
+--------------------
+
+    □ Check console for errors
+    □ Check React DevTools for component issues
+    □ Check network tab for API failures
+    □ Add console.log at key points
+    □ Use debugger breakpoints
+    □ Check if issue is in DEV or PROD only
+    □ Try on different device/simulator
+    □ Clear cache and restart
+    □ Check recent changes in git
+    □ Search error message online
+
+
+================================================================================
+                            DEBUGGING TOOLS SUMMARY
+================================================================================
+
+    ┌────────────────────┬──────────────────────────────────────────────────┐
+    │       Tool         │                    Best For                      │
+    ├────────────────────┼──────────────────────────────────────────────────┤
+    │ console.log        │ Quick debugging, simple values                   │
+    │ React DevTools     │ Component inspection, props/state                │
+    │ Chrome DevTools    │ Breakpoints, step debugging                      │
+    │ RN Debugger        │ All-in-one (React + Redux + Chrome)             │
+    │ Flipper            │ Advanced: network, databases, native            │
+    │ Reactotron         │ Network, Redux, async storage                    │
+    │ Perf Monitor       │ FPS and memory monitoring                        │
+    │ Profiler           │ Finding slow renders                             │
+    │ why-did-you-render │ Finding unnecessary re-renders                   │
+    └────────────────────┴──────────────────────────────────────────────────┘
+
+
+================================================================================
+                            QUICK REFERENCE
+================================================================================
+
+    # Start dev server
+    npx expo start
+    
+    # Open debugger
+    Press 'j' in terminal
+    
+    # React DevTools
+    npx react-devtools
+    
+    # Clear cache
+    npx expo start --clear
+    
+    # Check for issues
+    npx expo-doctor
+    
+    # Dev menu
+    Shake device / Cmd+D (iOS) / Cmd+M (Android)
+
+================================================================================
+                        END OF DOCUMENT 13
+                    Next: 14 - Best Practices and Tips
+================================================================================

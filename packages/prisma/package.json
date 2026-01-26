@@ -7,10 +7,13 @@
 	"module": "./index.ts",
 	"types": "./index.ts",
 	"scripts": {
-		"db:generate": "dotenv -e ../../.env -- prisma generate --schema=./schema",
-		"db:push": "dotenv -e ../../.env -- prisma db push --schema=./schema",
-		"db:migrate": "dotenv -e ../../.env -- prisma migrate dev --schema=./schema",
-		"db:studio": "dotenv -e ../../.env -- prisma studio --schema=./schema"
+		"db:generate": "dotenv -e ../../apps/main/.env -- prisma generate --schema=./schema",
+		"db:push": "dotenv -e ../../apps/main/.env -- prisma db push --schema=./schema",
+		"db:migrate": "dotenv -e ../../apps/main/.env -- prisma migrate dev --schema=./schema",
+		"db:studio": "dotenv -e ../../apps/main/.env -- prisma studio --schema=./schema",
+		"db:reset": "dotenv -e ../../apps/main/.env -- prisma db push --force-reset --schema=./schema",
+		"db:seed": "dotenv -e ../../apps/main/.env -- tsx seed.ts",
+		"generate": "dotenv -e ../../apps/main/.env -- prisma generate --schema=./schema"
 	},
 	"exports": {
 		".": "./index.ts",

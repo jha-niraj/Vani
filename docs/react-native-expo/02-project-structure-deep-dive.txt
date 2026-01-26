@@ -1,0 +1,935 @@
+================================================================================
+        REACT NATIVE WITH EXPO - COMPREHENSIVE LEARNING GUIDE
+                    PART 2: PROJECT STRUCTURE DEEP DIVE
+================================================================================
+
+This document provides an in-depth exploration of the Expo project structure,
+specifically analyzing the PrepSathi app structure and explaining every file
+and folder in detail.
+
+================================================================================
+                            TABLE OF CONTENTS
+================================================================================
+
+1. Overview of Project Structure
+2. Root Level Files Explained
+3. The 'app' Folder - Heart of Expo Router
+4. Understanding _layout.tsx Files
+5. The 'components' Folder
+6. The 'hooks' Folder
+7. The 'constants' Folder
+8. The 'assets' Folder
+9. The 'scripts' Folder
+10. Configuration Files Deep Dive
+11. File Naming Conventions
+12. Best Practices for Organization
+
+================================================================================
+                    1. OVERVIEW OF PROJECT STRUCTURE
+================================================================================
+
+Let's visualize your complete project structure:
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PREP-SATHI PROJECT STRUCTURE                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  prep-sathi/                                                                 │
+│  │                                                                           │
+│  ├── app/                        # 🎯 ROUTING & SCREENS (Expo Router)       │
+│  │   ├── _layout.tsx             # Root layout wrapper                       │
+│  │   ├── modal.tsx               # Modal screen                              │
+│  │   └── (tabs)/                 # Tab navigator group                       │
+│  │       ├── _layout.tsx         # Tab configuration                         │
+│  │       ├── index.tsx           # Home tab (/)                              │
+│  │       └── explore.tsx         # Explore tab (/explore)                    │
+│  │                                                                           │
+│  ├── components/                 # 🧩 REUSABLE UI COMPONENTS                │
+│  │   ├── ui/                     # Basic UI building blocks                  │
+│  │   ├── themed-text.tsx         # Theme-aware text                          │
+│  │   ├── themed-view.tsx         # Theme-aware container                     │
+│  │   └── ...                     # Other components                          │
+│  │                                                                           │
+│  ├── hooks/                      # 🪝 CUSTOM REACT HOOKS                    │
+│  │   ├── use-color-scheme.ts     # Color scheme detection                    │
+│  │   └── use-theme-color.ts      # Theme color helper                        │
+│  │                                                                           │
+│  ├── constants/                  # 📋 APP CONSTANTS                         │
+│  │   └── theme.ts                # Colors, fonts configuration               │
+│  │                                                                           │
+│  ├── assets/                     # 🖼️ STATIC ASSETS                         │
+│  │   └── images/                 # Images, icons, etc.                       │
+│  │                                                                           │
+│  ├── scripts/                    # 📜 UTILITY SCRIPTS                       │
+│  │   └── reset-project.js        # Project reset script                      │
+│  │                                                                           │
+│  ├── app.json                    # ⚙️ Expo configuration                    │
+│  ├── package.json                # 📦 Dependencies & scripts                │
+│  ├── tsconfig.json               # 🔷 TypeScript configuration              │
+│  └── eslint.config.js            # 🔍 Linting rules                         │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+UNDERSTANDING THE PURPOSE OF EACH FOLDER:
+-----------------------------------------
+
+┌──────────────────┬───────────────────────────────────────────────────────────┐
+│    Folder        │   Purpose                                                 │
+├──────────────────┼───────────────────────────────────────────────────────────┤
+│    app/          │   Contains all routes/screens. This is where navigation  │
+│                  │   and page components live. Expo Router uses this.        │
+├──────────────────┼───────────────────────────────────────────────────────────┤
+│    components/   │   Reusable UI components that are used across multiple   │
+│                  │   screens. Keep your UI building blocks here.            │
+├──────────────────┼───────────────────────────────────────────────────────────┤
+│    hooks/        │   Custom React hooks for shared logic. State management, │
+│                  │   data fetching logic, etc.                              │
+├──────────────────┼───────────────────────────────────────────────────────────┤
+│    constants/    │   Application-wide constants like colors, font sizes,    │
+│                  │   API endpoints, etc.                                    │
+├──────────────────┼───────────────────────────────────────────────────────────┤
+│    assets/       │   Static files: images, fonts, sounds, etc.              │
+├──────────────────┼───────────────────────────────────────────────────────────┤
+│    scripts/      │   Utility scripts for development tasks.                 │
+└──────────────────┴───────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                        2. ROOT LEVEL FILES EXPLAINED
+================================================================================
+
+Let's examine each root-level file in detail:
+
+--------------------------------------------------------------------------------
+                              app.json
+--------------------------------------------------------------------------------
+
+This is the MOST IMPORTANT configuration file for your Expo app. Here's your
+current configuration explained:
+
+    {
+      "expo": {
+        "name": "prep-sathi",           // App name shown on device
+        "slug": "prep-sathi",           // URL-friendly identifier
+        "version": "1.0.0",             // App version
+        "orientation": "portrait",      // portrait | landscape | default
+        "icon": "./assets/images/icon.png",  // App icon (1024x1024)
+        "scheme": "prepsathi",          // Deep linking URL scheme
+        "userInterfaceStyle": "automatic",  // light | dark | automatic
+        "newArchEnabled": true,         // Enable New Architecture
+        
+        "ios": {
+          "supportsTablet": true        // iPad support
+        },
+        
+        "android": {
+          "adaptiveIcon": {             // Android 8+ adaptive icons
+            "backgroundColor": "#E6F4FE",
+            "foregroundImage": "...",
+            "backgroundImage": "...",
+            "monochromeImage": "..."
+          },
+          "edgeToEdgeEnabled": true     // Full screen rendering
+        },
+        
+        "web": {
+          "output": "static",           // Static site generation
+          "favicon": "./assets/images/favicon.png"
+        },
+        
+        "plugins": [
+          "expo-router",                // File-based routing
+          ["expo-splash-screen", {...}] // Splash screen config
+        ],
+        
+        "experiments": {
+          "typedRoutes": true,          // Type-safe navigation
+          "reactCompiler": true         // React Compiler (performance)
+        }
+      }
+    }
+
+KEY CONFIGURATION OPTIONS EXPLAINED:
+------------------------------------
+
+┌─────────────────────────┬────────────────────────────────────────────────────┐
+│   Option                │   What it does                                     │
+├─────────────────────────┼────────────────────────────────────────────────────┤
+│   name                  │   Display name on home screen                      │
+│   slug                  │   Used in Expo URLs (expo.dev/@user/slug)          │
+│   scheme                │   Deep link prefix (prepsathi://...)               │
+│   newArchEnabled        │   Use Fabric + JSI (better performance)            │
+│   typedRoutes           │   TypeScript knows your route names!               │
+│   reactCompiler         │   Auto-optimizes renders (experimental)            │
+└─────────────────────────┴────────────────────────────────────────────────────┘
+
+
+--------------------------------------------------------------------------------
+                              package.json
+--------------------------------------------------------------------------------
+
+Your project's dependency manifest:
+
+    {
+      "name": "prep-sathi",
+      "main": "expo-router/entry",      // ⚠️ IMPORTANT: Entry point for Expo Router
+      "version": "1.0.0",
+      
+      "scripts": {
+        "start": "expo start",          // Start dev server
+        "android": "expo start --android",  // Start on Android
+        "ios": "expo start --ios",      // Start on iOS
+        "web": "expo start --web",      // Start on web
+        "lint": "expo lint"             // Run linter
+      },
+      
+      "dependencies": {
+        // Core Expo packages
+        "expo": "~54.0.32",
+        "expo-router": "~6.0.22",       // File-based routing
+        
+        // Navigation (used by Expo Router)
+        "@react-navigation/native": "^7.1.8",
+        "@react-navigation/bottom-tabs": "^7.4.0",
+        
+        // React & React Native
+        "react": "19.1.0",
+        "react-native": "0.81.5",
+        
+        // Animation library
+        "react-native-reanimated": "~4.1.1"
+        // ... more dependencies
+      }
+    }
+
+IMPORTANT NOTE ABOUT "main" FIELD:
+----------------------------------
+The "main": "expo-router/entry" is CRITICAL. It tells Expo to use Expo Router
+as the entry point instead of the traditional App.js/App.tsx approach.
+
+
+--------------------------------------------------------------------------------
+                              tsconfig.json
+--------------------------------------------------------------------------------
+
+TypeScript configuration with Expo-specific settings:
+
+Key features:
+• Path aliases (@/components, @/hooks, etc.)
+• Strict type checking
+• JSX handling for React Native
+
+The "@/" alias lets you import from project root:
+    
+    // Instead of:
+    import { ThemedText } from '../../../components/themed-text';
+    
+    // You can use:
+    import { ThemedText } from '@/components/themed-text';
+
+
+================================================================================
+                3. THE 'app' FOLDER - HEART OF EXPO ROUTER
+================================================================================
+
+The app/ folder is where ALL your screens and navigation live. This is
+file-based routing similar to Next.js.
+
+YOUR CURRENT APP STRUCTURE:
+---------------------------
+
+    app/
+    ├── _layout.tsx           # Root layout (wraps everything)
+    ├── modal.tsx             # /modal route
+    └── (tabs)/               # Tab group (parentheses = layout group)
+        ├── _layout.tsx       # Tab navigation configuration
+        ├── index.tsx         # / route (Home tab)
+        └── explore.tsx       # /explore route (Explore tab)
+
+
+ROUTE MAPPING FLOWCHART:
+------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                        FILE TO ROUTE MAPPING                             │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   FILE PATH                        ROUTE URL                             │
+    │   ─────────                        ─────────                             │
+    │                                                                          │
+    │   app/index.tsx           ──►      /                                     │
+    │   app/(tabs)/index.tsx    ──►      /                                     │
+    │   app/(tabs)/explore.tsx  ──►      /explore                              │
+    │   app/modal.tsx           ──►      /modal                                │
+    │   app/settings.tsx        ──►      /settings  (if created)              │
+    │   app/user/[id].tsx       ──►      /user/123   (dynamic route)          │
+    │   app/blog/[...slug].tsx  ──►      /blog/a/b/c (catch-all route)        │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+SPECIAL FILE NAMING CONVENTIONS:
+--------------------------------
+
+┌────────────────────────┬───────────────────────────────────────────────────────┐
+│   File/Folder Name     │   Purpose                                             │
+├────────────────────────┼───────────────────────────────────────────────────────┤
+│   _layout.tsx          │   Defines layout wrapper for routes at that level    │
+│                        │   Every folder can have its own _layout.tsx          │
+├────────────────────────┼───────────────────────────────────────────────────────┤
+│   index.tsx            │   Default route for that folder (like / or /folder)  │
+├────────────────────────┼───────────────────────────────────────────────────────┤
+│   (folderName)/        │   Layout group - groups routes without affecting URL │
+│                        │   (tabs) becomes just grouping, not /tabs/...        │
+├────────────────────────┼───────────────────────────────────────────────────────┤
+│   [param].tsx          │   Dynamic route segment. [id].tsx matches /123       │
+├────────────────────────┼───────────────────────────────────────────────────────┤
+│   [...param].tsx       │   Catch-all route. [...slug].tsx matches /a/b/c/d    │
+├────────────────────────┼───────────────────────────────────────────────────────┤
+│   +not-found.tsx       │   404 page (when no route matches)                   │
+├────────────────────────┼───────────────────────────────────────────────────────┤
+│   +html.tsx            │   Custom HTML wrapper for web                        │
+└────────────────────────┴───────────────────────────────────────────────────────┘
+
+
+================================================================================
+                    4. UNDERSTANDING _layout.tsx FILES
+================================================================================
+
+The _layout.tsx files are CRUCIAL to understand. They define how screens
+are organized and wrapped.
+
+ROOT _layout.tsx EXPLAINED:
+---------------------------
+
+File: app/_layout.tsx
+
+    import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+    import { Stack } from 'expo-router';
+    import { StatusBar } from 'expo-status-bar';
+    import 'react-native-reanimated';
+    
+    import { useColorScheme } from '@/hooks/use-color-scheme';
+    
+    // This tells Expo Router which route is the "anchor" (default)
+    export const unstable_settings = {
+      anchor: '(tabs)',
+    };
+    
+    export default function RootLayout() {
+      const colorScheme = useColorScheme();
+    
+      return (
+        // ThemeProvider wraps everything for theme colors
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          
+          {/* Stack navigator - screens stack on top of each other */}
+          <Stack>
+            {/* Hide header for tabs since tabs has its own navigation */}
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            
+            {/* Modal screen - opens as a modal overlay */}
+            <Stack.Screen 
+              name="modal" 
+              options={{ 
+                presentation: 'modal',  // Opens from bottom
+                title: 'Modal' 
+              }} 
+            />
+          </Stack>
+          
+          {/* Status bar configuration */}
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      );
+    }
+
+
+VISUAL REPRESENTATION OF LAYOUT HIERARCHY:
+------------------------------------------
+
+    ┌───────────────────────────────────────────────────────────────────────────┐
+    │                              RootLayout                                    │
+    │                      (app/_layout.tsx - Stack)                            │
+    │  ┌─────────────────────────────────────────────────────────────────────┐  │
+    │  │                         ThemeProvider                                │  │
+    │  │  ┌───────────────────────────────────────────────────────────────┐  │  │
+    │  │  │                            Stack                               │  │  │
+    │  │  │                                                                │  │  │
+    │  │  │    ┌─────────────────────┐    ┌─────────────────────┐        │  │  │
+    │  │  │    │  (tabs) - TabLayout │    │   modal.tsx         │        │  │  │
+    │  │  │    │                     │    │   (opens on top)    │        │  │  │
+    │  │  │    │  ┌───────────────┐  │    │                     │        │  │  │
+    │  │  │    │  │ index.tsx    │  │    └─────────────────────┘        │  │  │
+    │  │  │    │  │ (Home Tab)   │  │                                   │  │  │
+    │  │  │    │  └───────────────┘  │                                   │  │  │
+    │  │  │    │  ┌───────────────┐  │                                   │  │  │
+    │  │  │    │  │ explore.tsx  │  │                                   │  │  │
+    │  │  │    │  │ (Explore Tab)│  │                                   │  │  │
+    │  │  │    │  └───────────────┘  │                                   │  │  │
+    │  │  │    └─────────────────────┘                                   │  │  │
+    │  │  │                                                                │  │  │
+    │  │  └───────────────────────────────────────────────────────────────┘  │  │
+    │  └─────────────────────────────────────────────────────────────────────┘  │
+    └───────────────────────────────────────────────────────────────────────────┘
+
+
+TAB _layout.tsx EXPLAINED:
+--------------------------
+
+File: app/(tabs)/_layout.tsx
+
+    import { Tabs } from 'expo-router';
+    import React from 'react';
+    
+    import { HapticTab } from '@/components/haptic-tab';
+    import { IconSymbol } from '@/components/ui/icon-symbol';
+    import { Colors } from '@/constants/theme';
+    import { useColorScheme } from '@/hooks/use-color-scheme';
+    
+    export default function TabLayout() {
+      const colorScheme = useColorScheme();
+    
+      return (
+        <Tabs
+          screenOptions={{
+            // Active tab icon color
+            tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+            // Hide the header (we use our own)
+            headerShown: false,
+            // Custom tab button with haptic feedback
+            tabBarButton: HapticTab,
+          }}>
+          
+          {/* First Tab - Home */}
+          <Tabs.Screen
+            name="index"           // File: index.tsx
+            options={{
+              title: 'Home',       // Tab label
+              tabBarIcon: ({ color }) => (
+                <IconSymbol size={28} name="house.fill" color={color} />
+              ),
+            }}
+          />
+          
+          {/* Second Tab - Explore */}
+          <Tabs.Screen
+            name="explore"         // File: explore.tsx
+            options={{
+              title: 'Explore',
+              tabBarIcon: ({ color }) => (
+                <IconSymbol size={28} name="paperplane.fill" color={color} />
+              ),
+            }}
+          />
+        </Tabs>
+      );
+    }
+
+
+NAVIGATION TYPES COMPARISON:
+----------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                        NAVIGATION TYPES                                  │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   STACK NAVIGATOR                                                        │
+    │   ────────────────                                                       │
+    │   Screens stack on top of each other (like pages in a book)             │
+    │                                                                          │
+    │   ┌─────┐  push   ┌─────┐  push   ┌─────┐                               │
+    │   │  A  │ ──────► │  B  │ ──────► │  C  │   (C is on top)               │
+    │   └─────┘         └──┬──┘         └─────┘                               │
+    │                      │                                                   │
+    │                      ▼ pop (go back)                                     │
+    │                                                                          │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   TAB NAVIGATOR                                                          │
+    │   ─────────────                                                          │
+    │   Screens side by side, accessible via tab bar                          │
+    │                                                                          │
+    │   ┌─────────────────────────────────────────┐                           │
+    │   │            CURRENT SCREEN               │                           │
+    │   │                                         │                           │
+    │   │                                         │                           │
+    │   ├─────────┬─────────┬─────────┬──────────┤                           │
+    │   │  Home   │ Search  │  Cart   │ Profile  │  ◄── Tab Bar              │
+    │   └─────────┴─────────┴─────────┴──────────┘                           │
+    │                                                                          │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   DRAWER NAVIGATOR                                                       │
+    │   ────────────────                                                       │
+    │   Side menu that slides in from the edge                                │
+    │                                                                          │
+    │   ┌──────────────────────────────────────────┐                          │
+    │   │ ┌────────────┐                           │                          │
+    │   │ │   Menu     │                           │                          │
+    │   │ │ ─────────  │      CURRENT SCREEN       │                          │
+    │   │ │ • Home     │                           │                          │
+    │   │ │ • Settings │                           │                          │
+    │   │ │ • Profile  │                           │                          │
+    │   │ └────────────┘                           │                          │
+    │   └──────────────────────────────────────────┘                          │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                        5. THE 'components' FOLDER
+================================================================================
+
+This folder contains reusable UI components organized logically:
+
+    components/
+    ├── ui/                         # Basic UI building blocks
+    │   ├── collapsible.tsx         # Expandable/collapsible section
+    │   ├── icon-symbol.tsx         # Cross-platform icons
+    │   └── icon-symbol.ios.tsx     # iOS-specific icon implementation
+    │
+    ├── themed-text.tsx             # Text with theme support
+    ├── themed-view.tsx             # View with theme support
+    ├── parallax-scroll-view.tsx    # Fancy scrolling effect
+    ├── hello-wave.tsx              # Animated wave emoji
+    ├── haptic-tab.tsx              # Tab with haptic feedback
+    └── external-link.tsx           # Opens URL in browser
+
+
+COMPONENT ORGANIZATION BEST PRACTICES:
+--------------------------------------
+
+    ┌──────────────────────────────────────────────────────────────────────────┐
+    │                RECOMMENDED COMPONENT ORGANIZATION                         │
+    ├──────────────────────────────────────────────────────────────────────────┤
+    │                                                                           │
+    │  components/                                                              │
+    │  │                                                                        │
+    │  ├── ui/                      # Generic UI components                    │
+    │  │   ├── button.tsx           # Buttons                                  │
+    │  │   ├── input.tsx            # Text inputs                              │
+    │  │   ├── card.tsx             # Card containers                          │
+    │  │   └── modal.tsx            # Modal dialogs                            │
+    │  │                                                                        │
+    │  ├── forms/                   # Form-related components                  │
+    │  │   ├── form-field.tsx                                                  │
+    │  │   └── validation-error.tsx                                            │
+    │  │                                                                        │
+    │  ├── layout/                  # Layout components                        │
+    │  │   ├── container.tsx                                                   │
+    │  │   ├── header.tsx                                                      │
+    │  │   └── footer.tsx                                                      │
+    │  │                                                                        │
+    │  ├── features/                # Feature-specific components              │
+    │  │   ├── quiz/                                                           │
+    │  │   │   ├── quiz-card.tsx                                               │
+    │  │   │   └── quiz-option.tsx                                             │
+    │  │   └── profile/                                                        │
+    │  │       ├── avatar.tsx                                                  │
+    │  │       └── stats-card.tsx                                              │
+    │  │                                                                        │
+    │  └── shared/                  # Shared across features                   │
+    │      ├── loading-spinner.tsx                                             │
+    │      └── error-boundary.tsx                                              │
+    │                                                                           │
+    └──────────────────────────────────────────────────────────────────────────┘
+
+
+EXAMPLE: ANALYZING ThemedText COMPONENT:
+----------------------------------------
+
+File: components/themed-text.tsx
+
+    import { StyleSheet, Text, type TextProps } from 'react-native';
+    import { useThemeColor } from '@/hooks/use-theme-color';
+    
+    // Type definition extending React Native's TextProps
+    export type ThemedTextProps = TextProps & {
+      lightColor?: string;      // Custom light mode color
+      darkColor?: string;       // Custom dark mode color
+      type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
+    };
+    
+    export function ThemedText({
+      style,
+      lightColor,
+      darkColor,
+      type = 'default',
+      ...rest
+    }: ThemedTextProps) {
+      // Get the appropriate color based on theme
+      const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+    
+      return (
+        <Text
+          style={[
+            { color },
+            // Apply the appropriate style based on type
+            type === 'default' ? styles.default : undefined,
+            type === 'title' ? styles.title : undefined,
+            type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
+            type === 'subtitle' ? styles.subtitle : undefined,
+            type === 'link' ? styles.link : undefined,
+            style,  // User's custom style (applied last = highest priority)
+          ]}
+          {...rest}
+        />
+      );
+    }
+    
+    // Pre-defined styles for different text types
+    const styles = StyleSheet.create({
+      default: {
+        fontSize: 16,
+        lineHeight: 24,
+      },
+      title: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        lineHeight: 32,
+      },
+      // ... more styles
+    });
+
+
+USAGE EXAMPLE:
+    
+    // Simple usage
+    <ThemedText>Regular text</ThemedText>
+    
+    // With type
+    <ThemedText type="title">Page Title</ThemedText>
+    
+    // With custom colors
+    <ThemedText lightColor="#333" darkColor="#eee">Custom colors</ThemedText>
+    
+    // With additional styles
+    <ThemedText type="subtitle" style={{ marginTop: 20 }}>Subtitle</ThemedText>
+
+
+================================================================================
+                        6. THE 'hooks' FOLDER
+================================================================================
+
+Custom React hooks for reusable logic:
+
+    hooks/
+    ├── use-color-scheme.ts         # Detect light/dark mode
+    ├── use-color-scheme.web.ts     # Web-specific implementation
+    └── use-theme-color.ts          # Get theme-based colors
+
+
+UNDERSTANDING PLATFORM-SPECIFIC FILES:
+--------------------------------------
+
+Notice use-color-scheme.ts and use-color-scheme.web.ts. This is a powerful
+pattern in React Native!
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │              PLATFORM-SPECIFIC FILE RESOLUTION                           │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   When you import:                                                       │
+    │       import { useColorScheme } from '@/hooks/use-color-scheme';         │
+    │                                                                          │
+    │   React Native automatically picks:                                      │
+    │                                                                          │
+    │   ┌──────────────────┬────────────────────────────────────────────────┐ │
+    │   │   Platform       │   File Used                                    │ │
+    │   ├──────────────────┼────────────────────────────────────────────────┤ │
+    │   │   iOS            │   use-color-scheme.ios.ts (if exists)          │ │
+    │   │                  │   OR use-color-scheme.ts (fallback)            │ │
+    │   ├──────────────────┼────────────────────────────────────────────────┤ │
+    │   │   Android        │   use-color-scheme.android.ts (if exists)      │ │
+    │   │                  │   OR use-color-scheme.ts (fallback)            │ │
+    │   ├──────────────────┼────────────────────────────────────────────────┤ │
+    │   │   Web            │   use-color-scheme.web.ts (if exists)          │ │
+    │   │                  │   OR use-color-scheme.ts (fallback)            │ │
+    │   └──────────────────┴────────────────────────────────────────────────┘ │
+    │                                                                          │
+    │   Extension priority: .ios.ts > .android.ts > .native.ts > .ts          │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+ANALYZING useThemeColor HOOK:
+-----------------------------
+
+File: hooks/use-theme-color.ts
+
+    import { Colors } from '@/constants/theme';
+    import { useColorScheme } from '@/hooks/use-color-scheme';
+    
+    export function useThemeColor(
+      props: { light?: string; dark?: string },
+      colorName: keyof typeof Colors.light & keyof typeof Colors.dark
+    ) {
+      // Get current theme (light or dark)
+      const theme = useColorScheme() ?? 'light';
+      
+      // Check if a custom color was provided for this theme
+      const colorFromProps = props[theme];
+    
+      if (colorFromProps) {
+        // Use custom color if provided
+        return colorFromProps;
+      } else {
+        // Otherwise, use the color from our theme constants
+        return Colors[theme][colorName];
+      }
+    }
+
+HOW IT WORKS:
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    useThemeColor FLOW                                    │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   useThemeColor({ light: '#fff', dark: '#000' }, 'background')          │
+    │                          │                              │                │
+    │                          ▼                              ▼                │
+    │                   Custom colors               Fallback color name        │
+    │                          │                              │                │
+    │                          ▼                              │                │
+    │              ┌─────────────────────┐                    │                │
+    │              │  Is theme 'dark'?   │                    │                │
+    │              └──────────┬──────────┘                    │                │
+    │                         │                               │                │
+    │            ┌────────────┴────────────┐                  │                │
+    │            ▼                         ▼                  │                │
+    │     Return '#000'             Return '#fff'             │                │
+    │     (dark prop)               (light prop)              │                │
+    │                                                         │                │
+    │   If no custom color provided:                          │                │
+    │                                                         ▼                │
+    │                                    Return Colors[theme]['background']    │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                        7. THE 'constants' FOLDER
+================================================================================
+
+Application-wide constants:
+
+    constants/
+    └── theme.ts          # Colors, fonts, spacing, etc.
+
+
+ANALYZING theme.ts:
+-------------------
+
+    const tintColorLight = '#0a7ea4';
+    const tintColorDark = '#fff';
+    
+    export const Colors = {
+      light: {
+        text: '#11181C',
+        background: '#fff',
+        tint: tintColorLight,
+        icon: '#687076',
+        tabIconDefault: '#687076',
+        tabIconSelected: tintColorLight,
+      },
+      dark: {
+        text: '#ECEDEE',
+        background: '#151718',
+        tint: tintColorDark,
+        icon: '#9BA1A6',
+        tabIconDefault: '#9BA1A6',
+        tabIconSelected: tintColorDark,
+      },
+    };
+    
+    export const Fonts = Platform.select({
+      ios: {
+        sans: 'system-ui',
+        serif: 'ui-serif',
+        rounded: 'ui-rounded',
+        mono: 'ui-monospace',
+      },
+      default: {
+        sans: 'normal',
+        serif: 'serif',
+        rounded: 'normal',
+        mono: 'monospace',
+      },
+      // ... web fonts
+    });
+
+
+RECOMMENDED CONSTANTS ORGANIZATION:
+-----------------------------------
+
+    constants/
+    ├── theme.ts          # Colors, fonts
+    ├── spacing.ts        # Margin/padding values
+    ├── typography.ts     # Font sizes, line heights
+    ├── api.ts            # API endpoints
+    └── config.ts         # App configuration
+
+
+================================================================================
+                        8. THE 'assets' FOLDER
+================================================================================
+
+Static files that get bundled with your app:
+
+    assets/
+    └── images/
+        ├── icon.png                      # App icon (1024x1024 recommended)
+        ├── splash-icon.png               # Splash screen icon
+        ├── favicon.png                   # Web favicon
+        ├── partial-react-logo.png        # Example image
+        ├── react-logo.png                # Example image
+        ├── android-icon-foreground.png   # Android adaptive icon
+        ├── android-icon-background.png   # Android adaptive icon bg
+        └── android-icon-monochrome.png   # Android monochrome icon
+
+
+IMAGE DENSITY SUFFIXES:
+-----------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    IMAGE DENSITY NAMING                                  │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   React Native automatically picks the right image based on device:     │
+    │                                                                          │
+    │   assets/images/                                                         │
+    │   ├── logo.png           # Base (1x) - older devices                    │
+    │   ├── logo@2x.png        # 2x density - most phones                     │
+    │   └── logo@3x.png        # 3x density - high-end phones                 │
+    │                                                                          │
+    │   Usage (just reference the base name):                                  │
+    │                                                                          │
+    │       <Image source={require('@/assets/images/logo.png')} />            │
+    │                                                                          │
+    │   React Native automatically picks logo@2x.png or logo@3x.png           │
+    │   based on the device's screen density!                                  │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                    9. FILE NAMING CONVENTIONS
+================================================================================
+
+CONSISTENT NAMING IS IMPORTANT:
+-------------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    NAMING CONVENTIONS                                    │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   FILES (use kebab-case):                                                │
+    │   ────────────────────────                                               │
+    │   ✓ themed-text.tsx                                                      │
+    │   ✓ use-color-scheme.ts                                                  │
+    │   ✓ parallax-scroll-view.tsx                                             │
+    │   ✗ ThemedText.tsx (PascalCase - not recommended for files)             │
+    │   ✗ themedText.tsx (camelCase - not recommended)                        │
+    │                                                                          │
+    │   COMPONENTS (use PascalCase for exports):                               │
+    │   ──────────────────────────────────────────                             │
+    │   ✓ export function ThemedText() { }                                     │
+    │   ✓ export function ParallaxScrollView() { }                             │
+    │                                                                          │
+    │   HOOKS (use camelCase, start with "use"):                               │
+    │   ──────────────────────────────────────────                             │
+    │   ✓ export function useThemeColor() { }                                  │
+    │   ✓ export function useColorScheme() { }                                 │
+    │                                                                          │
+    │   CONSTANTS (use SCREAMING_SNAKE_CASE or PascalCase):                   │
+    │   ────────────────────────────────────────────────────                   │
+    │   ✓ export const Colors = { }                                            │
+    │   ✓ export const API_BASE_URL = '...'                                    │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                    10. BEST PRACTICES FOR ORGANIZATION
+================================================================================
+
+RULE 1: COLOCATION
+------------------
+Keep related files together. If a component has its own styles, types, or 
+tests, keep them in the same folder:
+
+    components/
+    └── quiz-card/
+        ├── index.tsx           # Main component (re-exports)
+        ├── quiz-card.tsx       # Component implementation
+        ├── quiz-card.styles.ts # Styles (if separate)
+        ├── quiz-card.types.ts  # TypeScript types
+        └── quiz-card.test.tsx  # Tests
+
+
+RULE 2: BARREL EXPORTS
+----------------------
+Use index.ts files to simplify imports:
+
+    // components/index.ts
+    export { ThemedText } from './themed-text';
+    export { ThemedView } from './themed-view';
+    export { ParallaxScrollView } from './parallax-scroll-view';
+    
+    // Now you can import like:
+    import { ThemedText, ThemedView } from '@/components';
+
+
+RULE 3: FEATURE-BASED ORGANIZATION FOR LARGE APPS
+-------------------------------------------------
+
+For larger apps, consider organizing by feature:
+
+    src/
+    ├── features/
+    │   ├── auth/
+    │   │   ├── screens/
+    │   │   ├── components/
+    │   │   ├── hooks/
+    │   │   └── api/
+    │   ├── quiz/
+    │   │   ├── screens/
+    │   │   ├── components/
+    │   │   ├── hooks/
+    │   │   └── api/
+    │   └── profile/
+    │       ├── screens/
+    │       ├── components/
+    │       └── hooks/
+    │
+    ├── shared/
+    │   ├── components/
+    │   ├── hooks/
+    │   └── utils/
+    │
+    └── app/              # Expo Router screens
+
+
+================================================================================
+                            SUMMARY
+================================================================================
+
+KEY TAKEAWAYS:
+--------------
+
+1. app/ folder = Routes and navigation (Expo Router)
+2. _layout.tsx files define navigation structure
+3. (parentheses) folders group routes without affecting URLs
+4. components/ = Reusable UI pieces
+5. hooks/ = Reusable logic
+6. constants/ = App-wide values
+7. assets/ = Static files (images, fonts)
+8. Platform-specific files: *.ios.ts, *.android.ts, *.web.ts
+9. Use kebab-case for files, PascalCase for components
+
+================================================================================
+                        END OF DOCUMENT 02
+                Next: 03 - Core Components Deep Dive
+================================================================================

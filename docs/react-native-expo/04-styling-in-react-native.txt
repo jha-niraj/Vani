@@ -1,0 +1,1165 @@
+================================================================================
+        REACT NATIVE WITH EXPO - COMPREHENSIVE LEARNING GUIDE
+                    PART 4: STYLING IN REACT NATIVE
+================================================================================
+
+This document covers everything you need to know about styling in React Native,
+from basic StyleSheet usage to advanced Flexbox layouts and responsive design.
+
+================================================================================
+                            TABLE OF CONTENTS
+================================================================================
+
+1. Styling Fundamentals: CSS vs React Native
+2. StyleSheet API Deep Dive
+3. Inline Styles vs StyleSheet
+4. Flexbox Layout System
+5. Common Style Properties Reference
+6. Responsive Design Strategies
+7. Platform-Specific Styles
+8. Shadow and Elevation
+9. Borders and Border Radius
+10. Typography and Fonts
+11. Transforms and Animations Basics
+12. Styling Best Practices
+
+================================================================================
+            1. STYLING FUNDAMENTALS: CSS vs REACT NATIVE
+================================================================================
+
+React Native styling looks similar to CSS but has important differences.
+
+KEY DIFFERENCES FROM CSS:
+-------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                CSS vs REACT NATIVE STYLING                               │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   1. PROPERTY NAMES                                                      │
+    │   ─────────────────                                                      │
+    │   CSS:           background-color: red;                                  │
+    │   React Native:  backgroundColor: 'red'                                  │
+    │                  (camelCase, string values)                              │
+    │                                                                          │
+    │   2. VALUES                                                              │
+    │   ──────────                                                             │
+    │   CSS:           padding: 16px;                                          │
+    │   React Native:  padding: 16  (no units, number = dp/pt)                │
+    │                                                                          │
+    │   3. NO CASCADING                                                        │
+    │   ───────────────                                                        │
+    │   CSS:           Styles inherit and cascade                              │
+    │   React Native:  Each component must be styled individually             │
+    │                  (except Text inherits from parent Text)                 │
+    │                                                                          │
+    │   4. NO GLOBAL STYLES                                                    │
+    │   ──────────────────                                                     │
+    │   CSS:           .button { } applies everywhere                          │
+    │   React Native:  Styles are scoped to component                         │
+    │                                                                          │
+    │   5. NO SELECTORS                                                        │
+    │   ───────────────                                                        │
+    │   CSS:           .parent > .child:hover { }                              │
+    │   React Native:  No selectors, no pseudo-classes                        │
+    │                                                                          │
+    │   6. FLEXBOX BY DEFAULT                                                  │
+    │   ─────────────────────                                                  │
+    │   CSS:           display: flex; needed                                   │
+    │   React Native:  Every View is already a flex container                 │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+VISUAL COMPARISON:
+------------------
+
+    ┌───────────────────────────────┬───────────────────────────────────────────┐
+    │         WEB CSS               │           REACT NATIVE                    │
+    ├───────────────────────────────┼───────────────────────────────────────────┤
+    │                               │                                           │
+    │  .card {                      │  const styles = StyleSheet.create({       │
+    │    background-color: #fff;    │    card: {                                │
+    │    border-radius: 8px;        │      backgroundColor: '#fff',             │
+    │    padding: 16px;             │      borderRadius: 8,                     │
+    │    box-shadow: 0 2px 4px      │      padding: 16,                         │
+    │      rgba(0,0,0,0.1);         │      // Shadow is more complex...        │
+    │    margin-bottom: 12px;       │      marginBottom: 12,                    │
+    │  }                            │    },                                     │
+    │                               │  });                                      │
+    │                               │                                           │
+    │  <div class="card">           │  <View style={styles.card}>              │
+    │    Content                    │    <Text>Content</Text>                   │
+    │  </div>                       │  </View>                                  │
+    │                               │                                           │
+    └───────────────────────────────┴───────────────────────────────────────────┘
+
+
+================================================================================
+                    2. StyleSheet API DEEP DIVE
+================================================================================
+
+StyleSheet.create() is the primary way to define styles in React Native.
+
+BASIC USAGE:
+------------
+
+    import { StyleSheet, View, Text } from 'react-native';
+    
+    function MyComponent() {
+      return (
+        <View style={styles.container}>
+          <Text style={styles.title}>Hello!</Text>
+          <Text style={styles.subtitle}>Welcome to the app</Text>
+        </View>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+        padding: 16,
+        backgroundColor: '#f5f5f5',
+      },
+      title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 8,
+      },
+      subtitle: {
+        fontSize: 16,
+        color: '#666',
+      },
+    });
+
+
+WHY USE StyleSheet.create()?
+----------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    BENEFITS OF StyleSheet.create()                       │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   1. VALIDATION                                                          │
+    │      Validates style properties at creation time                        │
+    │      Catches typos: { backgrondColor: 'red' } → Error!                  │
+    │                                                                          │
+    │   2. PERFORMANCE                                                         │
+    │      Creates a reference ID for styles                                  │
+    │      Styles are sent to native once, then referenced                    │
+    │      Reduces bridge traffic                                              │
+    │                                                                          │
+    │   3. TYPESCRIPT SUPPORT                                                  │
+    │      Full autocompletion for style properties                           │
+    │      Type checking for property values                                  │
+    │                                                                          │
+    │   4. ORGANIZATION                                                        │
+    │      Keeps styles organized and separate from JSX                       │
+    │      Easy to find and modify styles                                     │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+STYLESHEET METHODS:
+-------------------
+
+    // Create style objects
+    const styles = StyleSheet.create({ ... });
+    
+    // Flatten multiple styles into one
+    const flatStyle = StyleSheet.flatten([styles.base, styles.override]);
+    
+    // Compose styles (returns array)
+    const composed = StyleSheet.compose(styles.base, styles.override);
+    
+    // Get absolute fill style (covers entire parent)
+    const fill = StyleSheet.absoluteFill;
+    // Equivalent to: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }
+    
+    // Hairline width (thinnest possible line)
+    const thinBorder = StyleSheet.hairlineWidth;
+    // Usually 0.5 or less on high-density screens
+
+
+================================================================================
+                3. INLINE STYLES vs StyleSheet
+================================================================================
+
+You can use both approaches, but know when to use each:
+
+INLINE STYLES:
+--------------
+
+    // Dynamic values
+    <View style={{ 
+      backgroundColor: isActive ? 'blue' : 'gray',
+      opacity: disabled ? 0.5 : 1,
+    }}>
+    
+    // One-off styles
+    <View style={{ marginTop: 20 }}>
+
+
+STYLESHEET STYLES:
+------------------
+
+    // Reusable, static styles
+    <View style={styles.container}>
+    
+    // Multiple style sources
+    <View style={[styles.card, styles.shadow, { marginTop: 20 }]}>
+
+
+COMBINING STYLES:
+-----------------
+
+Styles can be combined using arrays. Later styles override earlier ones:
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    STYLE MERGING ORDER                                   │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   <View style={[                                                         │
+    │     styles.base,        // Applied first (lowest priority)              │
+    │     styles.variant,     // Overrides base                                │
+    │     isActive && styles.active,  // Conditional style                    │
+    │     { padding: 20 },    // Inline override (highest priority)           │
+    │   ]}>                                                                    │
+    │                                                                          │
+    │   Priority: Left ──────────────────────────────────────► Right          │
+    │             Lowest                                       Highest         │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+PRACTICAL EXAMPLE:
+------------------
+
+    const styles = StyleSheet.create({
+      button: {
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+        alignItems: 'center',
+      },
+      primaryButton: {
+        backgroundColor: '#007AFF',
+      },
+      secondaryButton: {
+        backgroundColor: '#6c757d',
+      },
+      disabledButton: {
+        opacity: 0.5,
+      },
+    });
+    
+    function Button({ variant, disabled }) {
+      return (
+        <Pressable
+          style={[
+            styles.button,
+            variant === 'primary' ? styles.primaryButton : styles.secondaryButton,
+            disabled && styles.disabledButton,
+          ]}
+        >
+          {/* ... */}
+        </Pressable>
+      );
+    }
+
+
+================================================================================
+                    4. FLEXBOX LAYOUT SYSTEM
+================================================================================
+
+Flexbox is THE layout system in React Native. Master this and you can
+build any layout.
+
+FLEXBOX BASICS:
+---------------
+
+Every View in React Native is a flex container by default with:
+- flexDirection: 'column' (items stack vertically)
+- alignItems: 'stretch' (items stretch horizontally)
+- flexWrap: 'nowrap' (items don't wrap)
+
+
+THE MAIN AXIS AND CROSS AXIS:
+-----------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    FLEXBOX AXES                                          │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   flexDirection: 'column' (default)                                      │
+    │   ─────────────────────────────────                                      │
+    │                                                                          │
+    │         CROSS AXIS ────────►                                             │
+    │         │                                                                │
+    │   M     │   ┌─────────────────────┐                                      │
+    │   A     │   │      Item 1         │                                      │
+    │   I     │   ├─────────────────────┤                                      │
+    │   N     │   │      Item 2         │                                      │
+    │         │   ├─────────────────────┤                                      │
+    │   A     │   │      Item 3         │                                      │
+    │   X     ▼   └─────────────────────┘                                      │
+    │   I                                                                      │
+    │   S                                                                      │
+    │                                                                          │
+    │   flexDirection: 'row'                                                   │
+    │   ────────────────────                                                   │
+    │                                                                          │
+    │         CROSS AXIS                                                       │
+    │         │                                                                │
+    │         │   ┌───────┬───────┬───────┐                                    │
+    │         │   │       │       │       │                                    │
+    │         ▼   │ Item1 │ Item2 │ Item3 │                                    │
+    │             │       │       │       │                                    │
+    │             └───────┴───────┴───────┘                                    │
+    │             ◄─────── MAIN AXIS ──────►                                   │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+FLEX CONTAINER PROPERTIES:
+--------------------------
+
+These properties are applied to the PARENT (container):
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │   PROPERTY          │   VALUES                   │   DESCRIPTION        │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   flexDirection     │   'column' (default)       │   Stack vertically   │
+    │                     │   'row'                    │   Stack horizontally │
+    │                     │   'column-reverse'         │   Reverse vertical   │
+    │                     │   'row-reverse'            │   Reverse horizontal │
+    │                                                                          │
+    │   justifyContent    │   (MAIN AXIS alignment)                            │
+    │                     │   'flex-start' (default)   │   Start of axis      │
+    │                     │   'center'                 │   Center of axis     │
+    │                     │   'flex-end'               │   End of axis        │
+    │                     │   'space-between'          │   Even space between │
+    │                     │   'space-around'           │   Even space around  │
+    │                     │   'space-evenly'           │   Equal spacing      │
+    │                                                                          │
+    │   alignItems        │   (CROSS AXIS alignment)                           │
+    │                     │   'stretch' (default)      │   Stretch to fill    │
+    │                     │   'flex-start'             │   Start of axis      │
+    │                     │   'center'                 │   Center of axis     │
+    │                     │   'flex-end'               │   End of axis        │
+    │                     │   'baseline'               │   Text baseline      │
+    │                                                                          │
+    │   flexWrap          │   'nowrap' (default)       │   Single line        │
+    │                     │   'wrap'                   │   Wrap to new lines  │
+    │                     │   'wrap-reverse'           │   Wrap reversed      │
+    │                                                                          │
+    │   gap               │   number                   │   Space between items│
+    │   rowGap            │   number                   │   Vertical gap       │
+    │   columnGap         │   number                   │   Horizontal gap     │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+FLEX ITEM PROPERTIES:
+---------------------
+
+These properties are applied to the CHILDREN (items):
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │   PROPERTY          │   VALUES                   │   DESCRIPTION        │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   flex              │   number                   │   Flex grow ratio    │
+    │                     │   1 = take all space       │   relative to others │
+    │                     │   0 = use natural size     │                      │
+    │                                                                          │
+    │   flexGrow          │   number (default: 0)      │   How much to grow   │
+    │                                                                          │
+    │   flexShrink        │   number (default: 0)      │   How much to shrink │
+    │                                                                          │
+    │   flexBasis         │   number | 'auto'          │   Initial size       │
+    │                                                                          │
+    │   alignSelf         │   'auto' (default)         │   Override parent's  │
+    │                     │   'flex-start'             │   alignItems for     │
+    │                     │   'center'                 │   this item only     │
+    │                     │   'flex-end'               │                      │
+    │                     │   'stretch'                │                      │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+VISUAL GUIDE - justifyContent:
+------------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    justifyContent VALUES                                 │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   flexDirection: 'row'                                                   │
+    │                                                                          │
+    │   flex-start (default)                                                   │
+    │   ┌─────────────────────────────────────┐                               │
+    │   │ [A] [B] [C]                         │                               │
+    │   └─────────────────────────────────────┘                               │
+    │                                                                          │
+    │   center                                                                 │
+    │   ┌─────────────────────────────────────┐                               │
+    │   │         [A] [B] [C]                 │                               │
+    │   └─────────────────────────────────────┘                               │
+    │                                                                          │
+    │   flex-end                                                               │
+    │   ┌─────────────────────────────────────┐                               │
+    │   │                         [A] [B] [C] │                               │
+    │   └─────────────────────────────────────┘                               │
+    │                                                                          │
+    │   space-between                                                          │
+    │   ┌─────────────────────────────────────┐                               │
+    │   │ [A]           [B]           [C]     │                               │
+    │   └─────────────────────────────────────┘                               │
+    │                                                                          │
+    │   space-around                                                           │
+    │   ┌─────────────────────────────────────┐                               │
+    │   │   [A]       [B]       [C]           │                               │
+    │   └─────────────────────────────────────┘                               │
+    │                                                                          │
+    │   space-evenly                                                           │
+    │   ┌─────────────────────────────────────┐                               │
+    │   │    [A]      [B]      [C]            │                               │
+    │   └─────────────────────────────────────┘                               │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+VISUAL GUIDE - alignItems:
+--------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    alignItems VALUES                                     │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   flexDirection: 'row'                                                   │
+    │                                                                          │
+    │   flex-start                    center                    flex-end       │
+    │   ┌──────────────┐             ┌──────────────┐          ┌──────────────┐│
+    │   │ [A][B]       │             │              │          │              ││
+    │   │              │             │    [A][B]    │          │              ││
+    │   │              │             │              │          │        [A][B]││
+    │   └──────────────┘             └──────────────┘          └──────────────┘│
+    │                                                                          │
+    │   stretch (default)                                                      │
+    │   ┌──────────────┐                                                       │
+    │   │ ╔════╗╔════╗ │             Items stretch to fill                    │
+    │   │ ║ A  ║║ B  ║ │             the cross-axis                           │
+    │   │ ╚════╝╚════╝ │                                                       │
+    │   └──────────────┘                                                       │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+COMMON LAYOUT PATTERNS:
+-----------------------
+
+PATTERN 1: Center Everything
+
+    <View style={{
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    }}>
+      <Text>Perfectly Centered!</Text>
+    </View>
+
+
+PATTERN 2: Header, Content, Footer
+
+    <View style={{ flex: 1 }}>
+      {/* Header - fixed height */}
+      <View style={{ height: 60, backgroundColor: '#007AFF' }}>
+        <Text>Header</Text>
+      </View>
+      
+      {/* Content - takes remaining space */}
+      <View style={{ flex: 1 }}>
+        <Text>Content</Text>
+      </View>
+      
+      {/* Footer - fixed height */}
+      <View style={{ height: 50, backgroundColor: '#eee' }}>
+        <Text>Footer</Text>
+      </View>
+    </View>
+
+
+PATTERN 3: Sidebar Layout
+
+    <View style={{ flex: 1, flexDirection: 'row' }}>
+      {/* Sidebar - fixed width */}
+      <View style={{ width: 80, backgroundColor: '#333' }}>
+        <Text>Sidebar</Text>
+      </View>
+      
+      {/* Main Content - takes remaining space */}
+      <View style={{ flex: 1 }}>
+        <Text>Main Content</Text>
+      </View>
+    </View>
+
+
+PATTERN 4: Space Between (Navigation Bar)
+
+    <View style={{
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 16,
+    }}>
+      <Text>Back</Text>
+      <Text>Title</Text>
+      <Text>Menu</Text>
+    </View>
+
+
+PATTERN 5: Grid with Gap
+
+    <View style={{
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+    }}>
+      {items.map(item => (
+        <View key={item.id} style={{ 
+          width: '48%',  // Roughly half width with gap
+        }}>
+          {/* Grid item */}
+        </View>
+      ))}
+    </View>
+
+
+================================================================================
+                5. COMMON STYLE PROPERTIES REFERENCE
+================================================================================
+
+LAYOUT PROPERTIES:
+------------------
+
+    const layoutStyles = {
+      // Dimensions
+      width: 100,                    // Fixed width
+      height: 100,                   // Fixed height
+      minWidth: 50,                  // Minimum width
+      maxWidth: 200,                 // Maximum width
+      minHeight: 50,                 // Minimum height
+      maxHeight: 200,                // Maximum height
+      
+      // Spacing
+      margin: 16,                    // All sides
+      marginTop: 10,                 // Top only
+      marginBottom: 10,              // Bottom only
+      marginLeft: 10,                // Left only
+      marginRight: 10,               // Right only
+      marginVertical: 10,            // Top and bottom
+      marginHorizontal: 10,          // Left and right
+      
+      padding: 16,                   // All sides
+      paddingTop: 10,                // ... same pattern as margin
+      paddingVertical: 10,
+      paddingHorizontal: 10,
+      
+      // Position
+      position: 'relative',          // Default
+      position: 'absolute',          // Position relative to parent
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      zIndex: 10,                    // Stacking order
+      
+      // Display
+      display: 'flex',               // Default (only option really)
+      display: 'none',               // Hide element
+      overflow: 'hidden',            // Clip overflow
+      overflow: 'visible',           // Show overflow (default)
+      overflow: 'scroll',            // Enable scrolling
+    };
+
+
+COLOR PROPERTIES:
+-----------------
+
+    const colorStyles = {
+      // Colors can be:
+      color: '#FF5733',              // Hex
+      color: '#F53',                 // Short hex
+      color: 'rgb(255, 87, 51)',     // RGB
+      color: 'rgba(255, 87, 51, 0.5)', // RGBA with opacity
+      color: 'red',                  // Named colors
+      
+      backgroundColor: '#fff',
+      borderColor: '#ddd',
+      
+      // Opacity
+      opacity: 0.5,                  // 0 to 1
+    };
+
+
+================================================================================
+                    6. RESPONSIVE DESIGN STRATEGIES
+================================================================================
+
+React Native doesn't have CSS media queries, but there are several strategies:
+
+STRATEGY 1: Dimensions API
+--------------------------
+
+    import { Dimensions, StyleSheet } from 'react-native';
+    
+    const { width, height } = Dimensions.get('window');
+    
+    const styles = StyleSheet.create({
+      container: {
+        width: width * 0.9,          // 90% of screen width
+        maxWidth: 400,               // But max 400
+      },
+      image: {
+        width: width,
+        height: width * 0.6,         // Aspect ratio 5:3
+      },
+    });
+
+
+STRATEGY 2: useWindowDimensions Hook
+------------------------------------
+
+    import { useWindowDimensions, StyleSheet } from 'react-native';
+    
+    function ResponsiveComponent() {
+      const { width, height } = useWindowDimensions();
+      
+      const isLandscape = width > height;
+      const isTablet = width >= 768;
+      
+      return (
+        <View style={[
+          styles.container,
+          isLandscape && styles.landscapeContainer,
+          isTablet && styles.tabletContainer,
+        ]}>
+          {/* Content */}
+        </View>
+      );
+    }
+
+
+STRATEGY 3: Percentage Values
+-----------------------------
+
+    const styles = StyleSheet.create({
+      halfWidth: {
+        width: '50%',
+      },
+      fullWidth: {
+        width: '100%',
+      },
+    });
+
+
+STRATEGY 4: Flex for Relative Sizing
+------------------------------------
+
+    <View style={{ flexDirection: 'row' }}>
+      <View style={{ flex: 1 }}>  {/* 25% */}
+      <View style={{ flex: 3 }}>  {/* 75% */}
+    </View>
+
+
+RESPONSIVE BREAKPOINTS EXAMPLE:
+-------------------------------
+
+    import { useWindowDimensions } from 'react-native';
+    
+    // Define breakpoints
+    const BREAKPOINTS = {
+      sm: 0,      // Mobile
+      md: 768,    // Tablet
+      lg: 1024,   // Desktop
+    };
+    
+    function useBreakpoint() {
+      const { width } = useWindowDimensions();
+      
+      if (width >= BREAKPOINTS.lg) return 'lg';
+      if (width >= BREAKPOINTS.md) return 'md';
+      return 'sm';
+    }
+    
+    function ResponsiveGrid() {
+      const breakpoint = useBreakpoint();
+      
+      const columns = {
+        sm: 1,
+        md: 2,
+        lg: 4,
+      }[breakpoint];
+      
+      return (
+        <FlatList
+          data={items}
+          numColumns={columns}
+          key={columns}  // Force re-render on column change
+          renderItem={/* ... */}
+        />
+      );
+    }
+
+
+================================================================================
+                    7. PLATFORM-SPECIFIC STYLES
+================================================================================
+
+Sometimes iOS and Android need different styles:
+
+METHOD 1: Platform.OS
+---------------------
+
+    import { Platform, StyleSheet } from 'react-native';
+    
+    const styles = StyleSheet.create({
+      container: {
+        paddingTop: Platform.OS === 'ios' ? 50 : 30,
+      },
+    });
+
+
+METHOD 2: Platform.select()
+---------------------------
+
+    import { Platform, StyleSheet } from 'react-native';
+    
+    const styles = StyleSheet.create({
+      container: {
+        ...Platform.select({
+          ios: {
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+          },
+          android: {
+            elevation: 4,
+          },
+          web: {
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          },
+        }),
+      },
+    });
+
+
+METHOD 3: Platform-Specific Files
+---------------------------------
+
+    // button.ios.tsx - iOS version
+    // button.android.tsx - Android version
+    // button.tsx - Default/web version
+    
+    // Import automatically picks the right one:
+    import { Button } from './button';
+
+
+================================================================================
+                    8. SHADOW AND ELEVATION
+================================================================================
+
+Shadows work differently on iOS and Android:
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    SHADOWS: iOS vs Android                               │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   iOS (uses shadow properties)                                           │
+    │   ────────────────────────────                                           │
+    │   shadowColor: '#000',                                                   │
+    │   shadowOffset: { width: 0, height: 2 },                                │
+    │   shadowOpacity: 0.25,                                                   │
+    │   shadowRadius: 3.84,                                                    │
+    │                                                                          │
+    │   Android (uses elevation)                                               │
+    │   ────────────────────────                                               │
+    │   elevation: 5,  // 0-24, higher = more shadow                          │
+    │                                                                          │
+    │   ⚠️ Android elevation only works with backgroundColor set!             │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+CROSS-PLATFORM SHADOW HELPER:
+-----------------------------
+
+    import { Platform, StyleSheet } from 'react-native';
+    
+    export function createShadow(depth = 4) {
+      return Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: depth / 2 },
+          shadowOpacity: 0.1 + (depth * 0.02),
+          shadowRadius: depth,
+        },
+        android: {
+          elevation: depth,
+        },
+        default: {},
+      });
+    }
+    
+    // Usage
+    const styles = StyleSheet.create({
+      card: {
+        backgroundColor: '#fff',  // Required for Android!
+        borderRadius: 8,
+        padding: 16,
+        ...createShadow(4),
+      },
+    });
+
+
+================================================================================
+                    9. BORDERS AND BORDER RADIUS
+================================================================================
+
+BORDER PROPERTIES:
+------------------
+
+    const borderStyles = {
+      // All sides
+      borderWidth: 1,
+      borderColor: '#ddd',
+      borderStyle: 'solid',        // 'solid', 'dotted', 'dashed'
+      
+      // Individual sides
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderLeftWidth: 1,
+      borderRightWidth: 1,
+      
+      borderTopColor: 'red',
+      borderBottomColor: 'blue',
+      // etc.
+      
+      // Border radius
+      borderRadius: 8,             // All corners
+      borderTopLeftRadius: 8,      // Individual corners
+      borderTopRightRadius: 8,
+      borderBottomLeftRadius: 8,
+      borderBottomRightRadius: 8,
+      
+      // Start/End (for RTL support)
+      borderStartWidth: 1,
+      borderEndWidth: 1,
+    };
+
+
+COMMON BORDER PATTERNS:
+-----------------------
+
+    // Pill shape
+    const pill = {
+      borderRadius: 999,  // Very large number = pill
+    };
+    
+    // Circle
+    const circle = {
+      width: 50,
+      height: 50,
+      borderRadius: 25,  // Half of width/height
+    };
+    
+    // Card with subtle border
+    const card = {
+      borderWidth: 1,
+      borderColor: 'rgba(0,0,0,0.1)',
+      borderRadius: 12,
+    };
+    
+    // Bottom border only (like a divider)
+    const divider = {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: '#ddd',
+    };
+
+
+================================================================================
+                    10. TYPOGRAPHY AND FONTS
+================================================================================
+
+TEXT STYLE PROPERTIES:
+----------------------
+
+    const textStyles = {
+      // Font
+      fontSize: 16,
+      fontWeight: 'bold',          // 'normal', 'bold', '100'-'900'
+      fontStyle: 'italic',         // 'normal', 'italic'
+      fontFamily: 'System',        // Platform font or custom
+      
+      // Color
+      color: '#333',
+      
+      // Alignment
+      textAlign: 'center',         // 'left', 'center', 'right', 'justify'
+      textAlignVertical: 'center', // Android only
+      
+      // Decoration
+      textDecorationLine: 'underline',  // 'none', 'underline', 'line-through'
+      textDecorationStyle: 'solid',
+      textDecorationColor: 'red',
+      
+      // Spacing
+      letterSpacing: 1,
+      lineHeight: 24,
+      
+      // Transform
+      textTransform: 'uppercase',  // 'none', 'uppercase', 'lowercase', 'capitalize'
+      
+      // Shadow
+      textShadowColor: 'rgba(0,0,0,0.3)',
+      textShadowOffset: { width: 1, height: 1 },
+      textShadowRadius: 2,
+      
+      // Include font padding (Android)
+      includeFontPadding: false,
+    };
+
+
+CREATING A TYPOGRAPHY SYSTEM:
+-----------------------------
+
+    // constants/typography.ts
+    export const Typography = {
+      h1: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        lineHeight: 40,
+      },
+      h2: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        lineHeight: 32,
+      },
+      h3: {
+        fontSize: 20,
+        fontWeight: '600',
+        lineHeight: 28,
+      },
+      body: {
+        fontSize: 16,
+        fontWeight: 'normal',
+        lineHeight: 24,
+      },
+      bodySmall: {
+        fontSize: 14,
+        fontWeight: 'normal',
+        lineHeight: 20,
+      },
+      caption: {
+        fontSize: 12,
+        fontWeight: 'normal',
+        lineHeight: 16,
+      },
+    };
+    
+    // Usage
+    <Text style={[Typography.h1, { color: '#333' }]}>Heading</Text>
+
+
+USING CUSTOM FONTS:
+-------------------
+
+With Expo, you can use expo-font:
+
+    import { useFonts } from 'expo-font';
+    
+    function App() {
+      const [fontsLoaded] = useFonts({
+        'Inter-Regular': require('./assets/fonts/Inter-Regular.ttf'),
+        'Inter-Bold': require('./assets/fonts/Inter-Bold.ttf'),
+      });
+      
+      if (!fontsLoaded) {
+        return null; // Or splash screen
+      }
+      
+      return (
+        <Text style={{ fontFamily: 'Inter-Bold' }}>
+          Custom Font!
+        </Text>
+      );
+    }
+
+
+================================================================================
+                11. TRANSFORMS AND ANIMATIONS BASICS
+================================================================================
+
+TRANSFORM PROPERTIES:
+---------------------
+
+    const transformStyles = {
+      transform: [
+        { translateX: 10 },        // Move horizontally
+        { translateY: 20 },        // Move vertically
+        { scale: 1.5 },            // Scale uniformly
+        { scaleX: 1.5 },           // Scale horizontally
+        { scaleY: 1.5 },           // Scale vertically
+        { rotate: '45deg' },       // Rotate (string with unit!)
+        { rotateX: '45deg' },      // Rotate around X axis
+        { rotateY: '45deg' },      // Rotate around Y axis
+        { rotateZ: '45deg' },      // Same as rotate
+        { skewX: '10deg' },        // Skew horizontally
+        { skewY: '10deg' },        // Skew vertically
+      ],
+    };
+
+
+IMPORTANT: Transform is an array of objects, applied in order!
+
+    // These are different:
+    transform: [{ rotate: '45deg' }, { translateX: 50 }]  // Rotate then move
+    transform: [{ translateX: 50 }, { rotate: '45deg' }]  // Move then rotate
+
+
+BASIC ANIMATION WITH Animated:
+------------------------------
+
+    import { Animated } from 'react-native';
+    import { useRef, useEffect } from 'react';
+    
+    function FadeInView({ children }) {
+      const fadeAnim = useRef(new Animated.Value(0)).current;
+      
+      useEffect(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }).start();
+      }, []);
+      
+      return (
+        <Animated.View style={{ opacity: fadeAnim }}>
+          {children}
+        </Animated.View>
+      );
+    }
+
+
+================================================================================
+                    12. STYLING BEST PRACTICES
+================================================================================
+
+BEST PRACTICE 1: Use StyleSheet.create()
+----------------------------------------
+Always use StyleSheet.create() for static styles:
+
+    ✓ const styles = StyleSheet.create({ container: { ... } });
+    ✗ <View style={{ flex: 1, padding: 16 }}>  // Inline for static = bad
+
+
+BEST PRACTICE 2: Organize Styles by Component
+----------------------------------------------
+
+    // ✓ Good - styles at bottom of component file
+    function Card() { ... }
+    const styles = StyleSheet.create({ ... });
+    
+    // ✓ Good - separate file for complex components
+    // card.tsx
+    // card.styles.ts
+
+
+BEST PRACTICE 3: Use Consistent Naming
+--------------------------------------
+
+    const styles = StyleSheet.create({
+      // Use descriptive, consistent names
+      container: { },        // Main wrapper
+      header: { },           // Header section
+      headerTitle: { },      // Title in header
+      content: { },          // Content section
+      footer: { },           // Footer section
+      button: { },           // Button base
+      buttonText: { },       // Text in button
+      buttonPrimary: { },    // Primary variant
+      buttonDisabled: { },   // Disabled state
+    });
+
+
+BEST PRACTICE 4: Create Reusable Style Constants
+-------------------------------------------------
+
+    // constants/spacing.ts
+    export const Spacing = {
+      xs: 4,
+      sm: 8,
+      md: 16,
+      lg: 24,
+      xl: 32,
+    };
+    
+    // Usage
+    const styles = StyleSheet.create({
+      container: {
+        padding: Spacing.md,
+        marginBottom: Spacing.lg,
+      },
+    });
+
+
+BEST PRACTICE 5: Avoid Magic Numbers
+------------------------------------
+
+    // ✗ Bad
+    const styles = StyleSheet.create({
+      container: {
+        padding: 17,  // Why 17?
+        marginTop: 43,  // Why 43?
+      },
+    });
+    
+    // ✓ Good
+    const HEADER_HEIGHT = 60;
+    const STATUS_BAR_HEIGHT = 44;
+    const TOP_OFFSET = HEADER_HEIGHT + STATUS_BAR_HEIGHT;
+    
+    const styles = StyleSheet.create({
+      container: {
+        marginTop: TOP_OFFSET,
+      },
+    });
+
+
+================================================================================
+                            SUMMARY
+================================================================================
+
+KEY TAKEAWAYS:
+--------------
+
+1. Use StyleSheet.create() for performance and validation
+2. Flexbox is default - master flex, justifyContent, alignItems
+3. No CSS cascading - style each component individually
+4. Use Platform.select() for iOS/Android differences
+5. Shadows: iOS uses shadow*, Android uses elevation
+6. Combine styles with arrays: [styles.base, styles.variant]
+7. Use useWindowDimensions for responsive layouts
+8. Create constants for colors, spacing, typography
+9. Transforms are arrays of objects, order matters
+10. Keep styles organized and use consistent naming
+
+================================================================================
+                        END OF DOCUMENT 04
+                    Next: 05 - Expo Router & Navigation
+================================================================================

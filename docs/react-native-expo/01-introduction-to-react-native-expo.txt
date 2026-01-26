@@ -1,0 +1,577 @@
+================================================================================
+        REACT NATIVE WITH EXPO - COMPREHENSIVE LEARNING GUIDE
+                    PART 1: INTRODUCTION & FUNDAMENTALS
+================================================================================
+
+Author: Documentation Guide for PrepSathi Project
+Created: January 2026
+Target Audience: React Developers transitioning to React Native
+
+================================================================================
+                            TABLE OF CONTENTS
+================================================================================
+
+1. What is React Native?
+2. What is Expo?
+3. React Native vs Expo: Understanding the Difference
+4. Why Choose Expo for React Native Development?
+5. Key Concepts You Need to Understand
+6. How React Native Works Under the Hood
+7. The Mental Model Shift from React Web to React Native
+8. Setting Up Your Development Environment
+9. Understanding the Expo CLI Commands
+10. Your First Steps in the Ecosystem
+
+================================================================================
+                        1. WHAT IS REACT NATIVE?
+================================================================================
+
+React Native is a JavaScript framework created by Facebook (now Meta) that 
+allows you to build native mobile applications using React. Unlike hybrid 
+frameworks that render web views, React Native creates truly native apps 
+with native UI components.
+
+KEY POINTS:
+-----------
+• Uses JavaScript/TypeScript (just like React web)
+• Renders REAL native components (not web views)
+• "Learn once, write anywhere" philosophy
+• Single codebase for iOS and Android
+• Access to native device features (camera, GPS, etc.)
+
+THE CORE DIFFERENCE FROM WEB REACT:
+-----------------------------------
+In web React, you use HTML elements like <div>, <span>, <p>, etc.
+In React Native, you use native components like <View>, <Text>, <Image>, etc.
+
++------------------------------------------+
+|           WEB REACT                      |
++------------------------------------------+
+|  <div>                                   |
+|    <p>Hello World</p>                    |
+|    <img src="..." />                     |
+|  </div>                                  |
++------------------------------------------+
+                  ↓
+                  ↓  EQUIVALENT IN
+                  ↓
++------------------------------------------+
+|         REACT NATIVE                     |
++------------------------------------------+
+|  <View>                                  |
+|    <Text>Hello World</Text>              |
+|    <Image source={{uri: '...'}} />       |
+|  </View>                                 |
++------------------------------------------+
+
+IMPORTANT UNDERSTANDING:
+------------------------
+React Native is NOT:
+  ✗ A WebView wrapper (like Cordova/PhoneGap)
+  ✗ A way to run web code on mobile
+  ✗ A PWA (Progressive Web App)
+
+React Native IS:
+  ✓ A bridge between JavaScript and native code
+  ✓ A way to build truly native apps with JavaScript
+  ✓ A framework that compiles to native iOS/Android code
+
+
+================================================================================
+                            2. WHAT IS EXPO?
+================================================================================
+
+Expo is a set of tools, libraries, and services built around React Native 
+that makes development significantly easier. Think of it as React Native 
+with training wheels that you never need to remove.
+
+EXPO ECOSYSTEM OVERVIEW:
+------------------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           EXPO ECOSYSTEM                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │   Expo CLI   │  │   Expo Go    │  │  Expo SDK    │  │    EAS       │    │
+│  │              │  │    App       │  │              │  │  (Build/     │    │
+│  │  (Dev Tool)  │  │  (Testing)   │  │ (Libraries)  │  │   Submit)    │    │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘    │
+│                                                                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │ Expo Router  │  │ Expo Modules │  │Expo Updates  │  │  Expo Dev    │    │
+│  │              │  │    API       │  │              │  │   Client     │    │
+│  │(File-based   │  │ (Native      │  │ (OTA         │  │ (Custom      │    │
+│  │  Routing)    │  │  Access)     │  │  Updates)    │  │  Dev Build)  │    │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+EXPO CLI:
+---------
+The command-line interface for:
+• Creating new projects
+• Starting development servers
+• Building apps
+• Managing configurations
+
+EXPO GO:
+--------
+A mobile app that lets you instantly preview your app during development
+without building a native binary. Just scan a QR code and see your app!
+
+EXPO SDK:
+---------
+A collection of libraries that provide access to device features:
+• Camera, Contacts, Location
+• Push Notifications
+• File System
+• Sensors, and much more!
+
+EAS (Expo Application Services):
+--------------------------------
+Cloud-based services for:
+• Building native binaries (iOS/Android)
+• Submitting to app stores
+• Over-the-air updates
+
+
+================================================================================
+            3. REACT NATIVE VS EXPO: UNDERSTANDING THE DIFFERENCE
+================================================================================
+
+This is one of the MOST CONFUSING topics for beginners. Let me clarify:
+
+FLOWCHART: DECIDING BETWEEN BARE REACT NATIVE AND EXPO
+-------------------------------------------------------
+
+                    ┌─────────────────────┐
+                    │ Starting a New RN   │
+                    │     Project?        │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+              ┌────────────────────────────────┐
+              │ Do you need custom native code │
+              │ that Expo doesn't support?     │
+              └───────────────┬────────────────┘
+                              │
+              ┌───────────────┴───────────────┐
+              │                               │
+              ▼                               ▼
+        ┌─────────┐                    ┌─────────────┐
+        │   YES   │                    │     NO      │
+        └────┬────┘                    └──────┬──────┘
+             │                                │
+             ▼                                ▼
+    ┌─────────────────┐              ┌────────────────────┐
+    │ Use Expo with   │              │   Use Expo         │
+    │ Development     │              │   (Standard)       │
+    │ Builds or       │              │                    │
+    │ Bare Workflow   │              │   npx create-      │
+    │                 │              │   expo-app@latest  │
+    └─────────────────┘              └────────────────────┘
+
+
+COMPARISON TABLE:
+-----------------
+
+┌────────────────────────┬─────────────────────┬─────────────────────────────┐
+│        Feature         │   Bare React Native │         Expo                │
+├────────────────────────┼─────────────────────┼─────────────────────────────┤
+│ Setup Complexity       │ Complex             │ Very Simple                 │
+│ Native Code Access     │ Full Access         │ Via Expo Modules/Dev Builds │
+│ Build Process          │ Manual (Xcode/AS)   │ Managed (EAS Build)         │
+│ OTA Updates            │ Manual Setup        │ Built-in (EAS Update)       │
+│ Learning Curve         │ Steep               │ Gentle                      │
+│ Debugging              │ More Complex        │ Simplified                  │
+│ Testing on Device      │ Need Native Build   │ Expo Go App                 │
+│ Native Dependencies    │ Manual Linking      │ Auto-configured             │
+│ iOS Development        │ Need macOS          │ Can build via EAS cloud     │
+└────────────────────────┴─────────────────────┴─────────────────────────────┘
+
+
+MODERN EXPO (2024+) - THE GAME CHANGER:
+---------------------------------------
+Modern Expo with Development Builds has essentially eliminated the gap between
+"bare" React Native and Expo. You can now:
+
+• Use ANY native library
+• Write custom native code
+• Still get all Expo benefits
+
+This is why YOUR PROJECT uses Expo - it's the recommended approach in 2024+!
+
+
+================================================================================
+                4. WHY CHOOSE EXPO FOR REACT NATIVE DEVELOPMENT?
+================================================================================
+
+BENEFITS OF EXPO:
+-----------------
+
+1. FASTER DEVELOPMENT CYCLE
+   ┌──────────────────────────────────────────────────────────────┐
+   │  Write Code → Save → See Changes Instantly (Hot Reload)     │
+   │                                                              │
+   │  No need to recompile native code for most changes!         │
+   └──────────────────────────────────────────────────────────────┘
+
+2. EASIER SETUP
+   • No Xcode configuration headaches
+   • No Android Studio gradle nightmares
+   • No CocoaPods mysteries
+   • Just: npx create-expo-app and you're ready!
+
+3. CROSS-PLATFORM FROM DAY ONE
+   • iOS, Android, AND Web support
+   • Single codebase
+   • Platform-specific code when needed
+
+4. RICH LIBRARY ECOSYSTEM
+   • 50+ official Expo SDK libraries
+   • Pre-configured and tested together
+   • Consistent API across platforms
+
+5. CLOUD BUILDS WITH EAS
+   • Build iOS apps without a Mac
+   • No local native toolchain required
+   • Automated CI/CD pipelines
+
+6. OVER-THE-AIR UPDATES
+   • Push updates without app store review
+   • Fix bugs instantly
+   • A/B testing capabilities
+
+
+================================================================================
+                    5. KEY CONCEPTS YOU NEED TO UNDERSTAND
+================================================================================
+
+Before diving into code, understand these fundamental concepts:
+
+CONCEPT 1: COMPONENTS (Same as React Web)
+------------------------------------------
+Components are the building blocks. Just like React web, you create reusable
+UI pieces that can be composed together.
+
+    // Just like React web, but with native components
+    function MyButton({ title, onPress }) {
+      return (
+        <Pressable onPress={onPress}>
+          <Text>{title}</Text>
+        </Pressable>
+      );
+    }
+
+
+CONCEPT 2: NATIVE COMPONENTS (Different from Web)
+-------------------------------------------------
+Instead of HTML elements, you use React Native components:
+
+    ┌─────────────────┬────────────────────┬─────────────────────────────┐
+    │   Web HTML      │  React Native      │  Purpose                    │
+    ├─────────────────┼────────────────────┼─────────────────────────────┤
+    │   <div>         │  <View>            │  Container element          │
+    │   <p>, <span>   │  <Text>            │  Display text               │
+    │   <img>         │  <Image>           │  Display images             │
+    │   <button>      │  <Pressable>       │  Clickable element          │
+    │   <input>       │  <TextInput>       │  Text input field           │
+    │   <ul>/<ol>     │  <FlatList>        │  List of items              │
+    │   <scroll>      │  <ScrollView>      │  Scrollable container       │
+    └─────────────────┴────────────────────┴─────────────────────────────┘
+
+
+CONCEPT 3: STYLING (StyleSheet, not CSS)
+-----------------------------------------
+React Native uses JavaScript objects for styling, not CSS files:
+
+    // Web CSS
+    .container {
+      display: flex;
+      flex-direction: row;
+      padding: 16px;
+    }
+
+    // React Native StyleSheet
+    const styles = StyleSheet.create({
+      container: {
+        flexDirection: 'row',    // Note: camelCase
+        padding: 16,              // Note: no 'px' unit
+      }
+    });
+
+KEY DIFFERENCES:
+• Properties are camelCase (backgroundColor, not background-color)
+• No units needed (16 not '16px')
+• Flexbox is the default layout
+• No cascading (styles don't inherit like CSS)
+
+
+CONCEPT 4: NAVIGATION (Expo Router)
+------------------------------------
+Your project uses Expo Router, which provides file-based routing similar to 
+Next.js. We'll cover this extensively in a dedicated document.
+
+
+CONCEPT 5: PLATFORM-SPECIFIC CODE
+----------------------------------
+Sometimes you need different code for iOS vs Android:
+
+    import { Platform } from 'react-native';
+
+    const styles = StyleSheet.create({
+      container: {
+        paddingTop: Platform.OS === 'ios' ? 50 : 30,
+        // Or use Platform.select:
+        padding: Platform.select({
+          ios: 20,
+          android: 16,
+          web: 24,
+        }),
+      }
+    });
+
+
+================================================================================
+                6. HOW REACT NATIVE WORKS UNDER THE HOOD
+================================================================================
+
+Understanding the architecture helps you write better code:
+
+OLD ARCHITECTURE (Pre-2022):
+----------------------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         OLD ARCHITECTURE                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────┐         ┌──────────────┐         ┌──────────────┐        │
+│  │  JavaScript  │ ◄─────► │    Bridge    │ ◄─────► │    Native    │        │
+│  │    Thread    │  JSON   │  (Async)     │  JSON   │    Thread    │        │
+│  └──────────────┘         └──────────────┘         └──────────────┘        │
+│                                                                              │
+│  Problems:                                                                   │
+│  • Async communication (delays)                                              │
+│  • JSON serialization overhead                                               │
+│  • No direct memory sharing                                                  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+NEW ARCHITECTURE (2022+, Your Project Uses This!):
+--------------------------------------------------
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         NEW ARCHITECTURE                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────┐                                  ┌──────────────┐        │
+│  │  JavaScript  │ ◄────── JSI (Direct) ──────────► │    Native    │        │
+│  │    (Hermes)  │      (No serialization)          │    Modules   │        │
+│  └──────────────┘                                  └──────────────┘        │
+│         │                                                  │                │
+│         │              ┌──────────────┐                    │                │
+│         └─────────────►│   Fabric     │◄───────────────────┘                │
+│                        │  (New UI     │                                     │
+│                        │   Renderer)  │                                     │
+│                        └──────────────┘                                     │
+│                                                                              │
+│  Benefits:                                                                   │
+│  • Synchronous communication                                                 │
+│  • Direct memory access                                                      │
+│  • Better performance                                                        │
+│  • Concurrent rendering                                                      │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Your app.json has "newArchEnabled": true, meaning you're using the modern 
+architecture with all its performance benefits!
+
+
+================================================================================
+            7. THE MENTAL MODEL SHIFT FROM REACT WEB TO REACT NATIVE
+================================================================================
+
+Here are the key mental shifts you need to make:
+
+SHIFT 1: EVERYTHING IS A BOX (View)
+-----------------------------------
+Web: You think in terms of divs, spans, sections, articles, etc.
+RN:  Everything is a <View>. It's the universal container.
+
+SHIFT 2: TEXT MUST BE WRAPPED
+-----------------------------
+Web: <div>Hello World</div>  ✓
+RN:  <View>Hello World</View>  ✗ (Error!)
+RN:  <View><Text>Hello World</Text></View>  ✓
+
+ALL text MUST be inside a <Text> component. No exceptions!
+
+SHIFT 3: FLEXBOX IS DEFAULT
+---------------------------
+Web: You set display: flex explicitly
+RN:  Every View is already a flex container!
+
+    // These are equivalent in behavior
+    <View>  {/* Already flexDirection: 'column' by default */}
+      <View />
+      <View />
+    </View>
+
+SHIFT 4: NO GLOBAL STYLES
+-------------------------
+Web: CSS cascades down the tree
+RN:  Each component must have its own styles
+
+    // This WON'T work in RN
+    const styles = StyleSheet.create({
+      container: { color: 'red' }  // Won't apply to child Text!
+    });
+
+    // You must style each Text individually
+    <View style={styles.container}>
+      <Text style={{ color: 'red' }}>Must style directly</Text>
+    </View>
+
+SHIFT 5: TOUCH HANDLING
+-----------------------
+Web: onClick, onMouseEnter, etc.
+RN:  onPress, onPressIn, onPressOut, onLongPress
+
+    // Web
+    <button onClick={handleClick}>Click</button>
+
+    // React Native
+    <Pressable onPress={handlePress}>
+      <Text>Press</Text>
+    </Pressable>
+
+
+================================================================================
+                8. UNDERSTANDING THE EXPO CLI COMMANDS
+================================================================================
+
+Here are the essential commands you'll use daily:
+
+STARTING YOUR APP:
+------------------
+    pnpm start          # or: npx expo start
+                        # Starts the development server
+                        # Shows QR code for Expo Go
+
+    pnpm android        # or: npx expo start --android
+                        # Starts and opens in Android emulator
+
+    pnpm ios            # or: npx expo start --ios  
+                        # Starts and opens in iOS simulator (macOS only)
+
+    pnpm web            # or: npx expo start --web
+                        # Starts and opens in web browser
+
+DEVELOPMENT SERVER COMMANDS:
+----------------------------
+Once the server is running, you can press:
+
+    ┌──────────┬───────────────────────────────────────────────────┐
+    │   Key    │   Action                                          │
+    ├──────────┼───────────────────────────────────────────────────┤
+    │   a      │   Open on Android emulator                        │
+    │   i      │   Open on iOS simulator                           │
+    │   w      │   Open in web browser                             │
+    │   r      │   Reload the app                                  │
+    │   m      │   Toggle menu                                     │
+    │   j      │   Open React DevTools                             │
+    │   o      │   Open project in editor                          │
+    │   ?      │   Show all commands                               │
+    └──────────┴───────────────────────────────────────────────────┘
+
+
+================================================================================
+                        9. YOUR FIRST STEPS
+================================================================================
+
+Now that you understand the fundamentals, here's what to do next:
+
+RECOMMENDED LEARNING PATH:
+--------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                                                                      │
+    │   Step 1: Read Document 02 (Project Structure)                      │
+    │           └─► Understand the folder structure                        │
+    │                                                                      │
+    │   Step 2: Read Document 03 (Core Components)                        │
+    │           └─► Learn View, Text, Image, etc.                         │
+    │                                                                      │
+    │   Step 3: Read Document 04 (Styling in React Native)                │
+    │           └─► Master StyleSheet and Flexbox                         │
+    │                                                                      │
+    │   Step 4: Read Document 05 (Expo Router & Navigation)               │
+    │           └─► Understand file-based routing                         │
+    │                                                                      │
+    │   Step 5: Read Document 06 (Hooks & State Management)               │
+    │           └─► useState, useEffect, custom hooks                     │
+    │                                                                      │
+    │   Step 6: Read Document 07 (Theming & Dark Mode)                    │
+    │           └─► Light/Dark mode implementation                        │
+    │                                                                      │
+    │   Step 7: Read Document 08 (Building Your First Feature)           │
+    │           └─► Practical hands-on project                            │
+    │                                                                      │
+    └─────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                            QUICK REFERENCE
+================================================================================
+
+ESSENTIAL IMPORTS:
+------------------
+    import { View, Text, StyleSheet, Pressable } from 'react-native';
+    import { Image } from 'expo-image';
+    import { Link, router } from 'expo-router';
+
+BASIC COMPONENT TEMPLATE:
+-------------------------
+    import { StyleSheet, View, Text } from 'react-native';
+
+    export default function MyComponent() {
+      return (
+        <View style={styles.container}>
+          <Text style={styles.text}>Hello, React Native!</Text>
+        </View>
+      );
+    }
+
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      text: {
+        fontSize: 24,
+        fontWeight: 'bold',
+      },
+    });
+
+
+================================================================================
+                            SUMMARY
+================================================================================
+
+• React Native lets you build native apps with JavaScript/TypeScript
+• Expo simplifies React Native development significantly
+• You use native components (View, Text) instead of HTML elements
+• Styling uses JavaScript objects via StyleSheet
+• Flexbox is the default layout system
+• Your project uses the New Architecture for better performance
+• Expo Router provides file-based navigation
+
+Continue to the next document to learn about the project structure!
+
+================================================================================
+                        END OF DOCUMENT 01
+                    Next: 02 - Project Structure
+================================================================================

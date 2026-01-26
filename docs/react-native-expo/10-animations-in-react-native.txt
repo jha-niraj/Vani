@@ -1,0 +1,1521 @@
+================================================================================
+        REACT NATIVE WITH EXPO - COMPREHENSIVE LEARNING GUIDE
+        PART 10: ANIMATIONS IN REACT NATIVE
+================================================================================
+
+Animations make your app feel alive and responsive. React Native offers
+multiple ways to create animations, from simple to complex.
+
+================================================================================
+                            TABLE OF CONTENTS
+================================================================================
+
+1. Animation Libraries Overview
+2. React Native's Animated API (Built-in)
+3. React Native Reanimated (Recommended)
+4. Layout Animations
+5. Gesture Handling with Animations
+6. Common Animation Patterns
+7. Performance Tips
+8. Practical Examples
+
+================================================================================
+                1. ANIMATION LIBRARIES OVERVIEW
+================================================================================
+
+COMPARISON:
+-----------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    ANIMATION OPTIONS                                     │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   BUILT-IN ANIMATED API                                                  │
+    │   ├── Pros: No extra dependencies, simple API                           │
+    │   ├── Cons: Runs on JS thread (can lag during heavy work)              │
+    │   └── Best for: Simple animations, beginners                            │
+    │                                                                          │
+    │   REACT NATIVE REANIMATED                                               │
+    │   ├── Pros: Runs on UI thread (smooth 60fps), powerful                 │
+    │   ├── Cons: Slightly more setup, learning curve                        │
+    │   └── Best for: Complex animations, production apps                     │
+    │                                                                          │
+    │   LOTTIE (expo-lottie)                                                  │
+    │   ├── Pros: Designer-friendly, After Effects export                    │
+    │   ├── Cons: Only for pre-designed animations                           │
+    │   └── Best for: Loading spinners, illustrations, icons                  │
+    │                                                                          │
+    │   MOTI                                                                   │
+    │   ├── Pros: Framer Motion-like API, easy to use                        │
+    │   ├── Cons: Built on Reanimated (same requirements)                    │
+    │   └── Best for: React developers familiar with Framer                   │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+YOUR PROJECT USES:
+------------------
+    "react-native-reanimated": "~4.1.1"
+
+This is the recommended library. We'll focus on Reanimated but also cover
+the built-in Animated API for understanding.
+
+
+================================================================================
+                2. REACT NATIVE'S ANIMATED API (BUILT-IN)
+================================================================================
+
+The built-in Animated API is good for simple animations.
+
+BASIC CONCEPTS:
+---------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    ANIMATED API FLOW                                     │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   1. Create animated value                                               │
+    │   ┌──────────────────────────────────────────────────────────────────┐  │
+    │   │  const opacity = new Animated.Value(0);                          │  │
+    │   └──────────────────────────────────────────────────────────────────┘  │
+    │                              │                                          │
+    │                              ▼                                          │
+    │   2. Connect to style                                                   │
+    │   ┌──────────────────────────────────────────────────────────────────┐  │
+    │   │  <Animated.View style={{ opacity }} />                           │  │
+    │   └──────────────────────────────────────────────────────────────────┘  │
+    │                              │                                          │
+    │                              ▼                                          │
+    │   3. Animate the value                                                  │
+    │   ┌──────────────────────────────────────────────────────────────────┐  │
+    │   │  Animated.timing(opacity, {                                      │  │
+    │   │    toValue: 1,                                                   │  │
+    │   │    duration: 500,                                                │  │
+    │   │    useNativeDriver: true,                                        │  │
+    │   │  }).start();                                                     │  │
+    │   └──────────────────────────────────────────────────────────────────┘  │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+FADE IN ANIMATION:
+------------------
+
+    import { useRef, useEffect } from 'react';
+    import { Animated, View, Text, StyleSheet } from 'react-native';
+    
+    export function FadeInView({ children }) {
+      // Create animated value (persists across renders)
+      const fadeAnim = useRef(new Animated.Value(0)).current;
+      
+      useEffect(() => {
+        // Start animation when component mounts
+        Animated.timing(fadeAnim, {
+          toValue: 1,           // Final value
+          duration: 500,        // Duration in ms
+          useNativeDriver: true // Use native driver for performance
+        }).start();
+      }, [fadeAnim]);
+      
+      return (
+        <Animated.View style={{ opacity: fadeAnim }}>
+          {children}
+        </Animated.View>
+      );
+    }
+    
+    // Usage:
+    <FadeInView>
+      <Text>I will fade in!</Text>
+    </FadeInView>
+
+
+SLIDE IN ANIMATION:
+-------------------
+
+    import { useRef, useEffect } from 'react';
+    import { Animated, Dimensions } from 'react-native';
+    
+    const { width } = Dimensions.get('window');
+    
+    export function SlideInView({ children, from = 'right' }) {
+      const slideAnim = useRef(
+        new Animated.Value(from === 'right' ? width : -width)
+      ).current;
+      
+      useEffect(() => {
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 50,
+          friction: 7,
+        }).start();
+      }, [slideAnim]);
+      
+      return (
+        <Animated.View 
+          style={{ 
+            transform: [{ translateX: slideAnim }] 
+          }}
+        >
+          {children}
+        </Animated.View>
+      );
+    }
+
+
+ANIMATION TYPES:
+----------------
+
+    ┌────────────────────┬──────────────────────────────────────────────────┐
+    │    Type            │                    Use Case                      │
+    ├────────────────────┼──────────────────────────────────────────────────┤
+    │ Animated.timing    │ Fixed duration, easing curves                    │
+    │                    │ Best for: Fade, most UI animations               │
+    ├────────────────────┼──────────────────────────────────────────────────┤
+    │ Animated.spring    │ Physics-based, natural feel                      │
+    │                    │ Best for: Bouncy effects, drag release           │
+    ├────────────────────┼──────────────────────────────────────────────────┤
+    │ Animated.decay     │ Starts fast, decelerates to stop                 │
+    │                    │ Best for: Scroll momentum, fling gestures        │
+    └────────────────────┴──────────────────────────────────────────────────┘
+
+
+COMBINING ANIMATIONS:
+---------------------
+
+    // Sequence - one after another
+    Animated.sequence([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1.2, duration: 200, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+    ]).start();
+    
+    // Parallel - all at once
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start();
+    
+    // Stagger - start each with delay
+    Animated.stagger(100, [
+      Animated.timing(item1, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.timing(item2, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.timing(item3, { toValue: 1, duration: 300, useNativeDriver: true }),
+    ]).start();
+
+
+================================================================================
+                3. REACT NATIVE REANIMATED (RECOMMENDED)
+================================================================================
+
+Reanimated runs animations on the UI thread, ensuring smooth 60fps even when
+JavaScript is busy.
+
+SETUP (Already done in your project):
+-------------------------------------
+    npx expo install react-native-reanimated
+
+    // babel.config.js
+    module.exports = {
+      plugins: ['react-native-reanimated/plugin'],
+    };
+
+
+KEY CONCEPTS:
+-------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    REANIMATED CONCEPTS                                   │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   SHARED VALUES                                                          │
+    │   └── Like state, but for animations (useSharedValue)                   │
+    │       const opacity = useSharedValue(0);                                │
+    │                                                                          │
+    │   ANIMATED STYLES                                                        │
+    │   └── Create styles that react to shared values (useAnimatedStyle)      │
+    │       const style = useAnimatedStyle(() => ({                           │
+    │         opacity: opacity.value,                                         │
+    │       }));                                                               │
+    │                                                                          │
+    │   ANIMATED COMPONENTS                                                    │
+    │   └── Special components that can use animated styles                   │
+    │       <Animated.View style={style} />                                   │
+    │                                                                          │
+    │   ANIMATION FUNCTIONS                                                    │
+    │   └── withTiming, withSpring, withDecay, withSequence, etc.             │
+    │       opacity.value = withTiming(1, { duration: 500 });                 │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+BASIC FADE IN:
+--------------
+
+    import Animated, {
+      useSharedValue,
+      useAnimatedStyle,
+      withTiming,
+    } from 'react-native-reanimated';
+    import { useEffect } from 'react';
+    
+    export function FadeInView({ children }) {
+      const opacity = useSharedValue(0);
+      
+      useEffect(() => {
+        opacity.value = withTiming(1, { duration: 500 });
+      }, []);
+      
+      const animatedStyle = useAnimatedStyle(() => ({
+        opacity: opacity.value,
+      }));
+      
+      return (
+        <Animated.View style={animatedStyle}>
+          {children}
+        </Animated.View>
+      );
+    }
+
+
+SCALE ON PRESS:
+---------------
+
+    import { Pressable, Text, StyleSheet } from 'react-native';
+    import Animated, {
+      useSharedValue,
+      useAnimatedStyle,
+      withSpring,
+    } from 'react-native-reanimated';
+    
+    export function BouncyButton({ title, onPress }) {
+      const scale = useSharedValue(1);
+      
+      const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+      }));
+      
+      const handlePressIn = () => {
+        scale.value = withSpring(0.95);
+      };
+      
+      const handlePressOut = () => {
+        scale.value = withSpring(1);
+      };
+      
+      return (
+        <Pressable
+          onPress={onPress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+        >
+          <Animated.View style={[styles.button, animatedStyle]}>
+            <Text style={styles.text}>{title}</Text>
+          </Animated.View>
+        </Pressable>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      button: {
+        backgroundColor: '#007AFF',
+        padding: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+      },
+      text: {
+        color: 'white',
+        fontWeight: 'bold',
+      },
+    });
+
+
+ANIMATION FUNCTIONS:
+--------------------
+
+    import {
+      withTiming,     // Duration-based animation
+      withSpring,     // Physics-based spring
+      withDecay,      // Momentum-based deceleration
+      withDelay,      // Add delay before animation
+      withSequence,   // Run animations in sequence
+      withRepeat,     // Repeat animation
+      Easing,         // Easing functions
+    } from 'react-native-reanimated';
+    
+    // Timing with easing
+    opacity.value = withTiming(1, {
+      duration: 500,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    });
+    
+    // Spring with custom physics
+    scale.value = withSpring(1, {
+      damping: 10,     // Higher = less bouncy
+      stiffness: 100,  // Higher = faster
+      mass: 1,         // Higher = slower
+    });
+    
+    // Delay then animate
+    opacity.value = withDelay(300, withTiming(1));
+    
+    // Sequence of animations
+    translateY.value = withSequence(
+      withTiming(-10, { duration: 100 }),
+      withTiming(10, { duration: 100 }),
+      withTiming(0, { duration: 100 }),
+    );
+    
+    // Repeat infinitely (or n times)
+    rotation.value = withRepeat(
+      withTiming(360, { duration: 1000 }),
+      -1,     // -1 = infinite, positive number = count
+      false   // reverse on each iteration?
+    );
+
+
+INTERPOLATION:
+--------------
+Map one value range to another.
+
+    import { interpolate, Extrapolation } from 'react-native-reanimated';
+    
+    const animatedStyle = useAnimatedStyle(() => {
+      // As scrollY goes from 0 to 200,
+      // opacity goes from 1 to 0
+      const opacity = interpolate(
+        scrollY.value,
+        [0, 200],      // Input range
+        [1, 0],        // Output range
+        Extrapolation.CLAMP  // Don't go outside output range
+      );
+      
+      // As scrollY goes from 0 to 200,
+      // scale goes from 1 to 0.5
+      const scale = interpolate(
+        scrollY.value,
+        [0, 200],
+        [1, 0.5],
+        Extrapolation.CLAMP
+      );
+      
+      return {
+        opacity,
+        transform: [{ scale }],
+      };
+    });
+
+
+YOUR PROJECT'S HELLO WAVE COMPONENT:
+------------------------------------
+
+    // components/hello-wave.tsx
+    import Animated, {
+      useSharedValue,
+      useAnimatedStyle,
+      withTiming,
+      withRepeat,
+      withSequence,
+    } from 'react-native-reanimated';
+    import { useEffect } from 'react';
+    import { StyleSheet } from 'react-native';
+    
+    export function HelloWave() {
+      const rotation = useSharedValue(0);
+      
+      useEffect(() => {
+        rotation.value = withRepeat(
+          withSequence(
+            withTiming(25, { duration: 150 }),
+            withTiming(0, { duration: 150 })
+          ),
+          4 // Repeat 4 times
+        );
+      }, []);
+      
+      const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ rotate: `${rotation.value}deg` }],
+      }));
+      
+      return (
+        <Animated.Text style={[styles.wave, animatedStyle]}>
+          👋
+        </Animated.Text>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      wave: {
+        fontSize: 28,
+      },
+    });
+
+
+================================================================================
+                    4. LAYOUT ANIMATIONS
+================================================================================
+
+Animate components when they enter/exit or change layout.
+
+ENTERING/EXITING ANIMATIONS:
+----------------------------
+
+    import Animated, {
+      FadeIn,
+      FadeOut,
+      SlideInLeft,
+      SlideOutRight,
+      ZoomIn,
+      ZoomOut,
+      BounceIn,
+    } from 'react-native-reanimated';
+    
+    export function AnimatedList({ items }) {
+      return (
+        <View>
+          {items.map((item, index) => (
+            <Animated.View
+              key={item.id}
+              entering={FadeIn.delay(index * 100).springify()}
+              exiting={FadeOut}
+            >
+              <ItemComponent item={item} />
+            </Animated.View>
+          ))}
+        </View>
+      );
+    }
+
+
+AVAILABLE ENTERING ANIMATIONS:
+------------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    ENTERING ANIMATIONS                                   │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   FADE                    SLIDE                                          │
+    │   • FadeIn                • SlideInLeft / SlideOutLeft                  │
+    │   • FadeInUp              • SlideInRight / SlideOutRight                │
+    │   • FadeInDown            • SlideInUp / SlideOutUp                      │
+    │   • FadeInLeft            • SlideInDown / SlideOutDown                  │
+    │   • FadeInRight                                                          │
+    │                                                                          │
+    │   ZOOM                    BOUNCE                                         │
+    │   • ZoomIn                • BounceIn                                     │
+    │   • ZoomInUp              • BounceInUp                                  │
+    │   • ZoomInDown            • BounceInDown                                │
+    │   • ZoomInLeft            • BounceInLeft                                │
+    │   • ZoomInRight           • BounceInRight                               │
+    │                                                                          │
+    │   FLIP                    STRETCH                                        │
+    │   • FlipInXUp             • StretchInX                                  │
+    │   • FlipInXDown           • StretchInY                                  │
+    │   • FlipInYLeft                                                          │
+    │   • FlipInYRight                                                         │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+CUSTOMIZING ENTERING/EXITING:
+-----------------------------
+
+    import Animated, { 
+      FadeIn, 
+      SlideInLeft 
+    } from 'react-native-reanimated';
+    
+    <Animated.View
+      // Delay, then fade in with spring physics
+      entering={FadeIn.delay(200).springify()}
+      
+      // Slide in from left over 500ms
+      entering={SlideInLeft.duration(500)}
+      
+      // Custom entering animation
+      entering={FadeIn
+        .delay(index * 100)       // Stagger based on index
+        .duration(400)            // 400ms duration
+        .springify()              // Use spring physics
+        .damping(15)              // Spring damping
+      }
+    />
+
+
+LAYOUT TRANSITIONS:
+-------------------
+Animate when component's layout changes.
+
+    import Animated, { LinearTransition } from 'react-native-reanimated';
+    
+    export function AnimatedListItem({ expanded }) {
+      return (
+        <Animated.View
+          layout={LinearTransition.springify()}
+          style={{ 
+            height: expanded ? 200 : 50,
+            backgroundColor: '#f0f0f0',
+          }}
+        >
+          <Text>Item content</Text>
+        </Animated.View>
+      );
+    }
+
+
+PRACTICAL: ANIMATED TODO LIST:
+------------------------------
+
+    import { useState } from 'react';
+    import { View, Text, Pressable, StyleSheet } from 'react-native';
+    import Animated, {
+      FadeInRight,
+      FadeOutLeft,
+      LinearTransition,
+    } from 'react-native-reanimated';
+    
+    export function AnimatedTodoList() {
+      const [todos, setTodos] = useState([
+        { id: 1, text: 'Learn React Native' },
+        { id: 2, text: 'Build awesome apps' },
+      ]);
+      
+      const addTodo = () => {
+        const newTodo = {
+          id: Date.now(),
+          text: `Todo ${todos.length + 1}`,
+        };
+        setTodos([newTodo, ...todos]);
+      };
+      
+      const removeTodo = (id: number) => {
+        setTodos(todos.filter(t => t.id !== id));
+      };
+      
+      return (
+        <View style={styles.container}>
+          <Pressable style={styles.addButton} onPress={addTodo}>
+            <Text style={styles.addText}>+ Add Todo</Text>
+          </Pressable>
+          
+          {todos.map((todo, index) => (
+            <Animated.View
+              key={todo.id}
+              entering={FadeInRight.delay(index * 50)}
+              exiting={FadeOutLeft}
+              layout={LinearTransition.springify()}
+              style={styles.todoItem}
+            >
+              <Text>{todo.text}</Text>
+              <Pressable onPress={() => removeTodo(todo.id)}>
+                <Text style={styles.delete}>×</Text>
+              </Pressable>
+            </Animated.View>
+          ))}
+        </View>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        padding: 16,
+      },
+      addButton: {
+        backgroundColor: '#007AFF',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 16,
+      },
+      addText: {
+        color: 'white',
+        fontWeight: 'bold',
+        textAlign: 'center',
+      },
+      todoItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        padding: 16,
+        backgroundColor: '#f0f0f0',
+        borderRadius: 8,
+        marginBottom: 8,
+      },
+      delete: {
+        fontSize: 24,
+        color: 'red',
+      },
+    });
+
+
+================================================================================
+                5. GESTURE HANDLING WITH ANIMATIONS
+================================================================================
+
+React Native Gesture Handler + Reanimated = powerful gesture animations.
+
+INSTALLATION:
+-------------
+    npx expo install react-native-gesture-handler
+
+GESTURE TYPES:
+--------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    GESTURE TYPES                                         │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   TAP GESTURE                                                            │
+    │   └── Single tap, double tap, long press                                │
+    │                                                                          │
+    │   PAN GESTURE                                                            │
+    │   └── Drag/swipe in any direction                                       │
+    │                                                                          │
+    │   PINCH GESTURE                                                          │
+    │   └── Two-finger pinch (zoom)                                           │
+    │                                                                          │
+    │   ROTATION GESTURE                                                       │
+    │   └── Two-finger rotate                                                 │
+    │                                                                          │
+    │   FLING GESTURE                                                          │
+    │   └── Quick swipe (like scrolling)                                      │
+    │                                                                          │
+    │   HOVER GESTURE (Pointer devices)                                       │
+    │   └── Mouse hover                                                        │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+DRAGGABLE COMPONENT:
+--------------------
+
+    import { View, StyleSheet } from 'react-native';
+    import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+    import Animated, {
+      useSharedValue,
+      useAnimatedStyle,
+      withSpring,
+    } from 'react-native-reanimated';
+    
+    export function DraggableBox() {
+      const translateX = useSharedValue(0);
+      const translateY = useSharedValue(0);
+      const scale = useSharedValue(1);
+      
+      // Track where the box started
+      const startX = useSharedValue(0);
+      const startY = useSharedValue(0);
+      
+      const panGesture = Gesture.Pan()
+        .onStart(() => {
+          // Remember starting position
+          startX.value = translateX.value;
+          startY.value = translateY.value;
+          // Slightly grow when picked up
+          scale.value = withSpring(1.1);
+        })
+        .onUpdate((event) => {
+          // Move based on gesture translation
+          translateX.value = startX.value + event.translationX;
+          translateY.value = startY.value + event.translationY;
+        })
+        .onEnd(() => {
+          // Shrink back when released
+          scale.value = withSpring(1);
+        });
+      
+      const animatedStyle = useAnimatedStyle(() => ({
+        transform: [
+          { translateX: translateX.value },
+          { translateY: translateY.value },
+          { scale: scale.value },
+        ],
+      }));
+      
+      return (
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={[styles.box, animatedStyle]} />
+        </GestureDetector>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      box: {
+        width: 100,
+        height: 100,
+        backgroundColor: '#007AFF',
+        borderRadius: 16,
+      },
+    });
+
+
+SWIPE TO DELETE:
+----------------
+
+    import { View, Text, StyleSheet, Dimensions } from 'react-native';
+    import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+    import Animated, {
+      useSharedValue,
+      useAnimatedStyle,
+      withSpring,
+      runOnJS,
+    } from 'react-native-reanimated';
+    
+    const SCREEN_WIDTH = Dimensions.get('window').width;
+    const DELETE_THRESHOLD = -SCREEN_WIDTH * 0.3;
+    
+    export function SwipeToDeleteItem({ item, onDelete }) {
+      const translateX = useSharedValue(0);
+      
+      const panGesture = Gesture.Pan()
+        .onUpdate((event) => {
+          // Only allow swiping left
+          translateX.value = Math.min(0, event.translationX);
+        })
+        .onEnd(() => {
+          if (translateX.value < DELETE_THRESHOLD) {
+            // Swipe past threshold - delete
+            translateX.value = withSpring(-SCREEN_WIDTH, {}, () => {
+              runOnJS(onDelete)(item.id);
+            });
+          } else {
+            // Snap back
+            translateX.value = withSpring(0);
+          }
+        });
+      
+      const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ translateX: translateX.value }],
+      }));
+      
+      return (
+        <View style={styles.container}>
+          {/* Delete background */}
+          <View style={styles.deleteBackground}>
+            <Text style={styles.deleteText}>Delete</Text>
+          </View>
+          
+          {/* Swipeable item */}
+          <GestureDetector gesture={panGesture}>
+            <Animated.View style={[styles.item, animatedStyle]}>
+              <Text>{item.text}</Text>
+            </Animated.View>
+          </GestureDetector>
+        </View>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        marginBottom: 8,
+      },
+      deleteBackground: {
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: '100%',
+        backgroundColor: '#FF3B30',
+        justifyContent: 'center',
+        alignItems: 'flex-end',
+        paddingRight: 20,
+        borderRadius: 8,
+      },
+      deleteText: {
+        color: 'white',
+        fontWeight: 'bold',
+      },
+      item: {
+        backgroundColor: 'white',
+        padding: 16,
+        borderRadius: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+      },
+    });
+
+
+PINCH TO ZOOM:
+--------------
+
+    import { StyleSheet, View } from 'react-native';
+    import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+    import Animated, {
+      useSharedValue,
+      useAnimatedStyle,
+    } from 'react-native-reanimated';
+    import { Image } from 'expo-image';
+    
+    export function ZoomableImage({ source }) {
+      const scale = useSharedValue(1);
+      const savedScale = useSharedValue(1);
+      
+      const pinchGesture = Gesture.Pinch()
+        .onUpdate((event) => {
+          scale.value = savedScale.value * event.scale;
+        })
+        .onEnd(() => {
+          // Clamp between 1x and 4x
+          savedScale.value = Math.max(1, Math.min(scale.value, 4));
+          if (scale.value < 1) {
+            scale.value = withSpring(1);
+            savedScale.value = 1;
+          } else if (scale.value > 4) {
+            scale.value = withSpring(4);
+            savedScale.value = 4;
+          }
+        });
+      
+      const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+      }));
+      
+      return (
+        <GestureDetector gesture={pinchGesture}>
+          <Animated.View style={[styles.container, animatedStyle]}>
+            <Image source={source} style={styles.image} contentFit="contain" />
+          </Animated.View>
+        </GestureDetector>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+      },
+      image: {
+        width: '100%',
+        height: '100%',
+      },
+    });
+
+
+COMBINING GESTURES:
+-------------------
+
+    const panGesture = Gesture.Pan().onUpdate(/* ... */);
+    const pinchGesture = Gesture.Pinch().onUpdate(/* ... */);
+    
+    // Run both simultaneously
+    const composedGesture = Gesture.Simultaneous(panGesture, pinchGesture);
+    
+    // Run one, then the other
+    const sequentialGesture = Gesture.Race(panGesture, pinchGesture);
+    
+    // Require one gesture before allowing another
+    const exclusiveGesture = Gesture.Exclusive(panGesture, pinchGesture);
+
+
+================================================================================
+                6. COMMON ANIMATION PATTERNS
+================================================================================
+
+LOADING SPINNER:
+----------------
+
+    import Animated, {
+      useSharedValue,
+      useAnimatedStyle,
+      withRepeat,
+      withTiming,
+      Easing,
+    } from 'react-native-reanimated';
+    import { useEffect } from 'react';
+    
+    export function LoadingSpinner({ size = 40, color = '#007AFF' }) {
+      const rotation = useSharedValue(0);
+      
+      useEffect(() => {
+        rotation.value = withRepeat(
+          withTiming(360, {
+            duration: 1000,
+            easing: Easing.linear,
+          }),
+          -1, // Infinite repeat
+          false
+        );
+      }, []);
+      
+      const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ rotate: `${rotation.value}deg` }],
+      }));
+      
+      return (
+        <Animated.View
+          style={[
+            {
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              borderWidth: size / 10,
+              borderColor: color,
+              borderTopColor: 'transparent',
+            },
+            animatedStyle,
+          ]}
+        />
+      );
+    }
+
+
+SKELETON LOADER:
+----------------
+
+    import { View, StyleSheet } from 'react-native';
+    import Animated, {
+      useSharedValue,
+      useAnimatedStyle,
+      withRepeat,
+      withTiming,
+      interpolate,
+    } from 'react-native-reanimated';
+    import { useEffect } from 'react';
+    import { LinearGradient } from 'expo-linear-gradient';
+    
+    export function Skeleton({ width, height, borderRadius = 4 }) {
+      const shimmer = useSharedValue(0);
+      
+      useEffect(() => {
+        shimmer.value = withRepeat(
+          withTiming(1, { duration: 1500 }),
+          -1,
+          false
+        );
+      }, []);
+      
+      const animatedStyle = useAnimatedStyle(() => ({
+        transform: [
+          {
+            translateX: interpolate(
+              shimmer.value,
+              [0, 1],
+              [-width, width]
+            ),
+          },
+        ],
+      }));
+      
+      return (
+        <View
+          style={[
+            styles.skeleton,
+            { width, height, borderRadius, overflow: 'hidden' },
+          ]}
+        >
+          <Animated.View style={[styles.shimmer, animatedStyle]}>
+            <LinearGradient
+              colors={['transparent', 'rgba(255,255,255,0.5)', 'transparent']}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={StyleSheet.absoluteFill}
+            />
+          </Animated.View>
+        </View>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      skeleton: {
+        backgroundColor: '#E0E0E0',
+      },
+      shimmer: {
+        width: '100%',
+        height: '100%',
+      },
+    });
+
+
+ANIMATED COUNTER:
+-----------------
+
+    import { Text } from 'react-native';
+    import Animated, {
+      useSharedValue,
+      useAnimatedProps,
+      withTiming,
+    } from 'react-native-reanimated';
+    import { useEffect } from 'react';
+    
+    // Create animated text component
+    const AnimatedText = Animated.createAnimatedComponent(Text);
+    
+    export function AnimatedCounter({ value }) {
+      const animatedValue = useSharedValue(0);
+      
+      useEffect(() => {
+        animatedValue.value = withTiming(value, { duration: 1000 });
+      }, [value]);
+      
+      const animatedProps = useAnimatedProps(() => ({
+        text: `${Math.round(animatedValue.value)}`,
+      }), []);
+      
+      return (
+        <AnimatedText
+          animatedProps={animatedProps}
+          style={{ fontSize: 48, fontWeight: 'bold' }}
+        />
+      );
+    }
+
+
+PARALLAX SCROLL HEADER:
+-----------------------
+
+    import { View, StyleSheet, Dimensions } from 'react-native';
+    import Animated, {
+      useAnimatedScrollHandler,
+      useSharedValue,
+      useAnimatedStyle,
+      interpolate,
+      Extrapolation,
+    } from 'react-native-reanimated';
+    
+    const HEADER_HEIGHT = 200;
+    const { width } = Dimensions.get('window');
+    
+    export function ParallaxScrollView({ headerImage, children }) {
+      const scrollY = useSharedValue(0);
+      
+      const scrollHandler = useAnimatedScrollHandler({
+        onScroll: (event) => {
+          scrollY.value = event.contentOffset.y;
+        },
+      });
+      
+      const headerAnimatedStyle = useAnimatedStyle(() => {
+        const scale = interpolate(
+          scrollY.value,
+          [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
+          [2, 1, 0.8],
+          Extrapolation.CLAMP
+        );
+        
+        const translateY = interpolate(
+          scrollY.value,
+          [0, HEADER_HEIGHT],
+          [0, -HEADER_HEIGHT / 2],
+          Extrapolation.CLAMP
+        );
+        
+        const opacity = interpolate(
+          scrollY.value,
+          [0, HEADER_HEIGHT],
+          [1, 0],
+          Extrapolation.CLAMP
+        );
+        
+        return {
+          transform: [{ scale }, { translateY }],
+          opacity,
+        };
+      });
+      
+      return (
+        <View style={styles.container}>
+          <Animated.Image
+            source={headerImage}
+            style={[styles.header, headerAnimatedStyle]}
+          />
+          <Animated.ScrollView
+            onScroll={scrollHandler}
+            scrollEventThrottle={16}
+            contentContainerStyle={{ paddingTop: HEADER_HEIGHT }}
+          >
+            {children}
+          </Animated.ScrollView>
+        </View>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+      },
+      header: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width,
+        height: HEADER_HEIGHT,
+      },
+    });
+
+
+================================================================================
+                    7. PERFORMANCE TIPS
+================================================================================
+
+USE UI THREAD (REANIMATED):
+---------------------------
+Always use Reanimated's worklets for smooth animations:
+
+    // ❌ Bad - runs on JS thread
+    const handleScroll = (event) => {
+      scrollY.value = event.nativeEvent.contentOffset.y;
+    };
+    
+    // ✅ Good - runs on UI thread
+    const scrollHandler = useAnimatedScrollHandler({
+      onScroll: (event) => {
+        scrollY.value = event.contentOffset.y;
+      },
+    });
+
+
+USE NATIVE DRIVER:
+------------------
+For built-in Animated API, always use native driver when possible:
+
+    Animated.timing(value, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true, // ← Always include this
+    }).start();
+
+Note: Native driver only works with transform and opacity.
+
+
+AVOID ANIMATING LAYOUT PROPERTIES:
+----------------------------------
+    // ❌ Slow - causes layout recalculation
+    const style = useAnimatedStyle(() => ({
+      width: width.value,
+      height: height.value,
+    }));
+    
+    // ✅ Fast - only animates transform
+    const style = useAnimatedStyle(() => ({
+      transform: [
+        { scaleX: width.value / 100 },
+        { scaleY: height.value / 100 },
+      ],
+    }));
+
+
+USE MEMO FOR ANIMATED STYLES:
+-----------------------------
+    // Animated styles are already optimized, but ensure
+    // dependencies are correct
+    const animatedStyle = useAnimatedStyle(() => ({
+      opacity: opacity.value,
+    }), []); // Empty deps if no external dependencies
+
+
+AVOID COMPLEX CALCULATIONS IN ANIMATION CALLBACKS:
+--------------------------------------------------
+    // ❌ Bad - heavy calculation in animation
+    const style = useAnimatedStyle(() => {
+      const complexResult = performHeavyCalculation(value.value);
+      return { opacity: complexResult };
+    });
+    
+    // ✅ Good - pre-calculate or use interpolate
+    const style = useAnimatedStyle(() => {
+      const simpleResult = interpolate(value.value, [0, 1], [0, 1]);
+      return { opacity: simpleResult };
+    });
+
+
+================================================================================
+                    8. PRACTICAL EXAMPLES
+================================================================================
+
+ANIMATED TAB BAR INDICATOR:
+---------------------------
+
+    import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
+    import Animated, {
+      useSharedValue,
+      useAnimatedStyle,
+      withSpring,
+    } from 'react-native-reanimated';
+    
+    const { width } = Dimensions.get('window');
+    const TABS = ['Home', 'Search', 'Profile'];
+    const TAB_WIDTH = width / TABS.length;
+    
+    export function AnimatedTabBar() {
+      const activeIndex = useSharedValue(0);
+      
+      const indicatorStyle = useAnimatedStyle(() => ({
+        transform: [{ translateX: withSpring(activeIndex.value * TAB_WIDTH) }],
+      }));
+      
+      return (
+        <View style={styles.tabBar}>
+          {/* Animated indicator */}
+          <Animated.View style={[styles.indicator, indicatorStyle]} />
+          
+          {/* Tab buttons */}
+          {TABS.map((tab, index) => (
+            <Pressable
+              key={tab}
+              style={styles.tab}
+              onPress={() => {
+                activeIndex.value = index;
+              }}
+            >
+              <Text style={styles.tabText}>{tab}</Text>
+            </Pressable>
+          ))}
+        </View>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      tabBar: {
+        flexDirection: 'row',
+        backgroundColor: '#f0f0f0',
+        height: 48,
+      },
+      tab: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      tabText: {
+        fontWeight: '600',
+      },
+      indicator: {
+        position: 'absolute',
+        bottom: 0,
+        width: TAB_WIDTH,
+        height: 3,
+        backgroundColor: '#007AFF',
+      },
+    });
+
+
+ANIMATED ACCORDION/COLLAPSIBLE:
+-------------------------------
+
+    import { useState } from 'react';
+    import { View, Text, Pressable, StyleSheet } from 'react-native';
+    import Animated, {
+      useSharedValue,
+      useAnimatedStyle,
+      withTiming,
+      runOnUI,
+      measure,
+      useAnimatedRef,
+    } from 'react-native-reanimated';
+    
+    export function AnimatedAccordion({ title, children }) {
+      const [expanded, setExpanded] = useState(false);
+      const height = useSharedValue(0);
+      const contentRef = useAnimatedRef();
+      
+      const toggleAccordion = () => {
+        if (expanded) {
+          height.value = withTiming(0);
+        } else {
+          // Measure content and animate to that height
+          runOnUI(() => {
+            'worklet';
+            const measured = measure(contentRef);
+            if (measured) {
+              height.value = withTiming(measured.height);
+            }
+          })();
+        }
+        setExpanded(!expanded);
+      };
+      
+      const animatedStyle = useAnimatedStyle(() => ({
+        height: height.value,
+        overflow: 'hidden',
+      }));
+      
+      return (
+        <View style={styles.accordion}>
+          <Pressable style={styles.header} onPress={toggleAccordion}>
+            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.icon}>{expanded ? '−' : '+'}</Text>
+          </Pressable>
+          
+          <Animated.View style={animatedStyle}>
+            <View ref={contentRef} style={styles.content}>
+              {children}
+            </View>
+          </Animated.View>
+        </View>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      accordion: {
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+        borderRadius: 8,
+        marginBottom: 8,
+        overflow: 'hidden',
+      },
+      header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        backgroundColor: '#f5f5f5',
+      },
+      title: {
+        fontWeight: '600',
+        fontSize: 16,
+      },
+      icon: {
+        fontSize: 20,
+        fontWeight: 'bold',
+      },
+      content: {
+        padding: 16,
+        position: 'absolute',
+        width: '100%',
+      },
+    });
+
+
+ANIMATED FLOATING ACTION BUTTON:
+--------------------------------
+
+    import { View, Pressable, Text, StyleSheet } from 'react-native';
+    import Animated, {
+      useSharedValue,
+      useAnimatedStyle,
+      withSpring,
+      interpolate,
+    } from 'react-native-reanimated';
+    
+    export function AnimatedFAB() {
+      const expanded = useSharedValue(0);
+      
+      const toggleFAB = () => {
+        expanded.value = withSpring(expanded.value === 0 ? 1 : 0);
+      };
+      
+      // Main button rotation
+      const mainButtonStyle = useAnimatedStyle(() => ({
+        transform: [{ rotate: `${interpolate(expanded.value, [0, 1], [0, 45])}deg` }],
+      }));
+      
+      // Secondary buttons animation
+      const createSecondaryStyle = (index: number) =>
+        useAnimatedStyle(() => ({
+          opacity: expanded.value,
+          transform: [
+            { translateY: interpolate(expanded.value, [0, 1], [0, -60 * (index + 1)]) },
+            { scale: expanded.value },
+          ],
+        }));
+      
+      const button1Style = createSecondaryStyle(0);
+      const button2Style = createSecondaryStyle(1);
+      const button3Style = createSecondaryStyle(2);
+      
+      return (
+        <View style={styles.fabContainer}>
+          {/* Secondary buttons */}
+          <Animated.View style={[styles.secondaryFab, button3Style]}>
+            <Text style={styles.fabIcon}>📷</Text>
+          </Animated.View>
+          <Animated.View style={[styles.secondaryFab, button2Style]}>
+            <Text style={styles.fabIcon}>📝</Text>
+          </Animated.View>
+          <Animated.View style={[styles.secondaryFab, button1Style]}>
+            <Text style={styles.fabIcon}>📎</Text>
+          </Animated.View>
+          
+          {/* Main button */}
+          <Pressable onPress={toggleFAB}>
+            <Animated.View style={[styles.mainFab, mainButtonStyle]}>
+              <Text style={styles.fabMainIcon}>+</Text>
+            </Animated.View>
+          </Pressable>
+        </View>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      fabContainer: {
+        position: 'absolute',
+        bottom: 24,
+        right: 24,
+        alignItems: 'center',
+      },
+      mainFab: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: '#007AFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 5,
+      },
+      fabMainIcon: {
+        fontSize: 28,
+        color: 'white',
+      },
+      secondaryFab: {
+        position: 'absolute',
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: '#5856D6',
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      fabIcon: {
+        fontSize: 18,
+      },
+    });
+
+
+================================================================================
+                            SUMMARY
+================================================================================
+
+KEY TAKEAWAYS:
+--------------
+
+1. Use React Native Reanimated for production apps (60fps on UI thread)
+2. Use useSharedValue for animated values
+3. Use useAnimatedStyle to connect values to styles
+4. withTiming for duration-based, withSpring for natural physics
+5. Layout animations (entering/exiting) make lists come alive
+6. Combine with Gesture Handler for interactive animations
+7. Always think about performance (avoid layout props, use native driver)
+8. Interpolate to map value ranges
+
+
+ANIMATION DECISION TREE:
+------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    WHICH ANIMATION TO USE?                               │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   Need to animate?                                                       │
+    │        │                                                                 │
+    │        ├── Simple fade/slide ──► withTiming                             │
+    │        │                                                                 │
+    │        ├── Bouncy/natural feel ──► withSpring                           │
+    │        │                                                                 │
+    │        ├── After gesture release ──► withDecay                          │
+    │        │                                                                 │
+    │        ├── List items entering ──► entering={FadeIn}                    │
+    │        │                                                                 │
+    │        ├── Gesture-driven ──► Gesture Handler + Reanimated              │
+    │        │                                                                 │
+    │        └── Pre-designed animation ──► Lottie                            │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                        END OF DOCUMENT 10
+                    Next: 11 - API Calls and Data Fetching
+================================================================================

@@ -10,7 +10,8 @@
 		"./config": "./src/auth.ts",
 		"./types": "./src/next-auth.d.ts",
 		"./middleware": "./src/middleware.ts",
-		"./client": "./src/client.ts"
+		"./client": "./src/client.ts",
+		"./phone": "./src/phone-auth.ts"
 	},
 	"scripts": {
 		"lint": "eslint . --max-warnings 0",

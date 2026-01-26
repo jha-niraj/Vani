@@ -11,6 +11,24 @@ export { default as NextAuth } from 'next-auth';
 export { getServerSession as getSession } from 'next-auth/next';
 
 // =========================================================
+// PHONE AUTHENTICATION (For Mobile & Web)
+// =========================================================
+export {
+    generateOTP,
+    hashOTP,
+    verifyOTPHash,
+    validateNepalPhone,
+    formatPhoneDisplay,
+    TwilioSMSService,
+    PhoneAuthService,
+    type PhoneAuthConfig,
+    type SendOTPResult,
+    type VerifyOTPResult,
+    type OTPData,
+    type PhoneAuthStorageAdapter,
+} from './phone-auth';
+
+// =========================================================
 // IMPORTANT: Separate imports for different runtime contexts
 // =========================================================
 // For MIDDLEWARE (Edge Runtime):
@@ -18,4 +36,7 @@ export { getServerSession as getSession } from 'next-auth/next';
 //
 // For CLIENT components (React):
 //   import { signIn, signOut, useSession, SessionProvider } from '@repo/auth/client';
+//
+// For PHONE AUTH (Mobile/Web):
+//   import { PhoneAuthService, validateNepalPhone } from '@repo/auth';
 // =========================================================

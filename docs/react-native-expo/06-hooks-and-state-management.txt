@@ -1,0 +1,1325 @@
+================================================================================
+        REACT NATIVE WITH EXPO - COMPREHENSIVE LEARNING GUIDE
+                    PART 6: HOOKS & STATE MANAGEMENT
+================================================================================
+
+This document covers React hooks in the context of React Native, custom hooks,
+and various state management strategies from local state to global solutions.
+
+================================================================================
+                            TABLE OF CONTENTS
+================================================================================
+
+1. React Hooks Overview
+2. useState - Managing Local State
+3. useEffect - Side Effects and Lifecycle
+4. useRef - References and Persistence
+5. useContext - Sharing State Globally
+6. useMemo & useCallback - Performance Optimization
+7. Custom Hooks - Reusable Logic
+8. React Native Specific Hooks
+9. Expo Router Hooks
+10. State Management Patterns
+11. Building a Complete State Solution
+12. Best Practices
+
+================================================================================
+                        1. REACT HOOKS OVERVIEW
+================================================================================
+
+Hooks let you use state and other React features in functional components.
+The same hooks from React web work identically in React Native.
+
+HOOK CATEGORIES:
+----------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    REACT HOOKS CATEGORIES                                │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   STATE HOOKS                                                            │
+    │   ───────────                                                            │
+    │   • useState      - Local component state                               │
+    │   • useReducer    - Complex state logic                                 │
+    │   • useContext    - Access context values                               │
+    │                                                                          │
+    │   EFFECT HOOKS                                                           │
+    │   ────────────                                                           │
+    │   • useEffect     - Side effects (API calls, subscriptions)             │
+    │   • useLayoutEffect - Before paint (measuring)                          │
+    │                                                                          │
+    │   REF HOOKS                                                              │
+    │   ─────────                                                              │
+    │   • useRef        - Persist values across renders                       │
+    │                                                                          │
+    │   PERFORMANCE HOOKS                                                      │
+    │   ─────────────────                                                      │
+    │   • useMemo       - Memoize computed values                             │
+    │   • useCallback   - Memoize functions                                   │
+    │                                                                          │
+    │   REACT NATIVE SPECIFIC                                                  │
+    │   ─────────────────────                                                  │
+    │   • useWindowDimensions  - Screen size                                  │
+    │   • useColorScheme       - System color scheme                          │
+    │                                                                          │
+    │   EXPO ROUTER HOOKS                                                      │
+    │   ─────────────────                                                      │
+    │   • useRouter            - Navigation                                   │
+    │   • useLocalSearchParams - Route parameters                             │
+    │   • usePathname          - Current path                                 │
+    │   • useSegments          - URL segments                                 │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+RULES OF HOOKS:
+---------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    HOOK RULES (MUST FOLLOW!)                             │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   RULE 1: Only call hooks at the top level                              │
+    │   ─────────────────────────────────────────                              │
+    │   ✗ if (condition) { const [state, setState] = useState(); }            │
+    │   ✗ for (...) { useEffect(() => {}); }                                  │
+    │   ✓ const [state, setState] = useState();  // Always at top            │
+    │                                                                          │
+    │   RULE 2: Only call hooks from React functions                          │
+    │   ─────────────────────────────────────────                              │
+    │   ✗ Regular JavaScript functions                                        │
+    │   ✓ React functional components                                         │
+    │   ✓ Custom hooks (functions starting with "use")                        │
+    │                                                                          │
+    │   RULE 3: Hooks must be called in the same order                        │
+    │   ─────────────────────────────────────────────                          │
+    │   React relies on the order of hook calls to maintain state             │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                    2. useState - MANAGING LOCAL STATE
+================================================================================
+
+useState is the most fundamental hook for managing component state.
+
+BASIC USAGE:
+------------
+
+    import { useState } from 'react';
+    import { View, Text, Pressable, StyleSheet } from 'react-native';
+    
+    function Counter() {
+      // Declare state variable and setter function
+      const [count, setCount] = useState(0);
+      
+      return (
+        <View style={styles.container}>
+          <Text style={styles.count}>{count}</Text>
+          
+          <Pressable 
+            style={styles.button}
+            onPress={() => setCount(count + 1)}
+          >
+            <Text>Increment</Text>
+          </Pressable>
+          
+          <Pressable 
+            style={styles.button}
+            onPress={() => setCount(prev => prev - 1)}  // Functional update
+          >
+            <Text>Decrement</Text>
+          </Pressable>
+        </View>
+      );
+    }
+
+
+STATE UPDATE PATTERNS:
+----------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    STATE UPDATE PATTERNS                                 │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   DIRECT UPDATE                                                          │
+    │   ─────────────                                                          │
+    │   setCount(5);                    // Set to specific value              │
+    │   setName('John');                // Set string                          │
+    │   setIsActive(true);              // Set boolean                         │
+    │                                                                          │
+    │   FUNCTIONAL UPDATE (Preferred when based on previous value)            │
+    │   ───────────────────────────────────────────────────────                │
+    │   setCount(prev => prev + 1);     // Increment                          │
+    │   setItems(prev => [...prev, newItem]);  // Add to array                │
+    │   setUser(prev => ({ ...prev, name: 'John' }));  // Update object       │
+    │                                                                          │
+    │   Why functional? Ensures you have the latest state value.              │
+    │   Important when multiple updates happen quickly.                       │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+DIFFERENT STATE TYPES:
+----------------------
+
+    // Primitive values
+    const [count, setCount] = useState(0);
+    const [name, setName] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    
+    // Arrays
+    const [items, setItems] = useState<string[]>([]);
+    
+    // Add item
+    setItems(prev => [...prev, 'new item']);
+    
+    // Remove item
+    setItems(prev => prev.filter(item => item !== 'remove me'));
+    
+    // Update item
+    setItems(prev => prev.map(item => 
+      item.id === targetId ? { ...item, name: 'updated' } : item
+    ));
+    
+    // Objects
+    const [user, setUser] = useState({
+      name: '',
+      email: '',
+      age: 0,
+    });
+    
+    // Update single property (SPREAD OPERATOR IS REQUIRED!)
+    setUser(prev => ({ ...prev, name: 'John' }));
+    
+    // Update multiple properties
+    setUser(prev => ({ ...prev, name: 'John', age: 25 }));
+
+
+LAZY INITIALIZATION:
+--------------------
+
+For expensive initial values, use a function:
+
+    // ✗ This runs on every render (wasteful)
+    const [data, setData] = useState(expensiveCalculation());
+    
+    // ✓ This only runs once on mount
+    const [data, setData] = useState(() => expensiveCalculation());
+
+
+TYPED STATE (TypeScript):
+-------------------------
+
+    // Inferred type
+    const [count, setCount] = useState(0);  // number
+    
+    // Explicit type
+    const [user, setUser] = useState<User | null>(null);
+    
+    // Array with type
+    const [items, setItems] = useState<Product[]>([]);
+    
+    // Union types
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+
+================================================================================
+                3. useEffect - SIDE EFFECTS AND LIFECYCLE
+================================================================================
+
+useEffect handles side effects like API calls, subscriptions, and timers.
+
+BASIC SYNTAX:
+-------------
+
+    useEffect(() => {
+      // Side effect code here
+      
+      return () => {
+        // Cleanup code (optional)
+      };
+    }, [dependencies]);
+
+
+DEPENDENCY ARRAY PATTERNS:
+--------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    useEffect DEPENDENCY PATTERNS                         │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   NO DEPENDENCY ARRAY - Runs after EVERY render                         │
+    │   ─────────────────────────────────────────────                          │
+    │   useEffect(() => {                                                      │
+    │     console.log('Runs after every render');                             │
+    │   });                                                                    │
+    │   ⚠️ Usually not what you want! Can cause infinite loops.              │
+    │                                                                          │
+    │   EMPTY ARRAY [] - Runs only on MOUNT                                   │
+    │   ───────────────────────────────────                                    │
+    │   useEffect(() => {                                                      │
+    │     console.log('Runs once on mount');                                  │
+    │     fetchInitialData();                                                  │
+    │   }, []);                                                                │
+    │                                                                          │
+    │   WITH DEPENDENCIES - Runs when dependencies CHANGE                     │
+    │   ─────────────────────────────────────────────────                      │
+    │   useEffect(() => {                                                      │
+    │     console.log('Runs when userId changes');                            │
+    │     fetchUserData(userId);                                               │
+    │   }, [userId]);                                                          │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+LIFECYCLE MAPPING:
+------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │              CLASS LIFECYCLE → HOOKS MAPPING                             │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   componentDidMount (runs once on mount):                               │
+    │   ─────────────────────────────────────                                  │
+    │   useEffect(() => {                                                      │
+    │     // This code runs on mount                                          │
+    │   }, []);                                                                │
+    │                                                                          │
+    │   componentDidUpdate (runs on prop/state change):                       │
+    │   ─────────────────────────────────────────────                          │
+    │   useEffect(() => {                                                      │
+    │     // This code runs when 'value' changes                              │
+    │   }, [value]);                                                           │
+    │                                                                          │
+    │   componentWillUnmount (cleanup):                                        │
+    │   ─────────────────────────────                                          │
+    │   useEffect(() => {                                                      │
+    │     return () => {                                                       │
+    │       // This cleanup code runs on unmount                              │
+    │     };                                                                   │
+    │   }, []);                                                                │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+PRACTICAL EXAMPLES:
+-------------------
+
+EXAMPLE 1: Fetching Data on Mount
+
+    function UserProfile({ userId }: { userId: string }) {
+      const [user, setUser] = useState<User | null>(null);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState<string | null>(null);
+      
+      useEffect(() => {
+        async function fetchUser() {
+          try {
+            setLoading(true);
+            setError(null);
+            const response = await fetch(`/api/users/${userId}`);
+            const data = await response.json();
+            setUser(data);
+          } catch (err) {
+            setError('Failed to fetch user');
+          } finally {
+            setLoading(false);
+          }
+        }
+        
+        fetchUser();
+      }, [userId]);  // Re-fetch when userId changes
+      
+      if (loading) return <Text>Loading...</Text>;
+      if (error) return <Text>{error}</Text>;
+      if (!user) return <Text>No user found</Text>;
+      
+      return <Text>{user.name}</Text>;
+    }
+
+
+EXAMPLE 2: Subscription with Cleanup
+
+    function ScreenOrientation() {
+      const [orientation, setOrientation] = useState('portrait');
+      
+      useEffect(() => {
+        // Subscribe to orientation changes
+        const subscription = Dimensions.addEventListener(
+          'change',
+          ({ window }) => {
+            setOrientation(window.width > window.height ? 'landscape' : 'portrait');
+          }
+        );
+        
+        // Cleanup: remove subscription on unmount
+        return () => {
+          subscription?.remove();
+        };
+      }, []);
+      
+      return <Text>Current: {orientation}</Text>;
+    }
+
+
+EXAMPLE 3: Timer/Interval with Cleanup
+
+    function Timer() {
+      const [seconds, setSeconds] = useState(0);
+      
+      useEffect(() => {
+        const interval = setInterval(() => {
+          setSeconds(prev => prev + 1);
+        }, 1000);
+        
+        // CRITICAL: Clear interval on unmount
+        return () => clearInterval(interval);
+      }, []);
+      
+      return <Text>Seconds: {seconds}</Text>;
+    }
+
+
+COMMON MISTAKES:
+----------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    COMMON useEffect MISTAKES                             │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   MISTAKE 1: Infinite Loop                                               │
+    │   ─────────────────────────                                              │
+    │   ✗ useEffect(() => {                                                    │
+    │       setCount(count + 1);  // Changes count → triggers effect → loop  │
+    │     }, [count]);                                                         │
+    │                                                                          │
+    │   MISTAKE 2: Missing Dependency                                          │
+    │   ──────────────────────────                                             │
+    │   ✗ useEffect(() => {                                                    │
+    │       fetchData(userId);    // userId used but not in dependencies      │
+    │     }, []);                 // Stale closure!                            │
+    │                                                                          │
+    │   ✓ useEffect(() => {                                                    │
+    │       fetchData(userId);                                                 │
+    │     }, [userId]);           // Correct                                   │
+    │                                                                          │
+    │   MISTAKE 3: Missing Cleanup                                             │
+    │   ──────────────────────────                                             │
+    │   ✗ useEffect(() => {                                                    │
+    │       const subscription = subscribe();                                  │
+    │       // No cleanup! Memory leak!                                        │
+    │     }, []);                                                              │
+    │                                                                          │
+    │   ✓ useEffect(() => {                                                    │
+    │       const subscription = subscribe();                                  │
+    │       return () => subscription.unsubscribe();  // Cleanup              │
+    │     }, []);                                                              │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                    4. useRef - REFERENCES AND PERSISTENCE
+================================================================================
+
+useRef persists values between renders without causing re-renders.
+
+TWO MAIN USE CASES:
+-------------------
+
+1. Accessing DOM/Native elements
+2. Storing mutable values that don't trigger re-renders
+
+
+USE CASE 1: ACCESSING ELEMENTS:
+-------------------------------
+
+    import { useRef } from 'react';
+    import { TextInput, Pressable, View, Text } from 'react-native';
+    
+    function SearchForm() {
+      // Create a ref to the TextInput
+      const inputRef = useRef<TextInput>(null);
+      
+      const focusInput = () => {
+        // Focus the input programmatically
+        inputRef.current?.focus();
+      };
+      
+      return (
+        <View>
+          <TextInput
+            ref={inputRef}
+            placeholder="Search..."
+          />
+          <Pressable onPress={focusInput}>
+            <Text>Focus Input</Text>
+          </Pressable>
+        </View>
+      );
+    }
+
+
+USE CASE 2: STORING MUTABLE VALUES:
+-----------------------------------
+
+    function Stopwatch() {
+      const [time, setTime] = useState(0);
+      const [isRunning, setIsRunning] = useState(false);
+      
+      // Store interval ID without causing re-renders
+      const intervalRef = useRef<NodeJS.Timeout | null>(null);
+      
+      const start = () => {
+        if (!isRunning) {
+          setIsRunning(true);
+          intervalRef.current = setInterval(() => {
+            setTime(prev => prev + 1);
+          }, 1000);
+        }
+      };
+      
+      const stop = () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        setIsRunning(false);
+      };
+      
+      const reset = () => {
+        stop();
+        setTime(0);
+      };
+      
+      return (
+        <View>
+          <Text>{time}s</Text>
+          <Pressable onPress={start}><Text>Start</Text></Pressable>
+          <Pressable onPress={stop}><Text>Stop</Text></Pressable>
+          <Pressable onPress={reset}><Text>Reset</Text></Pressable>
+        </View>
+      );
+    }
+
+
+useRef vs useState:
+-------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    useRef vs useState                                    │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   useState                          useRef                               │
+    │   ─────────                         ──────                               │
+    │   • Triggers re-render on change    • Does NOT trigger re-render        │
+    │   • Value preserved between renders • Value preserved between renders   │
+    │   • Use for UI state                • Use for non-UI values             │
+    │   • Async updates (batched)         • Sync updates (immediate)          │
+    │                                                                          │
+    │   Example: Show count on screen     Example: Store interval ID          │
+    │   const [count, setCount] = ...     const intervalRef = useRef(null)    │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                5. useContext - SHARING STATE GLOBALLY
+================================================================================
+
+useContext provides a way to share state across the component tree without
+passing props manually at every level (prop drilling).
+
+CREATING CONTEXT:
+-----------------
+
+    // contexts/ThemeContext.tsx
+    import { createContext, useContext, useState, ReactNode } from 'react';
+    
+    // Define types
+    type Theme = 'light' | 'dark';
+    
+    type ThemeContextType = {
+      theme: Theme;
+      toggleTheme: () => void;
+    };
+    
+    // Create context with default value
+    const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+    
+    // Create provider component
+    export function ThemeProvider({ children }: { children: ReactNode }) {
+      const [theme, setTheme] = useState<Theme>('light');
+      
+      const toggleTheme = () => {
+        setTheme(prev => prev === 'light' ? 'dark' : 'light');
+      };
+      
+      return (
+        <ThemeContext.Provider value={{ theme, toggleTheme }}>
+          {children}
+        </ThemeContext.Provider>
+      );
+    }
+    
+    // Create custom hook for easy access
+    export function useTheme() {
+      const context = useContext(ThemeContext);
+      if (context === undefined) {
+        throw new Error('useTheme must be used within a ThemeProvider');
+      }
+      return context;
+    }
+
+
+USING THE CONTEXT:
+------------------
+
+    // app/_layout.tsx
+    import { ThemeProvider } from '@/contexts/ThemeContext';
+    
+    export default function RootLayout() {
+      return (
+        <ThemeProvider>
+          <Stack />
+        </ThemeProvider>
+      );
+    }
+    
+    // Any component in the tree
+    import { useTheme } from '@/contexts/ThemeContext';
+    
+    function ThemedButton() {
+      const { theme, toggleTheme } = useTheme();
+      
+      return (
+        <Pressable 
+          style={{ 
+            backgroundColor: theme === 'dark' ? '#333' : '#fff' 
+          }}
+          onPress={toggleTheme}
+        >
+          <Text>Toggle Theme</Text>
+        </Pressable>
+      );
+    }
+
+
+CONTEXT FLOW VISUALIZATION:
+---------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    CONTEXT DATA FLOW                                     │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   WITHOUT CONTEXT (Prop Drilling):                                       │
+    │   ────────────────────────────────                                       │
+    │                                                                          │
+    │   App ──theme──► Layout ──theme──► Header ──theme──► ThemeButton        │
+    │       │                                                                  │
+    │       └──theme──► Content ──theme──► Card ──theme──► CardText           │
+    │                                                                          │
+    │   Every component must receive and pass the prop! 😫                    │
+    │                                                                          │
+    │   ──────────────────────────────────────────────────────────            │
+    │                                                                          │
+    │   WITH CONTEXT:                                                          │
+    │   ──────────────                                                         │
+    │                                                                          │
+    │   ┌─ ThemeProvider ─────────────────────────────────────────────────┐   │
+    │   │                                                                  │   │
+    │   │   App                                                            │   │
+    │   │   └── Layout                                                     │   │
+    │   │       └── Header                                                 │   │
+    │   │           └── ThemeButton ◄──────── useTheme()                  │   │
+    │   │       └── Content                                                │   │
+    │   │           └── Card                                               │   │
+    │   │               └── CardText ◄──────── useTheme()                 │   │
+    │   │                                                                  │   │
+    │   └──────────────────────────────────────────────────────────────────┘   │
+    │                                                                          │
+    │   Components just call useTheme() directly! 🎉                          │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+PRACTICAL EXAMPLE - AUTH CONTEXT:
+---------------------------------
+
+    // contexts/AuthContext.tsx
+    import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+    import AsyncStorage from '@react-native-async-storage/async-storage';
+    
+    type User = {
+      id: string;
+      name: string;
+      email: string;
+    };
+    
+    type AuthContextType = {
+      user: User | null;
+      isLoading: boolean;
+      isAuthenticated: boolean;
+      login: (email: string, password: string) => Promise<void>;
+      logout: () => Promise<void>;
+    };
+    
+    const AuthContext = createContext<AuthContextType | undefined>(undefined);
+    
+    export function AuthProvider({ children }: { children: ReactNode }) {
+      const [user, setUser] = useState<User | null>(null);
+      const [isLoading, setIsLoading] = useState(true);
+      
+      // Check for existing session on mount
+      useEffect(() => {
+        async function loadUser() {
+          try {
+            const token = await AsyncStorage.getItem('authToken');
+            if (token) {
+              // Validate token and get user
+              const userData = await validateToken(token);
+              setUser(userData);
+            }
+          } catch (error) {
+            console.error('Failed to load user:', error);
+          } finally {
+            setIsLoading(false);
+          }
+        }
+        
+        loadUser();
+      }, []);
+      
+      const login = async (email: string, password: string) => {
+        const { user, token } = await authApi.login(email, password);
+        await AsyncStorage.setItem('authToken', token);
+        setUser(user);
+      };
+      
+      const logout = async () => {
+        await AsyncStorage.removeItem('authToken');
+        setUser(null);
+      };
+      
+      return (
+        <AuthContext.Provider value={{
+          user,
+          isLoading,
+          isAuthenticated: !!user,
+          login,
+          logout,
+        }}>
+          {children}
+        </AuthContext.Provider>
+      );
+    }
+    
+    export function useAuth() {
+      const context = useContext(AuthContext);
+      if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+      }
+      return context;
+    }
+
+
+================================================================================
+            6. useMemo & useCallback - PERFORMANCE OPTIMIZATION
+================================================================================
+
+These hooks memoize values and functions to prevent unnecessary recalculations.
+
+useMemo - MEMOIZE VALUES:
+-------------------------
+
+    import { useMemo, useState } from 'react';
+    
+    function ProductList({ products, searchTerm }) {
+      // Only recalculate when products or searchTerm changes
+      const filteredProducts = useMemo(() => {
+        console.log('Filtering products...');
+        return products.filter(product =>
+          product.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }, [products, searchTerm]);
+      
+      // Expensive calculation memoized
+      const totalValue = useMemo(() => {
+        return products.reduce((sum, product) => sum + product.price, 0);
+      }, [products]);
+      
+      return (
+        <FlatList
+          data={filteredProducts}
+          renderItem={({ item }) => <ProductCard product={item} />}
+        />
+      );
+    }
+
+
+useCallback - MEMOIZE FUNCTIONS:
+--------------------------------
+
+    import { useCallback, useState } from 'react';
+    
+    function ParentComponent() {
+      const [count, setCount] = useState(0);
+      const [items, setItems] = useState<string[]>([]);
+      
+      // Without useCallback: new function on every render
+      // Child component would re-render every time
+      
+      // With useCallback: same function reference unless items changes
+      const addItem = useCallback((item: string) => {
+        setItems(prev => [...prev, item]);
+      }, []);  // Empty deps: function never changes
+      
+      const removeItem = useCallback((index: number) => {
+        setItems(prev => prev.filter((_, i) => i !== index));
+      }, []);
+      
+      return (
+        <View>
+          <Text>Count: {count}</Text>
+          <Pressable onPress={() => setCount(c => c + 1)}>
+            <Text>Increment</Text>
+          </Pressable>
+          
+          {/* ItemList won't re-render when count changes */}
+          <ItemList 
+            items={items} 
+            onAdd={addItem} 
+            onRemove={removeItem} 
+          />
+        </View>
+      );
+    }
+    
+    // Memoized child component
+    const ItemList = React.memo(function ItemList({ 
+      items, 
+      onAdd, 
+      onRemove 
+    }) {
+      console.log('ItemList rendered');
+      // ... render items
+    });
+
+
+WHEN TO USE:
+------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    WHEN TO USE useMemo/useCallback                       │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   USE useMemo WHEN:                                                      │
+    │   ─────────────────                                                      │
+    │   • Computing derived data (filtering, sorting, calculations)           │
+    │   • Creating objects/arrays passed to child components                  │
+    │   • Expensive calculations                                               │
+    │                                                                          │
+    │   USE useCallback WHEN:                                                  │
+    │   ─────────────────────                                                  │
+    │   • Passing functions to memoized child components (React.memo)         │
+    │   • Function is a dependency of useEffect                               │
+    │   • Preventing unnecessary effect re-runs                               │
+    │                                                                          │
+    │   DON'T OVERUSE:                                                         │
+    │   ──────────────                                                         │
+    │   • Memoization has a cost (memory, comparison checks)                  │
+    │   • Only use when there's a measurable performance issue                │
+    │   • Premature optimization is the root of all evil!                     │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                    7. CUSTOM HOOKS - REUSABLE LOGIC
+================================================================================
+
+Custom hooks let you extract component logic into reusable functions.
+
+NAMING CONVENTION:
+------------------
+Always start custom hook names with "use" (e.g., useUser, useFetch, useForm)
+
+
+EXAMPLE 1: useFetch - DATA FETCHING:
+------------------------------------
+
+    // hooks/useFetch.ts
+    import { useState, useEffect } from 'react';
+    
+    type FetchState<T> = {
+      data: T | null;
+      loading: boolean;
+      error: Error | null;
+      refetch: () => void;
+    };
+    
+    export function useFetch<T>(url: string): FetchState<T> {
+      const [data, setData] = useState<T | null>(null);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState<Error | null>(null);
+      
+      const fetchData = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const json = await response.json();
+          setData(json);
+        } catch (err) {
+          setError(err instanceof Error ? err : new Error('Unknown error'));
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      useEffect(() => {
+        fetchData();
+      }, [url]);
+      
+      return { data, loading, error, refetch: fetchData };
+    }
+    
+    // Usage
+    function UserProfile({ userId }: { userId: string }) {
+      const { data: user, loading, error, refetch } = useFetch<User>(
+        `/api/users/${userId}`
+      );
+      
+      if (loading) return <ActivityIndicator />;
+      if (error) return <Text>Error: {error.message}</Text>;
+      
+      return (
+        <View>
+          <Text>{user?.name}</Text>
+          <Pressable onPress={refetch}>
+            <Text>Refresh</Text>
+          </Pressable>
+        </View>
+      );
+    }
+
+
+EXAMPLE 2: useForm - FORM HANDLING:
+-----------------------------------
+
+    // hooks/useForm.ts
+    import { useState, useCallback } from 'react';
+    
+    type FormErrors<T> = Partial<Record<keyof T, string>>;
+    
+    export function useForm<T extends Record<string, any>>(
+      initialValues: T,
+      validate?: (values: T) => FormErrors<T>
+    ) {
+      const [values, setValues] = useState<T>(initialValues);
+      const [errors, setErrors] = useState<FormErrors<T>>({});
+      const [touched, setTouched] = useState<Partial<Record<keyof T, boolean>>>({});
+      
+      const handleChange = useCallback((name: keyof T, value: any) => {
+        setValues(prev => ({ ...prev, [name]: value }));
+        // Clear error when user starts typing
+        if (errors[name]) {
+          setErrors(prev => ({ ...prev, [name]: undefined }));
+        }
+      }, [errors]);
+      
+      const handleBlur = useCallback((name: keyof T) => {
+        setTouched(prev => ({ ...prev, [name]: true }));
+        
+        // Validate on blur
+        if (validate) {
+          const newErrors = validate(values);
+          setErrors(newErrors);
+        }
+      }, [values, validate]);
+      
+      const handleSubmit = useCallback((onSubmit: (values: T) => void) => {
+        // Mark all fields as touched
+        const allTouched = Object.keys(values).reduce(
+          (acc, key) => ({ ...acc, [key]: true }),
+          {} as Record<keyof T, boolean>
+        );
+        setTouched(allTouched);
+        
+        // Validate
+        if (validate) {
+          const newErrors = validate(values);
+          setErrors(newErrors);
+          
+          // If no errors, submit
+          if (Object.keys(newErrors).length === 0) {
+            onSubmit(values);
+          }
+        } else {
+          onSubmit(values);
+        }
+      }, [values, validate]);
+      
+      const reset = useCallback(() => {
+        setValues(initialValues);
+        setErrors({});
+        setTouched({});
+      }, [initialValues]);
+      
+      return {
+        values,
+        errors,
+        touched,
+        handleChange,
+        handleBlur,
+        handleSubmit,
+        reset,
+      };
+    }
+    
+    // Usage
+    function LoginForm() {
+      const { values, errors, handleChange, handleBlur, handleSubmit } = useForm(
+        { email: '', password: '' },
+        (values) => {
+          const errors: FormErrors<typeof values> = {};
+          if (!values.email) errors.email = 'Email is required';
+          if (!values.password) errors.password = 'Password is required';
+          return errors;
+        }
+      );
+      
+      return (
+        <View>
+          <TextInput
+            value={values.email}
+            onChangeText={(text) => handleChange('email', text)}
+            onBlur={() => handleBlur('email')}
+            placeholder="Email"
+          />
+          {errors.email && <Text style={styles.error}>{errors.email}</Text>}
+          
+          <TextInput
+            value={values.password}
+            onChangeText={(text) => handleChange('password', text)}
+            onBlur={() => handleBlur('password')}
+            placeholder="Password"
+            secureTextEntry
+          />
+          {errors.password && <Text style={styles.error}>{errors.password}</Text>}
+          
+          <Pressable onPress={() => handleSubmit(async (values) => {
+            // Submit form
+            await login(values.email, values.password);
+          })}>
+            <Text>Login</Text>
+          </Pressable>
+        </View>
+      );
+    }
+
+
+EXAMPLE 3: useDebounce - DEBOUNCED VALUE:
+-----------------------------------------
+
+    // hooks/useDebounce.ts
+    import { useState, useEffect } from 'react';
+    
+    export function useDebounce<T>(value: T, delay: number = 500): T {
+      const [debouncedValue, setDebouncedValue] = useState<T>(value);
+      
+      useEffect(() => {
+        const timer = setTimeout(() => {
+          setDebouncedValue(value);
+        }, delay);
+        
+        return () => {
+          clearTimeout(timer);
+        };
+      }, [value, delay]);
+      
+      return debouncedValue;
+    }
+    
+    // Usage - Search with debounce
+    function SearchScreen() {
+      const [searchTerm, setSearchTerm] = useState('');
+      const debouncedSearch = useDebounce(searchTerm, 300);
+      
+      // Only search when debounced value changes
+      useEffect(() => {
+        if (debouncedSearch) {
+          performSearch(debouncedSearch);
+        }
+      }, [debouncedSearch]);
+      
+      return (
+        <TextInput
+          value={searchTerm}
+          onChangeText={setSearchTerm}
+          placeholder="Search..."
+        />
+      );
+    }
+
+
+================================================================================
+                    8. REACT NATIVE SPECIFIC HOOKS
+================================================================================
+
+useWindowDimensions:
+--------------------
+
+    import { useWindowDimensions } from 'react-native';
+    
+    function ResponsiveLayout() {
+      const { width, height } = useWindowDimensions();
+      const isLandscape = width > height;
+      const isTablet = width >= 768;
+      
+      return (
+        <View style={{ 
+          flexDirection: isLandscape ? 'row' : 'column' 
+        }}>
+          {/* Layout changes based on screen size */}
+        </View>
+      );
+    }
+
+
+useColorScheme:
+---------------
+
+    import { useColorScheme } from 'react-native';
+    
+    function ThemedComponent() {
+      const colorScheme = useColorScheme(); // 'light' | 'dark' | null
+      
+      return (
+        <View style={{ 
+          backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' 
+        }}>
+          <Text style={{ color: colorScheme === 'dark' ? '#fff' : '#000' }}>
+            Current theme: {colorScheme}
+          </Text>
+        </View>
+      );
+    }
+
+
+================================================================================
+                        9. EXPO ROUTER HOOKS
+================================================================================
+
+    import { 
+      useRouter,
+      useLocalSearchParams,
+      useGlobalSearchParams,
+      usePathname,
+      useSegments,
+      useFocusEffect
+    } from 'expo-router';
+
+
+useRouter - Navigation:
+-----------------------
+
+    function MyComponent() {
+      const router = useRouter();
+      
+      return (
+        <Pressable onPress={() => router.push('/profile')}>
+          <Text>Go to Profile</Text>
+        </Pressable>
+      );
+    }
+
+
+useLocalSearchParams - Route Parameters:
+----------------------------------------
+
+    // app/user/[id].tsx
+    function UserScreen() {
+      const { id } = useLocalSearchParams<{ id: string }>();
+      return <Text>User ID: {id}</Text>;
+    }
+
+
+usePathname - Current Path:
+---------------------------
+
+    function DebugInfo() {
+      const pathname = usePathname();
+      return <Text>Current: {pathname}</Text>;  // e.g., "/user/123"
+    }
+
+
+useFocusEffect - Screen Focus:
+------------------------------
+
+    import { useFocusEffect } from 'expo-router';
+    import { useCallback } from 'react';
+    
+    function HomeScreen() {
+      useFocusEffect(
+        useCallback(() => {
+          // Runs when screen is focused
+          console.log('Screen focused');
+          fetchData();
+          
+          return () => {
+            // Cleanup when screen loses focus
+            console.log('Screen unfocused');
+          };
+        }, [])
+      );
+      
+      return <View>{/* ... */}</View>;
+    }
+
+
+================================================================================
+                    10. STATE MANAGEMENT PATTERNS
+================================================================================
+
+PATTERN 1: LOCAL STATE
+----------------------
+Use for UI state that doesn't need to be shared.
+
+    const [isOpen, setIsOpen] = useState(false);
+    const [inputValue, setInputValue] = useState('');
+
+
+PATTERN 2: LIFTING STATE UP
+---------------------------
+Move state to the nearest common ancestor when siblings need to share it.
+
+    function Parent() {
+      const [selectedId, setSelectedId] = useState<string | null>(null);
+      
+      return (
+        <>
+          <List onSelect={setSelectedId} />
+          <Details id={selectedId} />
+        </>
+      );
+    }
+
+
+PATTERN 3: CONTEXT FOR GLOBAL STATE
+-----------------------------------
+Use Context for app-wide state (theme, auth, settings).
+
+See section 5 for detailed examples.
+
+
+PATTERN 4: EXTERNAL STATE MANAGEMENT
+------------------------------------
+For complex apps, consider:
+- Zustand (simple, lightweight)
+- Redux Toolkit (powerful, but more boilerplate)
+- Jotai (atomic state)
+- React Query/TanStack Query (server state)
+
+
+ZUSTAND EXAMPLE:
+----------------
+
+    // stores/useCounterStore.ts
+    import { create } from 'zustand';
+    
+    type CounterStore = {
+      count: number;
+      increment: () => void;
+      decrement: () => void;
+      reset: () => void;
+    };
+    
+    export const useCounterStore = create<CounterStore>((set) => ({
+      count: 0,
+      increment: () => set((state) => ({ count: state.count + 1 })),
+      decrement: () => set((state) => ({ count: state.count - 1 })),
+      reset: () => set({ count: 0 }),
+    }));
+    
+    // Usage in any component
+    function Counter() {
+      const { count, increment, decrement, reset } = useCounterStore();
+      
+      return (
+        <View>
+          <Text>{count}</Text>
+          <Pressable onPress={increment}><Text>+</Text></Pressable>
+          <Pressable onPress={decrement}><Text>-</Text></Pressable>
+          <Pressable onPress={reset}><Text>Reset</Text></Pressable>
+        </View>
+      );
+    }
+
+
+================================================================================
+                        12. BEST PRACTICES
+================================================================================
+
+1. KEEP HOOKS AT THE TOP LEVEL
+------------------------------
+   Always call hooks at the top of your component, before any returns.
+
+2. USE CUSTOM HOOKS TO EXTRACT LOGIC
+------------------------------------
+   If you have complex logic with multiple hooks, extract it into a custom hook.
+
+3. INCLUDE ALL DEPENDENCIES
+---------------------------
+   Always include all values from the component scope that the effect uses.
+   Use the ESLint plugin for React hooks!
+
+4. CLEAN UP EFFECTS
+-------------------
+   Always return a cleanup function for subscriptions, timers, event listeners.
+
+5. USE FUNCTIONAL UPDATES FOR STATE
+-----------------------------------
+   When new state depends on old state, use the functional form:
+   setCount(prev => prev + 1);
+
+6. AVOID UNNECESSARY STATE
+--------------------------
+   Not everything needs to be in state. If it can be computed from props or
+   other state, compute it instead.
+
+7. CHOOSE THE RIGHT TOOL
+------------------------
+   Local state → useState
+   Complex state logic → useReducer
+   Global app state → Context
+   Server state → React Query
+   Complex global state → Zustand/Redux
+
+================================================================================
+                            SUMMARY
+================================================================================
+
+KEY TAKEAWAYS:
+--------------
+
+1. useState for local component state
+2. useEffect for side effects (fetch, subscriptions, timers)
+3. useRef for persistent values without re-renders
+4. useContext for sharing state across components
+5. useMemo/useCallback for performance optimization
+6. Custom hooks for reusable logic (start with "use")
+7. Always clean up effects (return function)
+8. Include all dependencies in effect arrays
+9. Use functional updates when state depends on previous state
+10. Choose the right state management for your needs
+
+================================================================================
+                        END OF DOCUMENT 06
+                Next: 07 - Theming & Dark Mode
+================================================================================

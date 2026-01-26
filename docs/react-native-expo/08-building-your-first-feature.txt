@@ -1,0 +1,1616 @@
+================================================================================
+        REACT NATIVE WITH EXPO - COMPREHENSIVE LEARNING GUIDE
+        PART 8: BUILDING YOUR FIRST FEATURE (PRACTICAL GUIDE)
+================================================================================
+
+This document takes you through building a complete feature from scratch,
+combining all the concepts learned. We'll build a Quiz feature that includes
+navigation, state management, API calls, and UI components.
+
+================================================================================
+                            TABLE OF CONTENTS
+================================================================================
+
+1. Feature Planning & Architecture
+2. Setting Up File Structure
+3. Creating Types and Interfaces
+4. Building the Data Layer
+5. Creating Custom Hooks
+6. Building UI Components
+7. Assembling Screens
+8. Navigation Setup
+9. Testing Your Feature
+10. Common Patterns and Tips
+
+================================================================================
+                1. FEATURE PLANNING & ARCHITECTURE
+================================================================================
+
+Before writing code, plan your feature architecture. Let's build a Quiz feature.
+
+FEATURE REQUIREMENTS:
+---------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    QUIZ FEATURE REQUIREMENTS                             │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   SCREENS:                                                               │
+    │   • Quiz List - Browse available quizzes                                │
+    │   • Quiz Detail - View quiz info, start quiz                            │
+    │   • Quiz Play - Answer questions one by one                             │
+    │   • Quiz Results - Show score and answers                               │
+    │                                                                          │
+    │   FUNCTIONALITY:                                                         │
+    │   • Fetch quizzes from API                                               │
+    │   • Track current question and answers                                  │
+    │   • Calculate score                                                      │
+    │   • Store quiz history                                                   │
+    │   • Show progress during quiz                                           │
+    │                                                                          │
+    │   COMPONENTS:                                                            │
+    │   • QuizCard - Display quiz in list                                     │
+    │   • QuestionCard - Display question and options                         │
+    │   • ProgressBar - Show quiz progress                                    │
+    │   • ResultCard - Show final result                                      │
+    │   • OptionButton - Selectable answer option                             │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+USER FLOW DIAGRAM:
+------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    QUIZ FEATURE USER FLOW                                │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   ┌──────────────┐                                                       │
+    │   │  Quiz List   │                                                       │
+    │   │   Screen     │                                                       │
+    │   └──────┬───────┘                                                       │
+    │          │ tap quiz                                                      │
+    │          ▼                                                               │
+    │   ┌──────────────┐                                                       │
+    │   │ Quiz Detail  │                                                       │
+    │   │   Screen     │                                                       │
+    │   └──────┬───────┘                                                       │
+    │          │ tap "Start Quiz"                                              │
+    │          ▼                                                               │
+    │   ┌──────────────┐     select answer      ┌──────────────┐              │
+    │   │  Quiz Play   │ ──────────────────────►│   Next       │              │
+    │   │   Screen     │ ◄──────────────────────│   Question   │              │
+    │   └──────┬───────┘     load next          └──────────────┘              │
+    │          │                                                               │
+    │          │ complete all questions                                        │
+    │          ▼                                                               │
+    │   ┌──────────────┐                                                       │
+    │   │   Results    │ ─────► Retry ──────► Quiz Play                       │
+    │   │   Screen     │ ─────► Home  ──────► Quiz List                       │
+    │   └──────────────┘                                                       │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+COMPONENT ARCHITECTURE:
+-----------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    COMPONENT HIERARCHY                                   │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   QuizListScreen                                                         │
+    │   └── FlatList                                                           │
+    │       └── QuizCard (for each quiz)                                      │
+    │           ├── Image (quiz thumbnail)                                    │
+    │           ├── ThemedText (title)                                        │
+    │           ├── ThemedText (description)                                  │
+    │           └── Badge (difficulty, question count)                        │
+    │                                                                          │
+    │   QuizPlayScreen                                                         │
+    │   ├── ProgressBar                                                        │
+    │   ├── QuestionCard                                                       │
+    │   │   ├── ThemedText (question)                                         │
+    │   │   └── View (options container)                                      │
+    │   │       └── OptionButton (for each option)                            │
+    │   └── NavigationButtons                                                  │
+    │       ├── ThemedButton (Previous)                                       │
+    │       └── ThemedButton (Next/Submit)                                    │
+    │                                                                          │
+    │   ResultsScreen                                                          │
+    │   ├── ScoreCard                                                          │
+    │   │   ├── CircularProgress                                              │
+    │   │   ├── ThemedText (score)                                            │
+    │   │   └── ThemedText (message)                                          │
+    │   ├── AnswersList                                                        │
+    │   │   └── AnswerItem (for each question)                                │
+    │   └── ActionButtons                                                      │
+    │       ├── ThemedButton (Retry)                                          │
+    │       └── ThemedButton (Home)                                           │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                2. SETTING UP FILE STRUCTURE
+================================================================================
+
+Create the following file structure for the Quiz feature:
+
+    app/
+    └── (tabs)/
+        └── quiz/
+            ├── _layout.tsx           # Quiz stack layout
+            ├── index.tsx             # Quiz list screen
+            ├── [quizId]/
+            │   ├── index.tsx         # Quiz detail screen
+            │   ├── play.tsx          # Quiz play screen
+            │   └── results.tsx       # Results screen
+    
+    components/
+    └── quiz/
+        ├── QuizCard.tsx              # Quiz list item
+        ├── QuestionCard.tsx          # Question display
+        ├── OptionButton.tsx          # Answer option
+        ├── ProgressBar.tsx           # Quiz progress
+        ├── ScoreCard.tsx             # Result score display
+        └── index.ts                  # Barrel export
+    
+    hooks/
+    └── quiz/
+        ├── useQuiz.ts                # Single quiz data
+        ├── useQuizzes.ts             # Quiz list data
+        ├── useQuizState.ts           # Quiz play state
+        └── index.ts                  # Barrel export
+    
+    types/
+    └── quiz.ts                       # Quiz type definitions
+    
+    services/
+    └── quiz.service.ts               # Quiz API calls
+
+
+================================================================================
+                3. CREATING TYPES AND INTERFACES
+================================================================================
+
+    // types/quiz.ts
+    
+    export type QuizDifficulty = 'easy' | 'medium' | 'hard';
+    
+    export type QuizCategory = 
+      | 'science'
+      | 'history'
+      | 'geography'
+      | 'math'
+      | 'general';
+    
+    export interface QuizOption {
+      id: string;
+      text: string;
+    }
+    
+    export interface QuizQuestion {
+      id: string;
+      question: string;
+      options: QuizOption[];
+      correctOptionId: string;
+      explanation?: string;
+    }
+    
+    export interface Quiz {
+      id: string;
+      title: string;
+      description: string;
+      category: QuizCategory;
+      difficulty: QuizDifficulty;
+      thumbnailUrl?: string;
+      questionCount: number;
+      timeLimit?: number; // in minutes
+      createdAt: string;
+    }
+    
+    export interface QuizWithQuestions extends Quiz {
+      questions: QuizQuestion[];
+    }
+    
+    export interface QuizAnswer {
+      questionId: string;
+      selectedOptionId: string | null;
+      isCorrect: boolean;
+    }
+    
+    export interface QuizResult {
+      quizId: string;
+      totalQuestions: number;
+      correctAnswers: number;
+      score: number; // percentage
+      answers: QuizAnswer[];
+      completedAt: string;
+    }
+    
+    // State types for useQuizState hook
+    export interface QuizPlayState {
+      quiz: QuizWithQuestions | null;
+      currentQuestionIndex: number;
+      answers: Map<string, string>; // questionId -> selectedOptionId
+      isComplete: boolean;
+      startedAt: Date | null;
+    }
+    
+    export type QuizPlayAction =
+      | { type: 'START_QUIZ'; quiz: QuizWithQuestions }
+      | { type: 'SELECT_ANSWER'; questionId: string; optionId: string }
+      | { type: 'NEXT_QUESTION' }
+      | { type: 'PREVIOUS_QUESTION' }
+      | { type: 'SUBMIT_QUIZ' }
+      | { type: 'RESET' };
+
+
+================================================================================
+                    4. BUILDING THE DATA LAYER
+================================================================================
+
+SERVICE LAYER:
+--------------
+
+    // services/quiz.service.ts
+    import { Quiz, QuizWithQuestions, QuizResult } from '@/types/quiz';
+    
+    const API_BASE = 'https://api.example.com'; // Replace with your API
+    
+    // For demo, using mock data
+    const MOCK_QUIZZES: Quiz[] = [
+      {
+        id: '1',
+        title: 'General Knowledge',
+        description: 'Test your general knowledge with these fun questions!',
+        category: 'general',
+        difficulty: 'easy',
+        questionCount: 10,
+        timeLimit: 10,
+        createdAt: '2024-01-15',
+      },
+      {
+        id: '2',
+        title: 'World History',
+        description: 'Journey through important historical events.',
+        category: 'history',
+        difficulty: 'medium',
+        questionCount: 15,
+        timeLimit: 20,
+        createdAt: '2024-01-10',
+      },
+      // Add more mock quizzes...
+    ];
+    
+    const MOCK_QUESTIONS: Record<string, QuizWithQuestions> = {
+      '1': {
+        ...MOCK_QUIZZES[0],
+        questions: [
+          {
+            id: 'q1',
+            question: 'What is the capital of France?',
+            options: [
+              { id: 'a', text: 'London' },
+              { id: 'b', text: 'Paris' },
+              { id: 'c', text: 'Berlin' },
+              { id: 'd', text: 'Madrid' },
+            ],
+            correctOptionId: 'b',
+            explanation: 'Paris has been the capital of France since the 10th century.',
+          },
+          {
+            id: 'q2',
+            question: 'What is 2 + 2?',
+            options: [
+              { id: 'a', text: '3' },
+              { id: 'b', text: '4' },
+              { id: 'c', text: '5' },
+              { id: 'd', text: '22' },
+            ],
+            correctOptionId: 'b',
+          },
+          // Add more questions...
+        ],
+      },
+    };
+    
+    class QuizService {
+      async getQuizzes(): Promise<Quiz[]> {
+        // Simulate API call
+        await this.delay(500);
+        return MOCK_QUIZZES;
+      }
+      
+      async getQuizById(id: string): Promise<Quiz | null> {
+        await this.delay(300);
+        return MOCK_QUIZZES.find(q => q.id === id) ?? null;
+      }
+      
+      async getQuizWithQuestions(id: string): Promise<QuizWithQuestions | null> {
+        await this.delay(500);
+        return MOCK_QUESTIONS[id] ?? null;
+      }
+      
+      async submitQuizResult(result: QuizResult): Promise<void> {
+        await this.delay(300);
+        console.log('Quiz result submitted:', result);
+        // In real app, send to API
+      }
+      
+      private delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+    }
+    
+    export const quizService = new QuizService();
+
+
+================================================================================
+                    5. CREATING CUSTOM HOOKS
+================================================================================
+
+HOOK: useQuizzes (List of quizzes)
+----------------------------------
+
+    // hooks/quiz/useQuizzes.ts
+    import { useState, useEffect, useCallback } from 'react';
+    import { Quiz } from '@/types/quiz';
+    import { quizService } from '@/services/quiz.service';
+    
+    interface UseQuizzesReturn {
+      quizzes: Quiz[];
+      loading: boolean;
+      error: string | null;
+      refetch: () => Promise<void>;
+    }
+    
+    export function useQuizzes(): UseQuizzesReturn {
+      const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState<string | null>(null);
+      
+      const fetchQuizzes = useCallback(async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          const data = await quizService.getQuizzes();
+          setQuizzes(data);
+        } catch (err) {
+          setError('Failed to load quizzes');
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      }, []);
+      
+      useEffect(() => {
+        fetchQuizzes();
+      }, [fetchQuizzes]);
+      
+      return {
+        quizzes,
+        loading,
+        error,
+        refetch: fetchQuizzes,
+      };
+    }
+
+
+HOOK: useQuiz (Single quiz with questions)
+------------------------------------------
+
+    // hooks/quiz/useQuiz.ts
+    import { useState, useEffect, useCallback } from 'react';
+    import { QuizWithQuestions } from '@/types/quiz';
+    import { quizService } from '@/services/quiz.service';
+    
+    interface UseQuizReturn {
+      quiz: QuizWithQuestions | null;
+      loading: boolean;
+      error: string | null;
+      refetch: () => Promise<void>;
+    }
+    
+    export function useQuiz(quizId: string): UseQuizReturn {
+      const [quiz, setQuiz] = useState<QuizWithQuestions | null>(null);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState<string | null>(null);
+      
+      const fetchQuiz = useCallback(async () => {
+        if (!quizId) return;
+        
+        try {
+          setLoading(true);
+          setError(null);
+          const data = await quizService.getQuizWithQuestions(quizId);
+          if (!data) {
+            throw new Error('Quiz not found');
+          }
+          setQuiz(data);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to load quiz');
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      }, [quizId]);
+      
+      useEffect(() => {
+        fetchQuiz();
+      }, [fetchQuiz]);
+      
+      return {
+        quiz,
+        loading,
+        error,
+        refetch: fetchQuiz,
+      };
+    }
+
+
+HOOK: useQuizState (Quiz play state management)
+-----------------------------------------------
+
+    // hooks/quiz/useQuizState.ts
+    import { useReducer, useCallback, useMemo } from 'react';
+    import { 
+      QuizWithQuestions, 
+      QuizPlayState, 
+      QuizPlayAction,
+      QuizResult,
+      QuizAnswer,
+    } from '@/types/quiz';
+    
+    const initialState: QuizPlayState = {
+      quiz: null,
+      currentQuestionIndex: 0,
+      answers: new Map(),
+      isComplete: false,
+      startedAt: null,
+    };
+    
+    function quizReducer(state: QuizPlayState, action: QuizPlayAction): QuizPlayState {
+      switch (action.type) {
+        case 'START_QUIZ':
+          return {
+            ...initialState,
+            quiz: action.quiz,
+            startedAt: new Date(),
+          };
+          
+        case 'SELECT_ANSWER':
+          const newAnswers = new Map(state.answers);
+          newAnswers.set(action.questionId, action.optionId);
+          return {
+            ...state,
+            answers: newAnswers,
+          };
+          
+        case 'NEXT_QUESTION':
+          if (!state.quiz) return state;
+          const nextIndex = Math.min(
+            state.currentQuestionIndex + 1,
+            state.quiz.questions.length - 1
+          );
+          return {
+            ...state,
+            currentQuestionIndex: nextIndex,
+          };
+          
+        case 'PREVIOUS_QUESTION':
+          return {
+            ...state,
+            currentQuestionIndex: Math.max(state.currentQuestionIndex - 1, 0),
+          };
+          
+        case 'SUBMIT_QUIZ':
+          return {
+            ...state,
+            isComplete: true,
+          };
+          
+        case 'RESET':
+          return initialState;
+          
+        default:
+          return state;
+      }
+    }
+    
+    export function useQuizState() {
+      const [state, dispatch] = useReducer(quizReducer, initialState);
+      
+      // Actions
+      const startQuiz = useCallback((quiz: QuizWithQuestions) => {
+        dispatch({ type: 'START_QUIZ', quiz });
+      }, []);
+      
+      const selectAnswer = useCallback((questionId: string, optionId: string) => {
+        dispatch({ type: 'SELECT_ANSWER', questionId, optionId });
+      }, []);
+      
+      const nextQuestion = useCallback(() => {
+        dispatch({ type: 'NEXT_QUESTION' });
+      }, []);
+      
+      const previousQuestion = useCallback(() => {
+        dispatch({ type: 'PREVIOUS_QUESTION' });
+      }, []);
+      
+      const submitQuiz = useCallback(() => {
+        dispatch({ type: 'SUBMIT_QUIZ' });
+      }, []);
+      
+      const resetQuiz = useCallback(() => {
+        dispatch({ type: 'RESET' });
+      }, []);
+      
+      // Derived state
+      const currentQuestion = useMemo(() => {
+        if (!state.quiz) return null;
+        return state.quiz.questions[state.currentQuestionIndex];
+      }, [state.quiz, state.currentQuestionIndex]);
+      
+      const progress = useMemo(() => {
+        if (!state.quiz) return 0;
+        return ((state.currentQuestionIndex + 1) / state.quiz.questions.length) * 100;
+      }, [state.quiz, state.currentQuestionIndex]);
+      
+      const isLastQuestion = useMemo(() => {
+        if (!state.quiz) return false;
+        return state.currentQuestionIndex === state.quiz.questions.length - 1;
+      }, [state.quiz, state.currentQuestionIndex]);
+      
+      const selectedAnswer = useMemo(() => {
+        if (!currentQuestion) return null;
+        return state.answers.get(currentQuestion.id) ?? null;
+      }, [currentQuestion, state.answers]);
+      
+      const calculateResult = useCallback((): QuizResult | null => {
+        if (!state.quiz) return null;
+        
+        const answers: QuizAnswer[] = state.quiz.questions.map(question => {
+          const selectedOptionId = state.answers.get(question.id) ?? null;
+          return {
+            questionId: question.id,
+            selectedOptionId,
+            isCorrect: selectedOptionId === question.correctOptionId,
+          };
+        });
+        
+        const correctAnswers = answers.filter(a => a.isCorrect).length;
+        
+        return {
+          quizId: state.quiz.id,
+          totalQuestions: state.quiz.questions.length,
+          correctAnswers,
+          score: (correctAnswers / state.quiz.questions.length) * 100,
+          answers,
+          completedAt: new Date().toISOString(),
+        };
+      }, [state.quiz, state.answers]);
+      
+      return {
+        // State
+        quiz: state.quiz,
+        currentQuestionIndex: state.currentQuestionIndex,
+        currentQuestion,
+        selectedAnswer,
+        answers: state.answers,
+        isComplete: state.isComplete,
+        progress,
+        isLastQuestion,
+        
+        // Actions
+        startQuiz,
+        selectAnswer,
+        nextQuestion,
+        previousQuestion,
+        submitQuiz,
+        resetQuiz,
+        calculateResult,
+      };
+    }
+
+
+BARREL EXPORT:
+--------------
+
+    // hooks/quiz/index.ts
+    export { useQuizzes } from './useQuizzes';
+    export { useQuiz } from './useQuiz';
+    export { useQuizState } from './useQuizState';
+
+
+================================================================================
+                    6. BUILDING UI COMPONENTS
+================================================================================
+
+COMPONENT: QuizCard
+-------------------
+
+    // components/quiz/QuizCard.tsx
+    import { View, StyleSheet, Pressable } from 'react-native';
+    import { Image } from 'expo-image';
+    import { Link } from 'expo-router';
+    import { Quiz, QuizDifficulty } from '@/types/quiz';
+    import { useTheme } from '@/contexts/ThemeContext';
+    import { ThemedText } from '@/components/themed';
+    
+    interface QuizCardProps {
+      quiz: Quiz;
+    }
+    
+    const difficultyColors: Record<QuizDifficulty, string> = {
+      easy: '#34C759',
+      medium: '#FF9500',
+      hard: '#FF3B30',
+    };
+    
+    export function QuizCard({ quiz }: QuizCardProps) {
+      const { theme } = useTheme();
+      const { colors, spacing, borderRadius } = theme;
+      
+      return (
+        <Link href={`/quiz/${quiz.id}`} asChild>
+          <Pressable style={({ pressed }) => [
+            styles.container,
+            {
+              backgroundColor: colors.card,
+              borderRadius: borderRadius.lg,
+              opacity: pressed ? 0.9 : 1,
+            },
+          ]}>
+            {quiz.thumbnailUrl && (
+              <Image
+                source={{ uri: quiz.thumbnailUrl }}
+                style={[styles.thumbnail, { borderRadius: borderRadius.md }]}
+                contentFit="cover"
+              />
+            )}
+            
+            <View style={[styles.content, { padding: spacing.md }]}>
+              <View style={styles.header}>
+                <ThemedText variant="subtitle" numberOfLines={1}>
+                  {quiz.title}
+                </ThemedText>
+                <View style={[
+                  styles.badge,
+                  { backgroundColor: difficultyColors[quiz.difficulty] }
+                ]}>
+                  <ThemedText 
+                    variant="caption" 
+                    style={{ color: '#fff', textTransform: 'capitalize' }}
+                  >
+                    {quiz.difficulty}
+                  </ThemedText>
+                </View>
+              </View>
+              
+              <ThemedText 
+                variant="body" 
+                color="secondary" 
+                numberOfLines={2}
+                style={{ marginTop: spacing.xs }}
+              >
+                {quiz.description}
+              </ThemedText>
+              
+              <View style={[styles.meta, { marginTop: spacing.sm }]}>
+                <ThemedText variant="caption" color="tertiary">
+                  📝 {quiz.questionCount} questions
+                </ThemedText>
+                {quiz.timeLimit && (
+                  <ThemedText variant="caption" color="tertiary">
+                    ⏱️ {quiz.timeLimit} min
+                  </ThemedText>
+                )}
+              </View>
+            </View>
+          </Pressable>
+        </Link>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        overflow: 'hidden',
+      },
+      thumbnail: {
+        width: '100%',
+        height: 120,
+      },
+      content: {},
+      header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      },
+      badge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+      },
+      meta: {
+        flexDirection: 'row',
+        gap: 16,
+      },
+    });
+
+
+COMPONENT: OptionButton
+-----------------------
+
+    // components/quiz/OptionButton.tsx
+    import { Pressable, StyleSheet } from 'react-native';
+    import { useTheme } from '@/contexts/ThemeContext';
+    import { ThemedText } from '@/components/themed';
+    import { QuizOption } from '@/types/quiz';
+    
+    interface OptionButtonProps {
+      option: QuizOption;
+      isSelected: boolean;
+      isCorrect?: boolean;
+      isRevealed?: boolean;
+      onPress: () => void;
+      disabled?: boolean;
+    }
+    
+    export function OptionButton({
+      option,
+      isSelected,
+      isCorrect,
+      isRevealed = false,
+      onPress,
+      disabled = false,
+    }: OptionButtonProps) {
+      const { theme } = useTheme();
+      const { colors, spacing, borderRadius } = theme;
+      
+      const getBackgroundColor = () => {
+        if (isRevealed) {
+          if (isCorrect) return '#34C75920';
+          if (isSelected && !isCorrect) return '#FF3B3020';
+        }
+        if (isSelected) return colors.primary + '20';
+        return colors.backgroundSecondary;
+      };
+      
+      const getBorderColor = () => {
+        if (isRevealed) {
+          if (isCorrect) return '#34C759';
+          if (isSelected && !isCorrect) return '#FF3B30';
+        }
+        if (isSelected) return colors.primary;
+        return colors.border;
+      };
+      
+      const getIcon = () => {
+        if (!isRevealed) return isSelected ? '●' : '○';
+        if (isCorrect) return '✓';
+        if (isSelected && !isCorrect) return '✗';
+        return '○';
+      };
+      
+      return (
+        <Pressable
+          style={[
+            styles.container,
+            {
+              backgroundColor: getBackgroundColor(),
+              borderColor: getBorderColor(),
+              borderRadius: borderRadius.md,
+              padding: spacing.md,
+              opacity: disabled ? 0.7 : 1,
+            },
+          ]}
+          onPress={onPress}
+          disabled={disabled || isRevealed}
+        >
+          <ThemedText style={[styles.icon, { color: getBorderColor() }]}>
+            {getIcon()}
+          </ThemedText>
+          <ThemedText 
+            style={[styles.text, { flex: 1 }]}
+            numberOfLines={2}
+          >
+            {option.text}
+          </ThemedText>
+        </Pressable>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 2,
+        gap: 12,
+      },
+      icon: {
+        fontSize: 18,
+        fontWeight: 'bold',
+      },
+      text: {
+        fontSize: 16,
+      },
+    });
+
+
+COMPONENT: QuestionCard
+-----------------------
+
+    // components/quiz/QuestionCard.tsx
+    import { View, StyleSheet } from 'react-native';
+    import { useTheme } from '@/contexts/ThemeContext';
+    import { ThemedText } from '@/components/themed';
+    import { QuizQuestion } from '@/types/quiz';
+    import { OptionButton } from './OptionButton';
+    
+    interface QuestionCardProps {
+      question: QuizQuestion;
+      questionNumber: number;
+      totalQuestions: number;
+      selectedOptionId: string | null;
+      onSelectOption: (optionId: string) => void;
+      showResults?: boolean;
+    }
+    
+    export function QuestionCard({
+      question,
+      questionNumber,
+      totalQuestions,
+      selectedOptionId,
+      onSelectOption,
+      showResults = false,
+    }: QuestionCardProps) {
+      const { theme } = useTheme();
+      const { spacing } = theme;
+      
+      return (
+        <View style={[styles.container, { padding: spacing.lg }]}>
+          <ThemedText variant="caption" color="secondary">
+            Question {questionNumber} of {totalQuestions}
+          </ThemedText>
+          
+          <ThemedText variant="title" style={{ marginTop: spacing.sm }}>
+            {question.question}
+          </ThemedText>
+          
+          <View style={[styles.options, { marginTop: spacing.lg, gap: spacing.md }]}>
+            {question.options.map((option) => (
+              <OptionButton
+                key={option.id}
+                option={option}
+                isSelected={selectedOptionId === option.id}
+                isCorrect={option.id === question.correctOptionId}
+                isRevealed={showResults}
+                onPress={() => onSelectOption(option.id)}
+                disabled={showResults}
+              />
+            ))}
+          </View>
+          
+          {showResults && question.explanation && (
+            <View style={[styles.explanation, { marginTop: spacing.lg }]}>
+              <ThemedText variant="caption" color="secondary">
+                💡 Explanation
+              </ThemedText>
+              <ThemedText style={{ marginTop: spacing.xs }}>
+                {question.explanation}
+              </ThemedText>
+            </View>
+          )}
+        </View>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {},
+      options: {},
+      explanation: {
+        padding: 12,
+        backgroundColor: 'rgba(0, 122, 255, 0.1)',
+        borderRadius: 8,
+      },
+    });
+
+
+COMPONENT: ProgressBar
+----------------------
+
+    // components/quiz/ProgressBar.tsx
+    import { View, StyleSheet } from 'react-native';
+    import { useTheme } from '@/contexts/ThemeContext';
+    import Animated, { 
+      useAnimatedStyle, 
+      withTiming 
+    } from 'react-native-reanimated';
+    
+    interface ProgressBarProps {
+      progress: number; // 0-100
+      height?: number;
+    }
+    
+    export function ProgressBar({ progress, height = 8 }: ProgressBarProps) {
+      const { theme } = useTheme();
+      const { colors, borderRadius } = theme;
+      
+      const animatedStyle = useAnimatedStyle(() => ({
+        width: withTiming(`${progress}%`, { duration: 300 }),
+      }));
+      
+      return (
+        <View 
+          style={[
+            styles.container, 
+            { 
+              height, 
+              backgroundColor: colors.backgroundSecondary,
+              borderRadius: borderRadius.full,
+            }
+          ]}
+        >
+          <Animated.View
+            style={[
+              styles.progress,
+              {
+                backgroundColor: colors.primary,
+                borderRadius: borderRadius.full,
+              },
+              animatedStyle,
+            ]}
+          />
+        </View>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        width: '100%',
+        overflow: 'hidden',
+      },
+      progress: {
+        height: '100%',
+      },
+    });
+
+
+COMPONENT: ScoreCard
+--------------------
+
+    // components/quiz/ScoreCard.tsx
+    import { View, StyleSheet } from 'react-native';
+    import { useTheme } from '@/contexts/ThemeContext';
+    import { ThemedText } from '@/components/themed';
+    import { QuizResult } from '@/types/quiz';
+    
+    interface ScoreCardProps {
+      result: QuizResult;
+    }
+    
+    export function ScoreCard({ result }: ScoreCardProps) {
+      const { theme } = useTheme();
+      const { colors, spacing, borderRadius } = theme;
+      
+      const getScoreColor = () => {
+        if (result.score >= 80) return '#34C759';
+        if (result.score >= 60) return '#FF9500';
+        return '#FF3B30';
+      };
+      
+      const getMessage = () => {
+        if (result.score >= 80) return 'Excellent! 🎉';
+        if (result.score >= 60) return 'Good job! 👍';
+        if (result.score >= 40) return 'Keep practicing! 💪';
+        return 'Better luck next time! 📚';
+      };
+      
+      return (
+        <View 
+          style={[
+            styles.container,
+            {
+              backgroundColor: colors.card,
+              borderRadius: borderRadius.xl,
+              padding: spacing.xl,
+            }
+          ]}
+        >
+          <View 
+            style={[
+              styles.scoreCircle,
+              { 
+                borderColor: getScoreColor(),
+                borderWidth: 6,
+              }
+            ]}
+          >
+            <ThemedText 
+              style={[styles.scoreText, { color: getScoreColor() }]}
+            >
+              {Math.round(result.score)}%
+            </ThemedText>
+          </View>
+          
+          <ThemedText variant="title" style={{ marginTop: spacing.lg }}>
+            {getMessage()}
+          </ThemedText>
+          
+          <ThemedText 
+            variant="body" 
+            color="secondary"
+            style={{ marginTop: spacing.sm }}
+          >
+            You got {result.correctAnswers} out of {result.totalQuestions} correct
+          </ThemedText>
+        </View>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        alignItems: 'center',
+      },
+      scoreCircle: {
+        width: 140,
+        height: 140,
+        borderRadius: 70,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      scoreText: {
+        fontSize: 36,
+        fontWeight: 'bold',
+      },
+    });
+
+
+BARREL EXPORT:
+--------------
+
+    // components/quiz/index.ts
+    export { QuizCard } from './QuizCard';
+    export { QuestionCard } from './QuestionCard';
+    export { OptionButton } from './OptionButton';
+    export { ProgressBar } from './ProgressBar';
+    export { ScoreCard } from './ScoreCard';
+
+
+================================================================================
+                    7. ASSEMBLING SCREENS
+================================================================================
+
+SCREEN: Quiz List
+-----------------
+
+    // app/(tabs)/quiz/index.tsx
+    import { View, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+    import { Stack } from 'expo-router';
+    import { useQuizzes } from '@/hooks/quiz';
+    import { QuizCard } from '@/components/quiz';
+    import { ThemedView, ThemedText } from '@/components/themed';
+    import { useTheme } from '@/contexts/ThemeContext';
+    
+    export default function QuizListScreen() {
+      const { quizzes, loading, error, refetch } = useQuizzes();
+      const { theme } = useTheme();
+      
+      if (loading) {
+        return (
+          <ThemedView style={styles.centered}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+          </ThemedView>
+        );
+      }
+      
+      if (error) {
+        return (
+          <ThemedView style={styles.centered}>
+            <ThemedText color="error">{error}</ThemedText>
+          </ThemedView>
+        );
+      }
+      
+      return (
+        <ThemedView style={styles.container}>
+          <Stack.Screen options={{ title: 'Quizzes' }} />
+          
+          <FlatList
+            data={quizzes}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <QuizCard quiz={item} />}
+            contentContainerStyle={{ 
+              padding: theme.spacing.md, 
+              gap: theme.spacing.md 
+            }}
+            refreshing={loading}
+            onRefresh={refetch}
+            ListEmptyComponent={
+              <ThemedText color="secondary" style={{ textAlign: 'center' }}>
+                No quizzes available
+              </ThemedText>
+            }
+          />
+        </ThemedView>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+      },
+      centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+    });
+
+
+SCREEN: Quiz Play
+-----------------
+
+    // app/(tabs)/quiz/[quizId]/play.tsx
+    import { View, StyleSheet } from 'react-native';
+    import { Stack, useLocalSearchParams, router } from 'expo-router';
+    import { useEffect } from 'react';
+    import { useQuiz, useQuizState } from '@/hooks/quiz';
+    import { QuestionCard, ProgressBar } from '@/components/quiz';
+    import { ThemedView, ThemedButton } from '@/components/themed';
+    import { useTheme } from '@/contexts/ThemeContext';
+    import { ActivityIndicator } from 'react-native';
+    
+    export default function QuizPlayScreen() {
+      const { quizId } = useLocalSearchParams<{ quizId: string }>();
+      const { quiz, loading, error } = useQuiz(quizId);
+      const { theme } = useTheme();
+      
+      const {
+        currentQuestion,
+        currentQuestionIndex,
+        selectedAnswer,
+        progress,
+        isLastQuestion,
+        startQuiz,
+        selectAnswer,
+        nextQuestion,
+        previousQuestion,
+        submitQuiz,
+        calculateResult,
+      } = useQuizState();
+      
+      // Start quiz when data loads
+      useEffect(() => {
+        if (quiz) {
+          startQuiz(quiz);
+        }
+      }, [quiz, startQuiz]);
+      
+      const handleNext = () => {
+        if (isLastQuestion) {
+          submitQuiz();
+          const result = calculateResult();
+          if (result) {
+            // Navigate to results with result data
+            router.push({
+              pathname: `/quiz/${quizId}/results`,
+              params: { result: JSON.stringify(result) },
+            });
+          }
+        } else {
+          nextQuestion();
+        }
+      };
+      
+      if (loading || !currentQuestion) {
+        return (
+          <ThemedView style={styles.centered}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+          </ThemedView>
+        );
+      }
+      
+      return (
+        <ThemedView style={styles.container}>
+          <Stack.Screen 
+            options={{ 
+              title: quiz?.title ?? 'Quiz',
+              headerShown: true,
+            }} 
+          />
+          
+          <View style={{ padding: theme.spacing.md }}>
+            <ProgressBar progress={progress} />
+          </View>
+          
+          <QuestionCard
+            question={currentQuestion}
+            questionNumber={currentQuestionIndex + 1}
+            totalQuestions={quiz?.questions.length ?? 0}
+            selectedOptionId={selectedAnswer}
+            onSelectOption={(optionId) => 
+              selectAnswer(currentQuestion.id, optionId)
+            }
+          />
+          
+          <View style={[styles.buttons, { padding: theme.spacing.md }]}>
+            {currentQuestionIndex > 0 && (
+              <ThemedButton
+                title="Previous"
+                variant="outline"
+                onPress={previousQuestion}
+              />
+            )}
+            <View style={{ flex: 1 }} />
+            <ThemedButton
+              title={isLastQuestion ? 'Submit' : 'Next'}
+              onPress={handleNext}
+              disabled={!selectedAnswer}
+            />
+          </View>
+        </ThemedView>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+      },
+      centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      buttons: {
+        flexDirection: 'row',
+        marginTop: 'auto',
+      },
+    });
+
+
+SCREEN: Results
+---------------
+
+    // app/(tabs)/quiz/[quizId]/results.tsx
+    import { View, StyleSheet, ScrollView } from 'react-native';
+    import { Stack, useLocalSearchParams, router } from 'expo-router';
+    import { ScoreCard } from '@/components/quiz';
+    import { ThemedView, ThemedButton } from '@/components/themed';
+    import { useTheme } from '@/contexts/ThemeContext';
+    import { QuizResult } from '@/types/quiz';
+    
+    export default function ResultsScreen() {
+      const { quizId, result: resultString } = useLocalSearchParams<{ 
+        quizId: string;
+        result: string;
+      }>();
+      const { theme } = useTheme();
+      
+      const result: QuizResult | null = resultString 
+        ? JSON.parse(resultString) 
+        : null;
+      
+      const handleRetry = () => {
+        router.replace(`/quiz/${quizId}/play`);
+      };
+      
+      const handleHome = () => {
+        router.replace('/quiz');
+      };
+      
+      if (!result) {
+        return (
+          <ThemedView style={styles.centered}>
+            <ThemedButton title="Go Home" onPress={handleHome} />
+          </ThemedView>
+        );
+      }
+      
+      return (
+        <ThemedView style={styles.container}>
+          <Stack.Screen 
+            options={{ 
+              title: 'Results',
+              headerBackVisible: false,
+            }} 
+          />
+          
+          <ScrollView contentContainerStyle={{ padding: theme.spacing.lg }}>
+            <ScoreCard result={result} />
+            
+            <View style={[styles.buttons, { marginTop: theme.spacing.xl }]}>
+              <ThemedButton
+                title="Try Again"
+                variant="outline"
+                onPress={handleRetry}
+                style={{ flex: 1 }}
+              />
+              <ThemedButton
+                title="Home"
+                onPress={handleHome}
+                style={{ flex: 1 }}
+              />
+            </View>
+          </ScrollView>
+        </ThemedView>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+      },
+      centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
+      buttons: {
+        flexDirection: 'row',
+        gap: 12,
+      },
+    });
+
+
+================================================================================
+                    8. NAVIGATION SETUP
+================================================================================
+
+QUIZ STACK LAYOUT:
+------------------
+
+    // app/(tabs)/quiz/_layout.tsx
+    import { Stack } from 'expo-router';
+    import { useTheme } from '@/contexts/ThemeContext';
+    
+    export default function QuizLayout() {
+      const { theme } = useTheme();
+      
+      return (
+        <Stack
+          screenOptions={{
+            headerStyle: {
+              backgroundColor: theme.colors.background,
+            },
+            headerTintColor: theme.colors.text,
+            contentStyle: {
+              backgroundColor: theme.colors.background,
+            },
+          }}
+        >
+          <Stack.Screen 
+            name="index" 
+            options={{ title: 'Quizzes' }} 
+          />
+          <Stack.Screen 
+            name="[quizId]/index" 
+            options={{ title: 'Quiz Details' }} 
+          />
+          <Stack.Screen 
+            name="[quizId]/play" 
+            options={{ 
+              title: 'Quiz',
+              gestureEnabled: false, // Prevent accidental back swipe
+            }} 
+          />
+          <Stack.Screen 
+            name="[quizId]/results" 
+            options={{ 
+              title: 'Results',
+              gestureEnabled: false,
+              headerBackVisible: false,
+            }} 
+          />
+        </Stack>
+      );
+    }
+
+
+INTEGRATING WITH TABS:
+----------------------
+
+    // app/(tabs)/_layout.tsx
+    import { Tabs } from 'expo-router';
+    import { Ionicons } from '@expo/vector-icons';
+    import { useTheme } from '@/contexts/ThemeContext';
+    
+    export default function TabLayout() {
+      const { theme } = useTheme();
+      
+      return (
+        <Tabs
+          screenOptions={{
+            tabBarActiveTintColor: theme.colors.primary,
+            tabBarInactiveTintColor: theme.colors.tabIconDefault,
+            tabBarStyle: {
+              backgroundColor: theme.colors.background,
+            },
+            headerShown: false,
+          }}
+        >
+          <Tabs.Screen
+            name="index"
+            options={{
+              title: 'Home',
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="home" size={size} color={color} />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="quiz"
+            options={{
+              title: 'Quiz',
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="book" size={size} color={color} />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="profile"
+            options={{
+              title: 'Profile',
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="person" size={size} color={color} />
+              ),
+            }}
+          />
+        </Tabs>
+      );
+    }
+
+
+================================================================================
+                    9. TESTING YOUR FEATURE
+================================================================================
+
+MANUAL TESTING CHECKLIST:
+-------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    TESTING CHECKLIST                                     │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   QUIZ LIST SCREEN                                                       │
+    │   □ Quizzes load correctly                                               │
+    │   □ Loading state shows                                                  │
+    │   □ Error state shows if API fails                                       │
+    │   □ Pull-to-refresh works                                                │
+    │   □ Tapping quiz navigates to detail                                    │
+    │   □ Works in both themes                                                 │
+    │                                                                          │
+    │   QUIZ PLAY SCREEN                                                       │
+    │   □ Questions load correctly                                             │
+    │   □ Progress bar updates                                                 │
+    │   □ Can select answers                                                   │
+    │   □ Can navigate between questions                                      │
+    │   □ Submit works on last question                                       │
+    │   □ Cannot go back during quiz (gesture disabled)                       │
+    │                                                                          │
+    │   RESULTS SCREEN                                                         │
+    │   □ Score displays correctly                                             │
+    │   □ Correct/incorrect count is accurate                                 │
+    │   □ Retry navigates back to quiz                                        │
+    │   □ Home navigates to quiz list                                         │
+    │   □ Cannot go back (button hidden, gesture disabled)                    │
+    │                                                                          │
+    │   GENERAL                                                                │
+    │   □ Theme switching works                                                │
+    │   □ Navigation works correctly                                          │
+    │   □ No console errors                                                    │
+    │   □ Performance is smooth                                                │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                    10. COMMON PATTERNS AND TIPS
+================================================================================
+
+PATTERN 1: LOADING STATES
+-------------------------
+Always show loading states for better UX:
+
+    if (loading) {
+      return (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" />
+          <Text>Loading...</Text>
+        </View>
+      );
+    }
+
+
+PATTERN 2: ERROR HANDLING
+-------------------------
+Handle errors gracefully:
+
+    if (error) {
+      return (
+        <View style={styles.centered}>
+          <Text>Something went wrong</Text>
+          <Button title="Try Again" onPress={refetch} />
+        </View>
+      );
+    }
+
+
+PATTERN 3: EMPTY STATES
+-----------------------
+Show helpful empty states:
+
+    <FlatList
+      // ...
+      ListEmptyComponent={
+        <View style={styles.emptyState}>
+          <Text>No quizzes yet</Text>
+          <Text>Check back later!</Text>
+        </View>
+      }
+    />
+
+
+PATTERN 4: OPTIMISTIC UPDATES
+-----------------------------
+Update UI before API confirms for better UX:
+
+    const selectAnswer = (optionId: string) => {
+      // Update UI immediately
+      dispatch({ type: 'SELECT_ANSWER', optionId });
+      
+      // Send to API in background
+      api.saveAnswer(optionId).catch(() => {
+        // Revert if failed
+        dispatch({ type: 'REVERT_ANSWER' });
+      });
+    };
+
+
+TIP 1: KEEP COMPONENTS FOCUSED
+------------------------------
+Each component should do one thing well. If it's getting too complex,
+split it into smaller components.
+
+
+TIP 2: USE BARREL EXPORTS
+-------------------------
+Create index.ts files to make imports cleaner:
+
+    // Instead of:
+    import { QuizCard } from '@/components/quiz/QuizCard';
+    import { ProgressBar } from '@/components/quiz/ProgressBar';
+    
+    // Use:
+    import { QuizCard, ProgressBar } from '@/components/quiz';
+
+
+TIP 3: TYPE EVERYTHING
+----------------------
+TypeScript helps catch errors early. Type all props, state, and return values.
+
+
+================================================================================
+                            SUMMARY
+================================================================================
+
+KEY TAKEAWAYS:
+--------------
+
+1. Plan your feature before coding (screens, components, data flow)
+2. Create proper file structure that's easy to navigate
+3. Define TypeScript types first for better development experience
+4. Build services for API calls (keeps components clean)
+5. Create custom hooks for reusable logic
+6. Build small, focused components
+7. Assemble components into screens
+8. Set up navigation properly
+9. Test thoroughly in both themes
+10. Follow consistent patterns (loading, error, empty states)
+
+================================================================================
+                        END OF DOCUMENT 08
+                    Next: 09 - Common Expo APIs
+================================================================================

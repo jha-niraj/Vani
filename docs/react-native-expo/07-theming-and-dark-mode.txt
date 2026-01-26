@@ -1,0 +1,1322 @@
+================================================================================
+        REACT NATIVE WITH EXPO - COMPREHENSIVE LEARNING GUIDE
+                    PART 7: THEMING & DARK MODE
+================================================================================
+
+This document covers everything about implementing themes, dark mode support,
+and creating a flexible theming system in your React Native Expo app.
+
+================================================================================
+                            TABLE OF CONTENTS
+================================================================================
+
+1. Understanding Theming in React Native
+2. System Color Scheme Detection
+3. Your Project's Theming Setup (Analysis)
+4. Building a Complete Theme System
+5. Theme Context Implementation
+6. Creating Themed Components
+7. Persisting Theme Preference
+8. Advanced Theming Techniques
+9. Animations During Theme Changes
+10. Best Practices
+
+================================================================================
+            1. UNDERSTANDING THEMING IN REACT NATIVE
+================================================================================
+
+Theming is the system that manages colors, typography, spacing, and other
+design tokens across your app, allowing for consistent styling and the
+ability to switch between different visual modes (like light and dark).
+
+WHAT THEMING INCLUDES:
+----------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    THEME COMPONENTS                                      │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   COLORS                                                                 │
+    │   ──────                                                                 │
+    │   • Primary, secondary, accent colors                                   │
+    │   • Background colors                                                    │
+    │   • Text colors                                                          │
+    │   • Border colors                                                        │
+    │   • Status colors (success, error, warning)                             │
+    │                                                                          │
+    │   TYPOGRAPHY                                                             │
+    │   ──────────                                                             │
+    │   • Font families                                                        │
+    │   • Font sizes                                                           │
+    │   • Font weights                                                         │
+    │   • Line heights                                                         │
+    │                                                                          │
+    │   SPACING                                                                │
+    │   ───────                                                                │
+    │   • Padding values                                                       │
+    │   • Margin values                                                        │
+    │   • Gap values                                                           │
+    │                                                                          │
+    │   OTHER                                                                  │
+    │   ─────                                                                  │
+    │   • Border radius                                                        │
+    │   • Shadow styles                                                        │
+    │   • Icon sizes                                                           │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+THEMING FLOW VISUALIZATION:
+---------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    THEMING FLOW                                          │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   ┌───────────────┐     ┌───────────────┐     ┌───────────────┐        │
+    │   │ System/User   │     │    Theme      │     │  Components   │        │
+    │   │  Preference   │────►│   Provider    │────►│  Use Theme    │        │
+    │   │ (dark/light)  │     │  (Context)    │     │  (via hook)   │        │
+    │   └───────────────┘     └───────────────┘     └───────────────┘        │
+    │          │                      │                     │                 │
+    │          │                      │                     │                 │
+    │          ▼                      ▼                     ▼                 │
+    │   ┌───────────────┐     ┌───────────────┐     ┌───────────────┐        │
+    │   │ User toggles  │     │ Theme values  │     │ Component     │        │
+    │   │ theme or      │     │ available     │     │ applies       │        │
+    │   │ system changes│     │ throughout    │     │ correct       │        │
+    │   │               │     │ app via       │     │ colors/       │        │
+    │   │               │     │ useTheme()    │     │ styles        │        │
+    │   └───────────────┘     └───────────────┘     └───────────────┘        │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                2. SYSTEM COLOR SCHEME DETECTION
+================================================================================
+
+React Native provides built-in support for detecting the system's color scheme.
+
+USING useColorScheme HOOK:
+--------------------------
+
+    import { useColorScheme } from 'react-native';
+    
+    function MyComponent() {
+      // Returns 'light', 'dark', or null
+      const colorScheme = useColorScheme();
+      
+      return (
+        <View style={{ 
+          backgroundColor: colorScheme === 'dark' ? '#000' : '#fff' 
+        }}>
+          <Text style={{ 
+            color: colorScheme === 'dark' ? '#fff' : '#000' 
+          }}>
+            Current scheme: {colorScheme}
+          </Text>
+        </View>
+      );
+    }
+
+
+CONFIGURING SYSTEM THEME SUPPORT:
+---------------------------------
+
+In your app.json, you configure how the app responds to system theme:
+
+    {
+      "expo": {
+        "userInterfaceStyle": "automatic",  // 'automatic' | 'light' | 'dark'
+        // ...
+      }
+    }
+
+    ┌────────────────────┬────────────────────────────────────────────────────┐
+    │   Value            │   Behavior                                         │
+    ├────────────────────┼────────────────────────────────────────────────────┤
+    │   "automatic"      │   App follows system dark/light mode               │
+    │   "light"          │   App always uses light mode                       │
+    │   "dark"           │   App always uses dark mode                        │
+    └────────────────────┴────────────────────────────────────────────────────┘
+
+
+================================================================================
+            3. YOUR PROJECT'S THEMING SETUP (ANALYSIS)
+================================================================================
+
+Let's analyze how theming is set up in your PrepSathi project:
+
+CURRENT SETUP IN YOUR PROJECT:
+------------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    YOUR PROJECT'S THEME STRUCTURE                        │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   constants/theme.ts                                                     │
+    │   ──────────────────                                                     │
+    │   Defines Colors object with light and dark variants                    │
+    │                                                                          │
+    │   export const Colors = {                                                │
+    │     light: {                                                             │
+    │       text: '#11181C',                                                   │
+    │       background: '#fff',                                                │
+    │       tint: '#0a7ea4',                                                   │
+    │       icon: '#687076',                                                   │
+    │       tabIconDefault: '#687076',                                         │
+    │       tabIconSelected: '#0a7ea4',                                        │
+    │     },                                                                   │
+    │     dark: {                                                              │
+    │       text: '#ECEDEE',                                                   │
+    │       background: '#151718',                                             │
+    │       tint: '#fff',                                                      │
+    │       icon: '#9BA1A6',                                                   │
+    │       tabIconDefault: '#9BA1A6',                                         │
+    │       tabIconSelected: '#fff',                                           │
+    │     },                                                                   │
+    │   };                                                                     │
+    │                                                                          │
+    │   hooks/use-color-scheme.ts                                              │
+    │   ─────────────────────────                                              │
+    │   Re-exports React Native's useColorScheme                              │
+    │                                                                          │
+    │   hooks/use-theme-color.ts                                               │
+    │   ────────────────────────                                               │
+    │   Helper hook to get color based on current theme                       │
+    │                                                                          │
+    │   components/themed-text.tsx & themed-view.tsx                           │
+    │   ────────────────────────────────────────────                           │
+    │   Theme-aware wrapper components                                         │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+ANALYZING useThemeColor HOOK:
+-----------------------------
+
+    // hooks/use-theme-color.ts
+    import { Colors } from '@/constants/theme';
+    import { useColorScheme } from '@/hooks/use-color-scheme';
+    
+    export function useThemeColor(
+      props: { light?: string; dark?: string },
+      colorName: keyof typeof Colors.light & keyof typeof Colors.dark
+    ) {
+      const theme = useColorScheme() ?? 'light';
+      const colorFromProps = props[theme];
+    
+      if (colorFromProps) {
+        return colorFromProps;
+      } else {
+        return Colors[theme][colorName];
+      }
+    }
+
+HOW IT WORKS:
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    useThemeColor LOGIC                                   │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   Input: { light: '#fff', dark: '#000' }, 'background'                  │
+    │                                                                          │
+    │   Step 1: Get current theme ('light' or 'dark')                         │
+    │           theme = useColorScheme() ?? 'light'                           │
+    │                                                                          │
+    │   Step 2: Check if custom color provided for current theme              │
+    │           colorFromProps = props[theme]                                  │
+    │                                                                          │
+    │   Step 3: Return custom color OR default from Colors                    │
+    │           if (colorFromProps) return colorFromProps                     │
+    │           else return Colors[theme][colorName]                          │
+    │                                                                          │
+    │   Result: Returns appropriate color for current theme                   │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+ANALYZING ThemedView COMPONENT:
+-------------------------------
+
+    // components/themed-view.tsx
+    import { View, type ViewProps } from 'react-native';
+    import { useThemeColor } from '@/hooks/use-theme-color';
+    
+    export type ThemedViewProps = ViewProps & {
+      lightColor?: string;
+      darkColor?: string;
+    };
+    
+    export function ThemedView({ 
+      style, 
+      lightColor, 
+      darkColor, 
+      ...otherProps 
+    }: ThemedViewProps) {
+      const backgroundColor = useThemeColor(
+        { light: lightColor, dark: darkColor }, 
+        'background'
+      );
+    
+      return <View style={[{ backgroundColor }, style]} {...otherProps} />;
+    }
+
+USAGE:
+
+    // Uses default background from Colors
+    <ThemedView style={styles.container}>
+      <Text>Content</Text>
+    </ThemedView>
+    
+    // Uses custom colors
+    <ThemedView 
+      lightColor="#f0f0f0" 
+      darkColor="#1a1a1a" 
+      style={styles.card}
+    >
+      <Text>Card Content</Text>
+    </ThemedView>
+
+
+================================================================================
+                4. BUILDING A COMPLETE THEME SYSTEM
+================================================================================
+
+Let's build a more comprehensive theming system that goes beyond the basics.
+
+STEP 1: DEFINE COMPLETE THEME TYPES:
+------------------------------------
+
+    // types/theme.ts
+    export type ThemeMode = 'light' | 'dark' | 'system';
+    
+    export type ColorScheme = 'light' | 'dark';
+    
+    export type ThemeColors = {
+      // Backgrounds
+      background: string;
+      backgroundSecondary: string;
+      backgroundTertiary: string;
+      
+      // Text
+      text: string;
+      textSecondary: string;
+      textTertiary: string;
+      textInverse: string;
+      
+      // Brand
+      primary: string;
+      primaryLight: string;
+      primaryDark: string;
+      secondary: string;
+      accent: string;
+      
+      // Status
+      success: string;
+      warning: string;
+      error: string;
+      info: string;
+      
+      // UI Elements
+      border: string;
+      borderLight: string;
+      divider: string;
+      card: string;
+      
+      // Icons
+      icon: string;
+      iconSecondary: string;
+      
+      // Interactive
+      link: string;
+      tint: string;
+      tabIconDefault: string;
+      tabIconSelected: string;
+      
+      // Overlays
+      overlay: string;
+      shadow: string;
+    };
+    
+    export type Theme = {
+      mode: ColorScheme;
+      colors: ThemeColors;
+      spacing: {
+        xs: number;
+        sm: number;
+        md: number;
+        lg: number;
+        xl: number;
+        xxl: number;
+      };
+      borderRadius: {
+        sm: number;
+        md: number;
+        lg: number;
+        xl: number;
+        full: number;
+      };
+      typography: {
+        sizes: {
+          xs: number;
+          sm: number;
+          md: number;
+          lg: number;
+          xl: number;
+          xxl: number;
+          xxxl: number;
+        };
+        weights: {
+          regular: string;
+          medium: string;
+          semibold: string;
+          bold: string;
+        };
+        lineHeights: {
+          tight: number;
+          normal: number;
+          relaxed: number;
+        };
+      };
+    };
+
+
+STEP 2: DEFINE THEME VALUES:
+----------------------------
+
+    // constants/themes.ts
+    import { ThemeColors, Theme } from '@/types/theme';
+    
+    const lightColors: ThemeColors = {
+      // Backgrounds
+      background: '#FFFFFF',
+      backgroundSecondary: '#F5F5F5',
+      backgroundTertiary: '#EBEBEB',
+      
+      // Text
+      text: '#1A1A1A',
+      textSecondary: '#666666',
+      textTertiary: '#999999',
+      textInverse: '#FFFFFF',
+      
+      // Brand
+      primary: '#007AFF',
+      primaryLight: '#4DA3FF',
+      primaryDark: '#0056B3',
+      secondary: '#5856D6',
+      accent: '#FF9500',
+      
+      // Status
+      success: '#34C759',
+      warning: '#FF9500',
+      error: '#FF3B30',
+      info: '#5AC8FA',
+      
+      // UI Elements
+      border: '#E5E5E5',
+      borderLight: '#F0F0F0',
+      divider: '#E5E5E5',
+      card: '#FFFFFF',
+      
+      // Icons
+      icon: '#666666',
+      iconSecondary: '#999999',
+      
+      // Interactive
+      link: '#007AFF',
+      tint: '#007AFF',
+      tabIconDefault: '#999999',
+      tabIconSelected: '#007AFF',
+      
+      // Overlays
+      overlay: 'rgba(0, 0, 0, 0.5)',
+      shadow: 'rgba(0, 0, 0, 0.1)',
+    };
+    
+    const darkColors: ThemeColors = {
+      // Backgrounds
+      background: '#000000',
+      backgroundSecondary: '#1C1C1E',
+      backgroundTertiary: '#2C2C2E',
+      
+      // Text
+      text: '#FFFFFF',
+      textSecondary: '#EBEBF5',
+      textTertiary: '#8E8E93',
+      textInverse: '#000000',
+      
+      // Brand
+      primary: '#0A84FF',
+      primaryLight: '#409CFF',
+      primaryDark: '#0066CC',
+      secondary: '#5E5CE6',
+      accent: '#FF9F0A',
+      
+      // Status
+      success: '#30D158',
+      warning: '#FF9F0A',
+      error: '#FF453A',
+      info: '#64D2FF',
+      
+      // UI Elements
+      border: '#38383A',
+      borderLight: '#2C2C2E',
+      divider: '#38383A',
+      card: '#1C1C1E',
+      
+      // Icons
+      icon: '#EBEBF5',
+      iconSecondary: '#8E8E93',
+      
+      // Interactive
+      link: '#0A84FF',
+      tint: '#0A84FF',
+      tabIconDefault: '#8E8E93',
+      tabIconSelected: '#0A84FF',
+      
+      // Overlays
+      overlay: 'rgba(0, 0, 0, 0.7)',
+      shadow: 'rgba(0, 0, 0, 0.3)',
+    };
+    
+    const sharedValues = {
+      spacing: {
+        xs: 4,
+        sm: 8,
+        md: 16,
+        lg: 24,
+        xl: 32,
+        xxl: 48,
+      },
+      borderRadius: {
+        sm: 4,
+        md: 8,
+        lg: 12,
+        xl: 16,
+        full: 9999,
+      },
+      typography: {
+        sizes: {
+          xs: 12,
+          sm: 14,
+          md: 16,
+          lg: 18,
+          xl: 20,
+          xxl: 24,
+          xxxl: 32,
+        },
+        weights: {
+          regular: '400',
+          medium: '500',
+          semibold: '600',
+          bold: '700',
+        },
+        lineHeights: {
+          tight: 1.2,
+          normal: 1.5,
+          relaxed: 1.75,
+        },
+      },
+    };
+    
+    export const lightTheme: Theme = {
+      mode: 'light',
+      colors: lightColors,
+      ...sharedValues,
+    };
+    
+    export const darkTheme: Theme = {
+      mode: 'dark',
+      colors: darkColors,
+      ...sharedValues,
+    };
+
+
+================================================================================
+                5. THEME CONTEXT IMPLEMENTATION
+================================================================================
+
+Create a context that manages theme state and provides theme values.
+
+    // contexts/ThemeContext.tsx
+    import { 
+      createContext, 
+      useContext, 
+      useState, 
+      useEffect, 
+      ReactNode 
+    } from 'react';
+    import { useColorScheme as useSystemColorScheme } from 'react-native';
+    import AsyncStorage from '@react-native-async-storage/async-storage';
+    import { Theme, ThemeMode, ColorScheme } from '@/types/theme';
+    import { lightTheme, darkTheme } from '@/constants/themes';
+    
+    const THEME_STORAGE_KEY = '@theme_mode';
+    
+    type ThemeContextType = {
+      theme: Theme;
+      themeMode: ThemeMode;
+      colorScheme: ColorScheme;
+      setThemeMode: (mode: ThemeMode) => Promise<void>;
+      toggleTheme: () => Promise<void>;
+      isLoading: boolean;
+    };
+    
+    const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+    
+    export function ThemeProvider({ children }: { children: ReactNode }) {
+      const systemColorScheme = useSystemColorScheme();
+      const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
+      const [isLoading, setIsLoading] = useState(true);
+      
+      // Load saved theme preference on mount
+      useEffect(() => {
+        async function loadThemePreference() {
+          try {
+            const savedMode = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+            if (savedMode && ['light', 'dark', 'system'].includes(savedMode)) {
+              setThemeModeState(savedMode as ThemeMode);
+            }
+          } catch (error) {
+            console.error('Failed to load theme preference:', error);
+          } finally {
+            setIsLoading(false);
+          }
+        }
+        
+        loadThemePreference();
+      }, []);
+      
+      // Determine actual color scheme based on mode
+      const colorScheme: ColorScheme = 
+        themeMode === 'system'
+          ? (systemColorScheme ?? 'light')
+          : themeMode;
+      
+      // Get theme object based on color scheme
+      const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
+      
+      // Save theme preference
+      const setThemeMode = async (mode: ThemeMode) => {
+        try {
+          await AsyncStorage.setItem(THEME_STORAGE_KEY, mode);
+          setThemeModeState(mode);
+        } catch (error) {
+          console.error('Failed to save theme preference:', error);
+        }
+      };
+      
+      // Toggle between light and dark
+      const toggleTheme = async () => {
+        const newMode = colorScheme === 'light' ? 'dark' : 'light';
+        await setThemeMode(newMode);
+      };
+      
+      return (
+        <ThemeContext.Provider
+          value={{
+            theme,
+            themeMode,
+            colorScheme,
+            setThemeMode,
+            toggleTheme,
+            isLoading,
+          }}
+        >
+          {children}
+        </ThemeContext.Provider>
+      );
+    }
+    
+    // Custom hook to use theme
+    export function useTheme(): ThemeContextType {
+      const context = useContext(ThemeContext);
+      if (context === undefined) {
+        throw new Error('useTheme must be used within a ThemeProvider');
+      }
+      return context;
+    }
+    
+    // Convenience hook for just colors
+    export function useColors() {
+      const { theme } = useTheme();
+      return theme.colors;
+    }
+
+
+INTEGRATING WITH APP LAYOUT:
+-----------------------------
+
+    // app/_layout.tsx
+    import { Stack } from 'expo-router';
+    import { StatusBar } from 'expo-status-bar';
+    import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
+    import { View, ActivityIndicator } from 'react-native';
+    
+    function RootLayoutNav() {
+      const { theme, colorScheme, isLoading } = useTheme();
+      
+      if (isLoading) {
+        return (
+          <View style={{ 
+            flex: 1, 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            backgroundColor: theme.colors.background 
+          }}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+          </View>
+        );
+      }
+      
+      return (
+        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+          <Stack
+            screenOptions={{
+              headerStyle: {
+                backgroundColor: theme.colors.background,
+              },
+              headerTintColor: theme.colors.text,
+              contentStyle: {
+                backgroundColor: theme.colors.background,
+              },
+            }}
+          />
+          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+        </View>
+      );
+    }
+    
+    export default function RootLayout() {
+      return (
+        <ThemeProvider>
+          <RootLayoutNav />
+        </ThemeProvider>
+      );
+    }
+
+
+================================================================================
+                    6. CREATING THEMED COMPONENTS
+================================================================================
+
+Build a library of themed components that automatically adapt to the theme.
+
+THEMED VIEW:
+------------
+
+    // components/themed/ThemedView.tsx
+    import { View, ViewProps, StyleSheet } from 'react-native';
+    import { useColors } from '@/contexts/ThemeContext';
+    
+    type Variant = 'default' | 'secondary' | 'tertiary' | 'card';
+    
+    type ThemedViewProps = ViewProps & {
+      variant?: Variant;
+    };
+    
+    export function ThemedView({ 
+      style, 
+      variant = 'default', 
+      ...props 
+    }: ThemedViewProps) {
+      const colors = useColors();
+      
+      const backgroundColors: Record<Variant, string> = {
+        default: colors.background,
+        secondary: colors.backgroundSecondary,
+        tertiary: colors.backgroundTertiary,
+        card: colors.card,
+      };
+      
+      return (
+        <View
+          style={[{ backgroundColor: backgroundColors[variant] }, style]}
+          {...props}
+        />
+      );
+    }
+
+
+THEMED TEXT:
+------------
+
+    // components/themed/ThemedText.tsx
+    import { Text, TextProps, StyleSheet } from 'react-native';
+    import { useTheme } from '@/contexts/ThemeContext';
+    
+    type TextVariant = 'body' | 'title' | 'subtitle' | 'caption' | 'label';
+    type TextColor = 'default' | 'secondary' | 'tertiary' | 'inverse' | 'primary' | 'error';
+    
+    type ThemedTextProps = TextProps & {
+      variant?: TextVariant;
+      color?: TextColor;
+      bold?: boolean;
+    };
+    
+    export function ThemedText({
+      style,
+      variant = 'body',
+      color = 'default',
+      bold = false,
+      ...props
+    }: ThemedTextProps) {
+      const { theme } = useTheme();
+      const { colors, typography } = theme;
+      
+      const colorMap: Record<TextColor, string> = {
+        default: colors.text,
+        secondary: colors.textSecondary,
+        tertiary: colors.textTertiary,
+        inverse: colors.textInverse,
+        primary: colors.primary,
+        error: colors.error,
+      };
+      
+      const variantStyles: Record<TextVariant, object> = {
+        title: {
+          fontSize: typography.sizes.xxl,
+          fontWeight: typography.weights.bold,
+          lineHeight: typography.sizes.xxl * typography.lineHeights.tight,
+        },
+        subtitle: {
+          fontSize: typography.sizes.lg,
+          fontWeight: typography.weights.semibold,
+          lineHeight: typography.sizes.lg * typography.lineHeights.normal,
+        },
+        body: {
+          fontSize: typography.sizes.md,
+          fontWeight: typography.weights.regular,
+          lineHeight: typography.sizes.md * typography.lineHeights.normal,
+        },
+        caption: {
+          fontSize: typography.sizes.sm,
+          fontWeight: typography.weights.regular,
+          lineHeight: typography.sizes.sm * typography.lineHeights.normal,
+        },
+        label: {
+          fontSize: typography.sizes.xs,
+          fontWeight: typography.weights.medium,
+          lineHeight: typography.sizes.xs * typography.lineHeights.normal,
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+        },
+      };
+      
+      return (
+        <Text
+          style={[
+            { color: colorMap[color] },
+            variantStyles[variant],
+            bold && { fontWeight: typography.weights.bold },
+            style,
+          ]}
+          {...props}
+        />
+      );
+    }
+
+
+THEMED BUTTON:
+--------------
+
+    // components/themed/ThemedButton.tsx
+    import { Pressable, PressableProps, StyleSheet, ActivityIndicator } from 'react-native';
+    import { useTheme } from '@/contexts/ThemeContext';
+    import { ThemedText } from './ThemedText';
+    
+    type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
+    type ButtonSize = 'sm' | 'md' | 'lg';
+    
+    type ThemedButtonProps = Omit<PressableProps, 'children'> & {
+      title: string;
+      variant?: ButtonVariant;
+      size?: ButtonSize;
+      loading?: boolean;
+      leftIcon?: React.ReactNode;
+      rightIcon?: React.ReactNode;
+    };
+    
+    export function ThemedButton({
+      title,
+      variant = 'primary',
+      size = 'md',
+      loading = false,
+      disabled = false,
+      leftIcon,
+      rightIcon,
+      style,
+      ...props
+    }: ThemedButtonProps) {
+      const { theme } = useTheme();
+      const { colors, spacing, borderRadius } = theme;
+      
+      const sizeStyles = {
+        sm: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
+        md: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
+        lg: { paddingVertical: spacing.lg, paddingHorizontal: spacing.xl },
+      };
+      
+      const variantStyles = {
+        primary: {
+          backgroundColor: colors.primary,
+          borderWidth: 0,
+        },
+        secondary: {
+          backgroundColor: colors.backgroundSecondary,
+          borderWidth: 0,
+        },
+        outline: {
+          backgroundColor: 'transparent',
+          borderWidth: 1,
+          borderColor: colors.primary,
+        },
+        ghost: {
+          backgroundColor: 'transparent',
+          borderWidth: 0,
+        },
+      };
+      
+      const textColors = {
+        primary: colors.textInverse,
+        secondary: colors.text,
+        outline: colors.primary,
+        ghost: colors.primary,
+      };
+      
+      return (
+        <Pressable
+          style={({ pressed }) => [
+            styles.base,
+            sizeStyles[size],
+            variantStyles[variant],
+            { borderRadius: borderRadius.md },
+            pressed && styles.pressed,
+            disabled && styles.disabled,
+            style as any,
+          ]}
+          disabled={disabled || loading}
+          {...props}
+        >
+          {loading ? (
+            <ActivityIndicator 
+              size="small" 
+              color={textColors[variant]} 
+            />
+          ) : (
+            <>
+              {leftIcon}
+              <ThemedText 
+                style={{ 
+                  color: textColors[variant],
+                  marginLeft: leftIcon ? spacing.sm : 0,
+                  marginRight: rightIcon ? spacing.sm : 0,
+                }}
+                bold
+              >
+                {title}
+              </ThemedText>
+              {rightIcon}
+            </>
+          )}
+        </Pressable>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      base: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      pressed: {
+        opacity: 0.8,
+        transform: [{ scale: 0.98 }],
+      },
+      disabled: {
+        opacity: 0.5,
+      },
+    });
+
+
+THEMED CARD:
+------------
+
+    // components/themed/ThemedCard.tsx
+    import { View, ViewProps, StyleSheet, Platform } from 'react-native';
+    import { useTheme } from '@/contexts/ThemeContext';
+    
+    type ThemedCardProps = ViewProps & {
+      elevated?: boolean;
+    };
+    
+    export function ThemedCard({ 
+      style, 
+      elevated = true, 
+      ...props 
+    }: ThemedCardProps) {
+      const { theme, colorScheme } = useTheme();
+      const { colors, spacing, borderRadius } = theme;
+      
+      const shadowStyle = elevated ? Platform.select({
+        ios: {
+          shadowColor: colors.shadow,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.25,
+          shadowRadius: 4,
+        },
+        android: {
+          elevation: 4,
+        },
+        default: {},
+      }) : {};
+      
+      return (
+        <View
+          style={[
+            {
+              backgroundColor: colors.card,
+              borderRadius: borderRadius.lg,
+              padding: spacing.md,
+              borderWidth: colorScheme === 'dark' ? 1 : 0,
+              borderColor: colors.border,
+            },
+            shadowStyle,
+            style,
+          ]}
+          {...props}
+        />
+      );
+    }
+
+
+================================================================================
+                7. PERSISTING THEME PREFERENCE
+================================================================================
+
+Store the user's theme preference so it persists across app restarts.
+
+USING ASYNCSTORAGE:
+-------------------
+(Already shown in ThemeContext above, but here's the pattern in isolation)
+
+    import AsyncStorage from '@react-native-async-storage/async-storage';
+    
+    const THEME_KEY = '@user_theme_preference';
+    
+    // Save theme
+    async function saveTheme(mode: 'light' | 'dark' | 'system') {
+      try {
+        await AsyncStorage.setItem(THEME_KEY, mode);
+      } catch (error) {
+        console.error('Failed to save theme:', error);
+      }
+    }
+    
+    // Load theme
+    async function loadTheme(): Promise<'light' | 'dark' | 'system'> {
+      try {
+        const saved = await AsyncStorage.getItem(THEME_KEY);
+        if (saved === 'light' || saved === 'dark' || saved === 'system') {
+          return saved;
+        }
+        return 'system'; // Default
+      } catch (error) {
+        console.error('Failed to load theme:', error);
+        return 'system';
+      }
+    }
+
+
+THEME SETTINGS SCREEN:
+----------------------
+
+    // app/settings/appearance.tsx
+    import { View, StyleSheet } from 'react-native';
+    import { useTheme } from '@/contexts/ThemeContext';
+    import { ThemedView, ThemedText, ThemedButton } from '@/components/themed';
+    
+    export default function AppearanceSettings() {
+      const { themeMode, setThemeMode, theme } = useTheme();
+      const { colors, spacing } = theme;
+      
+      const options = [
+        { value: 'light', label: 'Light', icon: '☀️' },
+        { value: 'dark', label: 'Dark', icon: '🌙' },
+        { value: 'system', label: 'System', icon: '📱' },
+      ] as const;
+      
+      return (
+        <ThemedView style={styles.container}>
+          <ThemedText variant="title" style={styles.title}>
+            Appearance
+          </ThemedText>
+          
+          <ThemedText color="secondary" style={styles.description}>
+            Choose how the app looks to you.
+          </ThemedText>
+          
+          <View style={styles.options}>
+            {options.map((option) => (
+              <Pressable
+                key={option.value}
+                style={[
+                  styles.option,
+                  {
+                    backgroundColor: themeMode === option.value 
+                      ? colors.primary 
+                      : colors.backgroundSecondary,
+                    borderRadius: theme.borderRadius.md,
+                    padding: spacing.md,
+                  },
+                ]}
+                onPress={() => setThemeMode(option.value)}
+              >
+                <ThemedText style={styles.optionIcon}>{option.icon}</ThemedText>
+                <ThemedText 
+                  bold
+                  style={{ 
+                    color: themeMode === option.value 
+                      ? colors.textInverse 
+                      : colors.text 
+                  }}
+                >
+                  {option.label}
+                </ThemedText>
+              </Pressable>
+            ))}
+          </View>
+        </ThemedView>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+        padding: 16,
+      },
+      title: {
+        marginBottom: 8,
+      },
+      description: {
+        marginBottom: 24,
+      },
+      options: {
+        flexDirection: 'row',
+        gap: 12,
+      },
+      option: {
+        flex: 1,
+        alignItems: 'center',
+        gap: 8,
+      },
+      optionIcon: {
+        fontSize: 32,
+      },
+    });
+
+
+================================================================================
+                8. ADVANCED THEMING TECHNIQUES
+================================================================================
+
+TECHNIQUE 1: THEME-AWARE IMAGES
+-------------------------------
+
+    // Use different images for different themes
+    function ThemeAwareLogo() {
+      const { colorScheme } = useTheme();
+      
+      return (
+        <Image
+          source={
+            colorScheme === 'dark'
+              ? require('@/assets/images/logo-dark.png')
+              : require('@/assets/images/logo-light.png')
+          }
+          style={styles.logo}
+        />
+      );
+    }
+
+
+TECHNIQUE 2: DYNAMIC STATUS BAR
+-------------------------------
+
+    import { StatusBar } from 'expo-status-bar';
+    
+    function App() {
+      const { colorScheme } = useTheme();
+      
+      return (
+        <>
+          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+          {/* rest of app */}
+        </>
+      );
+    }
+
+
+TECHNIQUE 3: NAVIGATION THEME INTEGRATION
+-----------------------------------------
+
+    import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
+    
+    function NavigationThemeWrapper({ children }) {
+      const { colorScheme, theme } = useTheme();
+      
+      // Create custom navigation theme based on your theme
+      const navTheme = {
+        ...(colorScheme === 'dark' ? DarkTheme : DefaultTheme),
+        colors: {
+          ...(colorScheme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
+          primary: theme.colors.primary,
+          background: theme.colors.background,
+          card: theme.colors.card,
+          text: theme.colors.text,
+          border: theme.colors.border,
+        },
+      };
+      
+      return (
+        <NavThemeProvider value={navTheme}>
+          {children}
+        </NavThemeProvider>
+      );
+    }
+
+
+TECHNIQUE 4: SEMANTIC COLORS
+----------------------------
+
+    // Use semantic naming for easier understanding
+    const semanticColors = {
+      // Instead of just 'red' and 'green'
+      success: '#34C759',
+      error: '#FF3B30',
+      warning: '#FF9500',
+      info: '#5AC8FA',
+      
+      // Interactive states
+      pressed: 'rgba(0, 0, 0, 0.1)',
+      focused: 'rgba(0, 122, 255, 0.3)',
+      disabled: 'rgba(0, 0, 0, 0.3)',
+    };
+
+
+================================================================================
+                9. ANIMATIONS DURING THEME CHANGES
+================================================================================
+
+Add smooth transitions when changing themes using Reanimated.
+
+    // hooks/useAnimatedTheme.ts
+    import { useEffect } from 'react';
+    import { 
+      useSharedValue, 
+      withTiming, 
+      interpolateColor,
+      useAnimatedStyle
+    } from 'react-native-reanimated';
+    import { useTheme } from '@/contexts/ThemeContext';
+    
+    export function useAnimatedBackground() {
+      const { colorScheme, theme } = useTheme();
+      const progress = useSharedValue(colorScheme === 'dark' ? 1 : 0);
+      
+      useEffect(() => {
+        progress.value = withTiming(colorScheme === 'dark' ? 1 : 0, {
+          duration: 300,
+        });
+      }, [colorScheme]);
+      
+      const animatedStyle = useAnimatedStyle(() => {
+        return {
+          backgroundColor: interpolateColor(
+            progress.value,
+            [0, 1],
+            ['#FFFFFF', '#000000']
+          ),
+        };
+      });
+      
+      return animatedStyle;
+    }
+    
+    // Usage
+    import Animated from 'react-native-reanimated';
+    
+    function AnimatedThemeScreen() {
+      const animatedStyle = useAnimatedBackground();
+      
+      return (
+        <Animated.View style={[styles.container, animatedStyle]}>
+          {/* Content */}
+        </Animated.View>
+      );
+    }
+
+
+================================================================================
+                        10. BEST PRACTICES
+================================================================================
+
+1. USE SEMANTIC COLOR NAMES
+---------------------------
+   Name colors by their purpose, not their value:
+   ✓ colors.primary, colors.textSecondary
+   ✗ colors.blue, colors.gray500
+
+2. DEFINE COMPLETE THEME OBJECTS
+--------------------------------
+   Include all possible colors, not just the ones you need now.
+   This prevents future theme-related bugs.
+
+3. TEST BOTH THEMES
+-------------------
+   Always test your app in both light and dark modes.
+   Use the device/simulator settings to switch.
+
+4. HANDLE LOADING STATE
+-----------------------
+   Show a loading indicator while loading saved theme preference.
+
+5. USE CONTEXT EFFICIENTLY
+--------------------------
+   Don't include too much in one context. Split if needed.
+   Consider using separate contexts for colors, typography, etc.
+
+6. PROVIDE THEME TOGGLE
+-----------------------
+   Always give users control over their theme preference.
+   Include options for 'Light', 'Dark', and 'System'.
+
+7. CONSIDER ACCESSIBILITY
+-------------------------
+   Ensure sufficient color contrast in both themes.
+   Test with accessibility tools.
+
+
+================================================================================
+                            SUMMARY
+================================================================================
+
+KEY TAKEAWAYS:
+--------------
+
+1. Use useColorScheme to detect system theme
+2. Create a Theme context to manage theme state
+3. Define complete light and dark color palettes
+4. Build themed components that use theme context
+5. Persist user's theme preference with AsyncStorage
+6. Integrate theme with navigation (React Navigation)
+7. Provide users with theme selection (Light/Dark/System)
+8. Consider animations for smooth theme transitions
+9. Test thoroughly in both themes
+
+================================================================================
+                        END OF DOCUMENT 07
+            Next: 08 - Building Your First Feature (Practical Guide)
+================================================================================

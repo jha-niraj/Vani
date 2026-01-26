@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
@@ -14,6 +14,7 @@ export default prisma;
 
 // Re-export types from Prisma Client
 export * from "@prisma/client";
+export { Prisma };
 
 export const sanitizeFullTextSearch = (search: string) => {
     // remove unsupported characters for full text search

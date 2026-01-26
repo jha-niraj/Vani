@@ -1,0 +1,1314 @@
+================================================================================
+        REACT NATIVE WITH EXPO - COMPREHENSIVE LEARNING GUIDE
+                    PART 3: CORE COMPONENTS DEEP DIVE
+================================================================================
+
+This document covers all the fundamental React Native components you need
+to know. We'll explore each component with examples, props, and use cases.
+
+================================================================================
+                            TABLE OF CONTENTS
+================================================================================
+
+1. Understanding React Native Components
+2. View - The Universal Container
+3. Text - Displaying Text Content
+4. Image & expo-image - Displaying Images
+5. TextInput - User Text Input
+6. Pressable - Touch Interactions
+7. ScrollView - Scrollable Content
+8. FlatList - Efficient Lists
+9. SafeAreaView - Device-Safe Rendering
+10. StatusBar - Status Bar Control
+11. ActivityIndicator - Loading States
+12. Modal - Overlay Content
+13. Switch - Toggle Component
+14. Component Comparison: React Web vs React Native
+
+================================================================================
+            1. UNDERSTANDING REACT NATIVE COMPONENTS
+================================================================================
+
+React Native provides a set of core components that map to native UI elements.
+Unlike web where you have dozens of HTML elements, React Native has fewer,
+more powerful components.
+
+COMPONENT HIERARCHY VISUALIZATION:
+----------------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                  REACT NATIVE COMPONENT TREE                             │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │                         ┌─────────────────┐                              │
+    │                         │   SafeAreaView  │  ◄── Respects notches        │
+    │                         └────────┬────────┘                              │
+    │                                  │                                       │
+    │                         ┌────────▼────────┐                              │
+    │                         │      View       │  ◄── Main container          │
+    │                         └────────┬────────┘                              │
+    │                                  │                                       │
+    │           ┌──────────────────────┼──────────────────────┐                │
+    │           │                      │                      │                │
+    │   ┌───────▼───────┐     ┌────────▼────────┐    ┌────────▼────────┐      │
+    │   │     View      │     │      Text       │    │     Image       │      │
+    │   │  (Header)     │     │  (Content)      │    │  (Logo)         │      │
+    │   └───────┬───────┘     └─────────────────┘    └─────────────────┘      │
+    │           │                                                              │
+    │   ┌───────▼───────┐                                                      │
+    │   │    Text       │                                                      │
+    │   │  (Title)      │                                                      │
+    │   └───────────────┘                                                      │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+KEY PRINCIPLE: COMPONENT COMPOSITION
+------------------------------------
+
+React Native, like React, is all about composing small components into larger
+ones. Every screen you build is a tree of nested components.
+
+
+================================================================================
+                    2. VIEW - THE UNIVERSAL CONTAINER
+================================================================================
+
+View is the most fundamental component - equivalent to <div> in web.
+
+BASIC SYNTAX:
+-------------
+
+    import { View, StyleSheet } from 'react-native';
+    
+    function MyComponent() {
+      return (
+        <View style={styles.container}>
+          {/* Child components go here */}
+        </View>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+        backgroundColor: '#fff',
+        padding: 16,
+      },
+    });
+
+
+IMPORTANT VIEW CHARACTERISTICS:
+-------------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                        VIEW CHARACTERISTICS                              │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   1. FLEXBOX BY DEFAULT                                                  │
+    │      Every View is a flex container with flexDirection: 'column'        │
+    │                                                                          │
+    │      ┌─────────────────────┐                                             │
+    │      │      View           │                                             │
+    │      │  ┌───────────────┐  │  Children stack                             │
+    │      │  │   Child 1     │  │  vertically                                 │
+    │      │  ├───────────────┤  │  by default                                 │
+    │      │  │   Child 2     │  │                                             │
+    │      │  ├───────────────┤  │                                             │
+    │      │  │   Child 3     │  │                                             │
+    │      │  └───────────────┘  │                                             │
+    │      └─────────────────────┘                                             │
+    │                                                                          │
+    │   2. NO TEXT ALLOWED DIRECTLY                                            │
+    │      ✗ <View>Hello</View>           // ERROR!                            │
+    │      ✓ <View><Text>Hello</Text></View>  // Correct                       │
+    │                                                                          │
+    │   3. SUPPORTS NESTING                                                    │
+    │      Views can contain any number of child Views                        │
+    │                                                                          │
+    │   4. CAN BE STYLED                                                       │
+    │      Supports most CSS-like properties                                  │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+COMMON VIEW PROPS:
+------------------
+
+    ┌─────────────────────┬────────────────────────────────────────────────────┐
+    │   Prop              │   Description                                      │
+    ├─────────────────────┼────────────────────────────────────────────────────┤
+    │   style             │   StyleSheet styles or inline style object         │
+    │   onLayout          │   Called when layout changes                       │
+    │   accessibilityLabel│   Screen reader text                               │
+    │   pointerEvents     │   Controls touch interaction                       │
+    │   testID            │   For testing frameworks                           │
+    └─────────────────────┴────────────────────────────────────────────────────┘
+
+
+VIEW LAYOUT EXAMPLES:
+---------------------
+
+EXAMPLE 1: Horizontal Row
+
+    <View style={{ flexDirection: 'row' }}>
+      <View style={{ width: 50, height: 50, backgroundColor: 'red' }} />
+      <View style={{ width: 50, height: 50, backgroundColor: 'blue' }} />
+      <View style={{ width: 50, height: 50, backgroundColor: 'green' }} />
+    </View>
+    
+    Result:
+    ┌─────────────────────────┐
+    │ ┌───┐ ┌───┐ ┌───┐      │
+    │ │ R │ │ B │ │ G │      │
+    │ └───┘ └───┘ └───┘      │
+    └─────────────────────────┘
+
+
+EXAMPLE 2: Centered Content
+
+    <View style={{ 
+      flex: 1, 
+      justifyContent: 'center', 
+      alignItems: 'center' 
+    }}>
+      <Text>Perfectly Centered!</Text>
+    </View>
+    
+    Result:
+    ┌─────────────────────────┐
+    │                         │
+    │                         │
+    │   Perfectly Centered!   │
+    │                         │
+    │                         │
+    └─────────────────────────┘
+
+
+EXAMPLE 3: Space Between Items
+
+    <View style={{ 
+      flex: 1, 
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      padding: 16
+    }}>
+      <Text>Left</Text>
+      <Text>Right</Text>
+    </View>
+    
+    Result:
+    ┌─────────────────────────┐
+    │ Left             Right  │
+    └─────────────────────────┘
+
+
+================================================================================
+                    3. TEXT - DISPLAYING TEXT CONTENT
+================================================================================
+
+Text is THE ONLY component that can render text. All text must be wrapped
+in a Text component.
+
+BASIC SYNTAX:
+-------------
+
+    import { Text, StyleSheet } from 'react-native';
+    
+    function MyText() {
+      return (
+        <Text style={styles.heading}>Hello, World!</Text>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      heading: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#333',
+      },
+    });
+
+
+CRITICAL RULE - TEXT MUST BE IN TEXT:
+-------------------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                     THE TEXT-IN-TEXT RULE                                │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   ✗ WRONG - Will crash your app!                                         │
+    │   ─────────────────────────────────                                      │
+    │   <View>                                                                 │
+    │     Hello World                  // ❌ Text outside Text component       │
+    │   </View>                                                                │
+    │                                                                          │
+    │   <View>                                                                 │
+    │     {user.name}                  // ❌ Variable text outside Text        │
+    │   </View>                                                                │
+    │                                                                          │
+    │   ✓ CORRECT                                                              │
+    │   ─────────────                                                          │
+    │   <View>                                                                 │
+    │     <Text>Hello World</Text>     // ✓ Text wrapped properly             │
+    │   </View>                                                                │
+    │                                                                          │
+    │   <View>                                                                 │
+    │     <Text>{user.name}</Text>     // ✓ Variable in Text component        │
+    │   </View>                                                                │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+NESTED TEXT (INLINE STYLING):
+-----------------------------
+
+Text can be nested to create inline styling effects:
+
+    <Text style={styles.paragraph}>
+      This is <Text style={styles.bold}>bold</Text> and this is{' '}
+      <Text style={styles.italic}>italic</Text> text.
+    </Text>
+    
+    const styles = StyleSheet.create({
+      paragraph: { fontSize: 16 },
+      bold: { fontWeight: 'bold' },
+      italic: { fontStyle: 'italic' },
+    });
+    
+    Result:
+    "This is **bold** and this is _italic_ text."
+
+
+COMMON TEXT PROPS:
+------------------
+
+    ┌────────────────────────┬─────────────────────────────────────────────────┐
+    │   Prop                 │   Description                                   │
+    ├────────────────────────┼─────────────────────────────────────────────────┤
+    │   numberOfLines        │   Truncate after X lines (adds ...)             │
+    │   ellipsizeMode        │   Where to add ... ('head', 'middle', 'tail')   │
+    │   selectable           │   Allow text selection (default: false)         │
+    │   onPress              │   Touch handler (makes text tappable)           │
+    │   adjustsFontSizeToFit │   Shrink text to fit container (iOS)            │
+    └────────────────────────┴─────────────────────────────────────────────────┘
+
+
+TEXT STYLING PROPERTIES:
+------------------------
+
+    const textStyles = StyleSheet.create({
+      example: {
+        // Font
+        fontSize: 16,
+        fontWeight: 'bold',        // 'normal', 'bold', '100'-'900'
+        fontStyle: 'italic',       // 'normal', 'italic'
+        fontFamily: 'Arial',       // Platform-specific
+        
+        // Color
+        color: '#333333',
+        
+        // Alignment
+        textAlign: 'center',       // 'left', 'center', 'right', 'justify'
+        
+        // Decoration
+        textDecorationLine: 'underline',  // 'none', 'underline', 'line-through'
+        textDecorationStyle: 'solid',     // 'solid', 'double', 'dotted', 'dashed'
+        textDecorationColor: 'red',
+        
+        // Spacing
+        letterSpacing: 2,
+        lineHeight: 24,
+        
+        // Transform
+        textTransform: 'uppercase',  // 'none', 'uppercase', 'lowercase', 'capitalize'
+        
+        // Shadow
+        textShadowColor: 'rgba(0, 0, 0, 0.3)',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
+      },
+    });
+
+
+PRACTICAL EXAMPLE - TRUNCATED TEXT:
+-----------------------------------
+
+    <Text numberOfLines={2} ellipsizeMode="tail">
+      This is a very long text that will be truncated after two lines.
+      It keeps going and going and going and will eventually be cut off
+      with an ellipsis at the end.
+    </Text>
+    
+    Result:
+    ┌──────────────────────────────────────┐
+    │ This is a very long text that will   │
+    │ be truncated after two lines. It...  │
+    └──────────────────────────────────────┘
+
+
+================================================================================
+                4. IMAGE & expo-image - DISPLAYING IMAGES
+================================================================================
+
+There are two ways to display images in Expo:
+
+1. React Native's built-in <Image> component
+2. Expo's <Image> from expo-image (RECOMMENDED)
+
+Your project uses expo-image which is more performant:
+
+    import { Image } from 'expo-image';   // Recommended
+
+
+LOADING IMAGES - THREE METHODS:
+-------------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    IMAGE LOADING METHODS                                 │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   1. LOCAL IMAGES (require)                                              │
+    │   ─────────────────────────                                              │
+    │   <Image                                                                 │
+    │     source={require('@/assets/images/logo.png')}                        │
+    │     style={{ width: 100, height: 100 }}                                 │
+    │   />                                                                     │
+    │                                                                          │
+    │   2. REMOTE IMAGES (URL)                                                 │
+    │   ──────────────────────                                                 │
+    │   <Image                                                                 │
+    │     source={{ uri: 'https://example.com/image.jpg' }}                   │
+    │     style={{ width: 100, height: 100 }}                                 │
+    │   />                                                                     │
+    │   ⚠️  Remote images REQUIRE explicit width and height!                  │
+    │                                                                          │
+    │   3. BASE64 IMAGES                                                       │
+    │   ────────────────                                                       │
+    │   <Image                                                                 │
+    │     source={{ uri: 'data:image/png;base64,iVBORw0KGgo...' }}           │
+    │     style={{ width: 100, height: 100 }}                                 │
+    │   />                                                                     │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+EXPO IMAGE ADVANTAGES:
+----------------------
+
+    import { Image } from 'expo-image';
+    
+    function Avatar({ url }) {
+      return (
+        <Image
+          source={{ uri: url }}
+          style={styles.avatar}
+          
+          // Expo Image specific props:
+          placeholder={require('@/assets/images/placeholder.png')}
+          contentFit="cover"          // Like CSS object-fit
+          transition={200}            // Fade-in animation (ms)
+          cachePolicy="memory-disk"   // Caching strategy
+        />
+      );
+    }
+
+
+CONTENT FIT OPTIONS:
+--------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    contentFit OPTIONS                                    │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   'cover' (default)                                                      │
+    │   ─────────────────                                                      │
+    │   ┌─────────────┐     Image fills the container, may be cropped         │
+    │   │ ╔═══════╗   │     Maintains aspect ratio                             │
+    │   │ ║ Image ║   │                                                        │
+    │   │ ║cropped║   │                                                        │
+    │   │ ╚═══════╝   │                                                        │
+    │   └─────────────┘                                                        │
+    │                                                                          │
+    │   'contain'                                                              │
+    │   ─────────                                                              │
+    │   ┌─────────────┐     Image fits inside container, may have empty space │
+    │   │   ┌─────┐   │     Maintains aspect ratio                             │
+    │   │   │Image│   │                                                        │
+    │   │   └─────┘   │                                                        │
+    │   └─────────────┘                                                        │
+    │                                                                          │
+    │   'fill'                                                                 │
+    │   ──────                                                                 │
+    │   ┌─────────────┐     Image stretches to fill container                 │
+    │   │ ╔═════════╗ │     May distort aspect ratio                          │
+    │   │ ║ Stretched║ │                                                        │
+    │   │ ╚═════════╝ │                                                        │
+    │   └─────────────┘                                                        │
+    │                                                                          │
+    │   'none'                                                                 │
+    │   ──────                                                                 │
+    │   Image displayed at natural size, may overflow                         │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+PRACTICAL EXAMPLE - AVATAR COMPONENT:
+-------------------------------------
+
+    import { Image } from 'expo-image';
+    import { View, StyleSheet } from 'react-native';
+    
+    type AvatarProps = {
+      uri: string;
+      size?: number;
+    };
+    
+    export function Avatar({ uri, size = 50 }: AvatarProps) {
+      return (
+        <View style={[styles.container, { width: size, height: size }]}>
+          <Image
+            source={{ uri }}
+            style={styles.image}
+            contentFit="cover"
+            transition={200}
+          />
+        </View>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        borderRadius: 999,          // Perfect circle
+        overflow: 'hidden',         // Clip image to circle
+        backgroundColor: '#e1e1e1', // Placeholder color
+      },
+      image: {
+        width: '100%',
+        height: '100%',
+      },
+    });
+
+
+================================================================================
+                    5. TextInput - USER TEXT INPUT
+================================================================================
+
+TextInput allows users to enter text. It's like <input type="text"> in web.
+
+BASIC SYNTAX:
+-------------
+
+    import { TextInput, StyleSheet, useState } from 'react-native';
+    
+    function SearchInput() {
+      const [value, setValue] = useState('');
+      
+      return (
+        <TextInput
+          style={styles.input}
+          value={value}
+          onChangeText={setValue}
+          placeholder="Search..."
+          placeholderTextColor="#999"
+        />
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      input: {
+        height: 48,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        paddingHorizontal: 16,
+        fontSize: 16,
+      },
+    });
+
+
+IMPORTANT: onChangeText vs onChange
+-----------------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    TextInput Event Handlers                              │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   onChangeText (RECOMMENDED)                                             │
+    │   ──────────────────────────                                             │
+    │   Receives the text value directly as a string                          │
+    │                                                                          │
+    │   <TextInput                                                             │
+    │     onChangeText={(text) => setValue(text)}                             │
+    │     // or simply:                                                        │
+    │     onChangeText={setValue}                                              │
+    │   />                                                                     │
+    │                                                                          │
+    │   onChange (Less common)                                                 │
+    │   ─────────────────────                                                  │
+    │   Receives an event object (like web React)                             │
+    │                                                                          │
+    │   <TextInput                                                             │
+    │     onChange={(event) => setValue(event.nativeEvent.text)}              │
+    │   />                                                                     │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+COMMON TextInput PROPS:
+-----------------------
+
+    ┌─────────────────────────┬────────────────────────────────────────────────┐
+    │   Prop                  │   Description                                  │
+    ├─────────────────────────┼────────────────────────────────────────────────┤
+    │   value                 │   Controlled input value                       │
+    │   onChangeText          │   Called with text on each change              │
+    │   placeholder           │   Placeholder text                             │
+    │   placeholderTextColor  │   Color of placeholder                         │
+    │   secureTextEntry       │   Password field (hides characters)            │
+    │   keyboardType          │   Type of keyboard to display                  │
+    │   autoCapitalize        │   Auto-capitalize behavior                     │
+    │   autoComplete          │   Autocomplete hints                           │
+    │   autoFocus             │   Focus on mount                               │
+    │   multiline             │   Allow multiple lines (like textarea)         │
+    │   maxLength             │   Maximum character limit                      │
+    │   returnKeyType         │   Return key appearance                        │
+    │   onSubmitEditing       │   Called when submit/return pressed            │
+    │   onFocus               │   Called when focused                          │
+    │   onBlur                │   Called when blurred                          │
+    │   editable              │   If false, input is disabled                  │
+    └─────────────────────────┴────────────────────────────────────────────────┘
+
+
+KEYBOARD TYPES:
+---------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    keyboardType OPTIONS                                  │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   'default'           Standard keyboard                                  │
+    │   'numeric'           Numbers only                                       │
+    │   'email-address'     Keyboard with @ and .com                          │
+    │   'phone-pad'         Phone number pad                                   │
+    │   'decimal-pad'       Numbers with decimal point                        │
+    │   'number-pad'        Numbers only (no decimal)                         │
+    │   'url'               Keyboard with / and .com                          │
+    │                                                                          │
+    │   iOS only:                                                              │
+    │   'ascii-capable'     Standard ASCII keyboard                           │
+    │   'numbers-and-punctuation'                                              │
+    │   'name-phone-pad'                                                       │
+    │   'twitter'           With @ and #                                       │
+    │   'web-search'        With search button                                 │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+PRACTICAL EXAMPLES:
+-------------------
+
+EMAIL INPUT:
+
+    <TextInput
+      placeholder="Email address"
+      keyboardType="email-address"
+      autoCapitalize="none"
+      autoComplete="email"
+      textContentType="emailAddress"  // iOS autofill
+    />
+
+
+PASSWORD INPUT:
+
+    <TextInput
+      placeholder="Password"
+      secureTextEntry={true}
+      autoComplete="password"
+      textContentType="password"  // iOS autofill
+    />
+
+
+MULTILINE (TEXTAREA):
+
+    <TextInput
+      placeholder="Write your message..."
+      multiline={true}
+      numberOfLines={4}
+      style={{ 
+        height: 120, 
+        textAlignVertical: 'top'  // Android: align text to top
+      }}
+    />
+
+
+SEARCH INPUT WITH SUBMIT:
+
+    <TextInput
+      placeholder="Search..."
+      returnKeyType="search"
+      onSubmitEditing={() => performSearch()}
+    />
+
+
+================================================================================
+                    6. PRESSABLE - TOUCH INTERACTIONS
+================================================================================
+
+Pressable is the modern way to handle touch interactions. It replaced
+TouchableOpacity and TouchableHighlight.
+
+BASIC SYNTAX:
+-------------
+
+    import { Pressable, Text, StyleSheet } from 'react-native';
+    
+    function MyButton({ title, onPress }) {
+      return (
+        <Pressable 
+          style={styles.button}
+          onPress={onPress}
+        >
+          <Text style={styles.buttonText}>{title}</Text>
+        </Pressable>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      button: {
+        backgroundColor: '#007AFF',
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+      },
+      buttonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+      },
+    });
+
+
+PRESSABLE vs OTHER TOUCHABLES:
+------------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    TOUCHABLE COMPARISON                                  │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   Pressable (RECOMMENDED - Modern API)                                   │
+    │   ─────────────────────────────────────                                  │
+    │   • Full control over press states                                       │
+    │   • Customizable feedback                                                │
+    │   • Supports all touch events                                            │
+    │                                                                          │
+    │   TouchableOpacity (Legacy)                                              │
+    │   ─────────────────────────                                              │
+    │   • Fades opacity on press                                               │
+    │   • Simple but limited customization                                     │
+    │                                                                          │
+    │   TouchableHighlight (Legacy)                                            │
+    │   ───────────────────────────                                            │
+    │   • Shows underlay color on press                                        │
+    │   • Requires underlayColor prop                                          │
+    │                                                                          │
+    │   TouchableWithoutFeedback (Legacy)                                      │
+    │   ─────────────────────────────────                                      │
+    │   • No visual feedback                                                   │
+    │   • Rarely used directly                                                 │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+PRESSABLE EVENTS:
+-----------------
+
+    <Pressable
+      onPress={() => console.log('Pressed!')}
+      onPressIn={() => console.log('Finger down')}
+      onPressOut={() => console.log('Finger up')}
+      onLongPress={() => console.log('Long pressed!')}
+      delayLongPress={500}  // ms before long press triggers
+    >
+      {/* content */}
+    </Pressable>
+
+
+EVENT FLOW:
+-----------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    PRESSABLE EVENT FLOW                                  │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   User touches button                                                    │
+    │         │                                                                │
+    │         ▼                                                                │
+    │   ┌─────────────┐                                                        │
+    │   │  onPressIn  │  ◄── Finger touches screen                            │
+    │   └──────┬──────┘                                                        │
+    │          │                                                               │
+    │          │  User holds...                                                │
+    │          │                                                               │
+    │          ├──── < 500ms ────┐                                             │
+    │          │                 │                                             │
+    │          ▼                 ▼                                             │
+    │   ┌─────────────┐   ┌──────────────┐                                     │
+    │   │ onLongPress │   │  onPressOut  │  ◄── Finger lifts                  │
+    │   └─────────────┘   └──────┬───────┘                                     │
+    │                            │                                             │
+    │                            ▼                                             │
+    │                     ┌─────────────┐                                      │
+    │                     │   onPress   │  ◄── Normal tap completed           │
+    │                     └─────────────┘                                      │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+DYNAMIC STYLES WITH PRESSED STATE:
+----------------------------------
+
+Pressable's style prop can be a function that receives the pressed state:
+
+    <Pressable
+      style={({ pressed }) => [
+        styles.button,
+        pressed && styles.buttonPressed,
+      ]}
+    >
+      {({ pressed }) => (
+        <Text style={[
+          styles.buttonText,
+          pressed && styles.buttonTextPressed,
+        ]}>
+          {pressed ? 'Pressing...' : 'Press Me'}
+        </Text>
+      )}
+    </Pressable>
+    
+    const styles = StyleSheet.create({
+      button: {
+        backgroundColor: '#007AFF',
+        padding: 16,
+        borderRadius: 8,
+      },
+      buttonPressed: {
+        backgroundColor: '#0056b3',
+        transform: [{ scale: 0.98 }],
+      },
+      buttonText: {
+        color: 'white',
+      },
+      buttonTextPressed: {
+        opacity: 0.8,
+      },
+    });
+
+
+PRACTICAL EXAMPLE - COMPLETE BUTTON COMPONENT:
+----------------------------------------------
+
+    import { Pressable, Text, StyleSheet, ActivityIndicator } from 'react-native';
+    
+    type ButtonProps = {
+      title: string;
+      onPress: () => void;
+      variant?: 'primary' | 'secondary' | 'outline';
+      disabled?: boolean;
+      loading?: boolean;
+    };
+    
+    export function Button({ 
+      title, 
+      onPress, 
+      variant = 'primary',
+      disabled = false,
+      loading = false,
+    }: ButtonProps) {
+      return (
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            styles[variant],
+            pressed && styles.pressed,
+            disabled && styles.disabled,
+          ]}
+          onPress={onPress}
+          disabled={disabled || loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={[
+              styles.text,
+              variant === 'outline' && styles.outlineText,
+            ]}>
+              {title}
+            </Text>
+          )}
+        </Pressable>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      button: {
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 48,
+      },
+      primary: {
+        backgroundColor: '#007AFF',
+      },
+      secondary: {
+        backgroundColor: '#6c757d',
+      },
+      outline: {
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        borderColor: '#007AFF',
+      },
+      pressed: {
+        opacity: 0.8,
+        transform: [{ scale: 0.98 }],
+      },
+      disabled: {
+        opacity: 0.5,
+      },
+      text: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+      },
+      outlineText: {
+        color: '#007AFF',
+      },
+    });
+
+
+================================================================================
+                    7. ScrollView - SCROLLABLE CONTENT
+================================================================================
+
+ScrollView is used when you have content that might exceed the screen size.
+
+BASIC SYNTAX:
+-------------
+
+    import { ScrollView, View, Text, StyleSheet } from 'react-native';
+    
+    function MyScrollableContent() {
+      return (
+        <ScrollView style={styles.container}>
+          <View style={styles.content}>
+            <Text>Lots of content here...</Text>
+            <Text>More content...</Text>
+            <Text>Even more content...</Text>
+            {/* Content that exceeds screen height */}
+          </View>
+        </ScrollView>
+      );
+    }
+
+
+SCROLLVIEW vs FLATLIST:
+-----------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    WHEN TO USE WHICH?                                    │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   USE ScrollView WHEN:                                                   │
+    │   ────────────────────                                                   │
+    │   • Content is static and limited                                        │
+    │   • You have mixed content (not a list)                                  │
+    │   • Less than ~20-30 items                                               │
+    │   • Forms, settings pages, etc.                                          │
+    │                                                                          │
+    │   USE FlatList WHEN:                                                     │
+    │   ──────────────────                                                     │
+    │   • You have a long list of similar items                                │
+    │   • Items come from an array                                             │
+    │   • More than 20-30 items                                                │
+    │   • You need item virtualization for performance                         │
+    │   • Product lists, feeds, contacts, etc.                                 │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+COMMON ScrollView PROPS:
+------------------------
+
+    ┌───────────────────────────┬──────────────────────────────────────────────┐
+    │   Prop                    │   Description                                │
+    ├───────────────────────────┼──────────────────────────────────────────────┤
+    │   horizontal              │   Scroll horizontally instead of vertically │
+    │   showsVerticalScrollIndicator   │   Show/hide vertical scrollbar       │
+    │   showsHorizontalScrollIndicator │   Show/hide horizontal scrollbar     │
+    │   contentContainerStyle   │   Style for the content container           │
+    │   refreshControl          │   Pull-to-refresh component                 │
+    │   keyboardShouldPersistTaps │   Tap behavior when keyboard is open     │
+    │   onScroll                │   Called on scroll events                   │
+    │   scrollEventThrottle     │   How often onScroll fires (ms)             │
+    │   pagingEnabled           │   Snap to pages                             │
+    │   bounces                 │   iOS bounce effect                         │
+    │   stickyHeaderIndices     │   Indices of sticky headers                 │
+    └───────────────────────────┴──────────────────────────────────────────────┘
+
+
+IMPORTANT: contentContainerStyle vs style:
+------------------------------------------
+
+    <ScrollView
+      style={styles.scrollView}              // Applied to the scroll container
+      contentContainerStyle={styles.content}  // Applied to the content inside
+    >
+      {/* content */}
+    </ScrollView>
+    
+    const styles = StyleSheet.create({
+      scrollView: {
+        flex: 1,                    // ScrollView takes full screen
+        backgroundColor: '#f5f5f5',
+      },
+      content: {
+        padding: 16,                // Padding around content
+        paddingBottom: 100,         // Extra space at bottom
+      },
+    });
+
+
+HORIZONTAL SCROLL (Carousel-like):
+----------------------------------
+
+    <ScrollView 
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: 16 }}
+    >
+      <View style={styles.card}>...</View>
+      <View style={styles.card}>...</View>
+      <View style={styles.card}>...</View>
+    </ScrollView>
+
+
+================================================================================
+                    8. FlatList - EFFICIENT LISTS
+================================================================================
+
+FlatList is the go-to component for rendering lists efficiently. It only
+renders items that are currently visible on screen (virtualization).
+
+BASIC SYNTAX:
+-------------
+
+    import { FlatList, View, Text, StyleSheet } from 'react-native';
+    
+    const DATA = [
+      { id: '1', title: 'Item 1' },
+      { id: '2', title: 'Item 2' },
+      { id: '3', title: 'Item 3' },
+    ];
+    
+    function MyList() {
+      return (
+        <FlatList
+          data={DATA}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.item}>
+              <Text>{item.title}</Text>
+            </View>
+          )}
+        />
+      );
+    }
+
+
+REQUIRED PROPS:
+---------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    FlatList REQUIRED PROPS                               │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   data                                                                   │
+    │   ────                                                                   │
+    │   The array of items to render                                          │
+    │                                                                          │
+    │   renderItem                                                             │
+    │   ──────────                                                             │
+    │   Function that returns a component for each item                       │
+    │   Receives: { item, index, separators }                                 │
+    │                                                                          │
+    │   keyExtractor                                                           │
+    │   ────────────                                                           │
+    │   Function that returns a unique key for each item                      │
+    │   Important for React's reconciliation                                  │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+COMMON OPTIONAL PROPS:
+----------------------
+
+    ┌─────────────────────────┬────────────────────────────────────────────────┐
+    │   Prop                  │   Description                                  │
+    ├─────────────────────────┼────────────────────────────────────────────────┤
+    │   ListHeaderComponent   │   Component at the top of list                 │
+    │   ListFooterComponent   │   Component at the bottom of list              │
+    │   ListEmptyComponent    │   Component when data is empty                 │
+    │   ItemSeparatorComponent│   Component between items                      │
+    │   numColumns            │   Number of columns (grid layout)              │
+    │   horizontal            │   Horizontal list                              │
+    │   onRefresh             │   Pull-to-refresh callback                     │
+    │   refreshing            │   Is refreshing state                          │
+    │   onEndReached          │   Called when near end (infinite scroll)       │
+    │   onEndReachedThreshold │   How close to end to trigger callback         │
+    │   initialNumToRender    │   Items to render initially                    │
+    └─────────────────────────┴────────────────────────────────────────────────┘
+
+
+PRACTICAL EXAMPLE - COMPLETE LIST:
+----------------------------------
+
+    import { FlatList, View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+    import { useState, useCallback } from 'react';
+    
+    type Product = {
+      id: string;
+      name: string;
+      price: number;
+    };
+    
+    function ProductList() {
+      const [products, setProducts] = useState<Product[]>(DATA);
+      const [refreshing, setRefreshing] = useState(false);
+      const [loading, setLoading] = useState(false);
+      
+      // Pull to refresh
+      const handleRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await fetchProducts();
+        setRefreshing(false);
+      }, []);
+      
+      // Infinite scroll - load more
+      const handleEndReached = useCallback(async () => {
+        if (loading) return;
+        setLoading(true);
+        const moreProducts = await fetchMoreProducts();
+        setProducts(prev => [...prev, ...moreProducts]);
+        setLoading(false);
+      }, [loading]);
+      
+      return (
+        <FlatList
+          data={products}
+          keyExtractor={(item) => item.id}
+          
+          renderItem={({ item }) => (
+            <View style={styles.productCard}>
+              <Text style={styles.productName}>{item.name}</Text>
+              <Text style={styles.productPrice}>${item.price}</Text>
+            </View>
+          )}
+          
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          
+          ListHeaderComponent={
+            <Text style={styles.header}>Our Products</Text>
+          }
+          
+          ListEmptyComponent={
+            <Text style={styles.empty}>No products found</Text>
+          }
+          
+          ListFooterComponent={
+            loading ? <ActivityIndicator style={styles.loader} /> : null
+          }
+          
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.5}
+          
+          contentContainerStyle={styles.container}
+        />
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: {
+        padding: 16,
+      },
+      header: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 16,
+      },
+      productCard: {
+        padding: 16,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+      },
+      productName: {
+        fontSize: 16,
+        fontWeight: '600',
+      },
+      productPrice: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 4,
+      },
+      separator: {
+        height: 12,
+      },
+      empty: {
+        textAlign: 'center',
+        color: '#999',
+        marginTop: 50,
+      },
+      loader: {
+        marginVertical: 20,
+      },
+    });
+
+
+GRID LAYOUT:
+------------
+
+    <FlatList
+      data={DATA}
+      numColumns={2}
+      columnWrapperStyle={{ gap: 12 }}  // Space between columns
+      renderItem={({ item }) => (
+        <View style={{ flex: 1 }}>
+          {/* Grid item */}
+        </View>
+      )}
+    />
+
+
+================================================================================
+        9-12. OTHER ESSENTIAL COMPONENTS (QUICK REFERENCE)
+================================================================================
+
+SAFEAREAVIEW:
+-------------
+Ensures content doesn't overlap with device notches or home indicators.
+
+    import { SafeAreaView } from 'react-native-safe-area-context';
+    
+    function Screen() {
+      return (
+        <SafeAreaView style={{ flex: 1 }}>
+          {/* Your content is safe from notches! */}
+        </SafeAreaView>
+      );
+    }
+
+
+STATUSBAR:
+----------
+Controls the status bar appearance.
+
+    import { StatusBar } from 'expo-status-bar';
+    
+    <StatusBar style="auto" />  // 'auto', 'light', 'dark', 'inverted'
+
+
+ACTIVITYINDICATOR:
+------------------
+Loading spinner.
+
+    import { ActivityIndicator } from 'react-native';
+    
+    <ActivityIndicator size="large" color="#007AFF" />
+
+
+MODAL:
+------
+Overlay content.
+
+    import { Modal, View, Text } from 'react-native';
+    
+    <Modal
+      visible={isVisible}
+      animationType="slide"  // 'none', 'slide', 'fade'
+      transparent={true}
+      onRequestClose={() => setIsVisible(false)}
+    >
+      <View style={styles.modalBackground}>
+        <View style={styles.modalContent}>
+          <Text>Modal Content</Text>
+        </View>
+      </View>
+    </Modal>
+
+
+SWITCH:
+-------
+Toggle switch.
+
+    import { Switch } from 'react-native';
+    
+    <Switch
+      value={isEnabled}
+      onValueChange={setIsEnabled}
+      trackColor={{ false: '#ccc', true: '#81b0ff' }}
+      thumbColor={isEnabled ? '#007AFF' : '#f4f3f4'}
+    />
+
+
+================================================================================
+            13. COMPONENT COMPARISON: REACT WEB vs REACT NATIVE
+================================================================================
+
+QUICK REFERENCE TABLE:
+----------------------
+
+    ┌─────────────────────┬────────────────────────┬──────────────────────────┐
+    │   Web HTML/React    │   React Native         │   Notes                  │
+    ├─────────────────────┼────────────────────────┼──────────────────────────┤
+    │   <div>             │   <View>               │   Container              │
+    │   <span>            │   <Text>               │   Inline text            │
+    │   <p>               │   <Text>               │   Paragraph              │
+    │   <h1>-<h6>         │   <Text> + style       │   Style fontSize/weight  │
+    │   <img>             │   <Image>              │   Images                 │
+    │   <input>           │   <TextInput>          │   Text input             │
+    │   <button>          │   <Pressable>          │   Clickable              │
+    │   <a>               │   <Link> (expo-router) │   Navigation             │
+    │   <ul>/<ol>         │   <FlatList>           │   Lists                  │
+    │   <form>            │   <View>               │   No form element        │
+    │   <textarea>        │   <TextInput multiline>│   Multi-line input       │
+    │   <select>          │   (Third-party)        │   Use Picker libs        │
+    │   <video>           │   expo-av              │   Video player           │
+    │   <audio>           │   expo-av              │   Audio player           │
+    │   <canvas>          │   react-native-canvas  │   Canvas drawing         │
+    │   <svg>             │   react-native-svg     │   SVG graphics           │
+    └─────────────────────┴────────────────────────┴──────────────────────────┘
+
+
+================================================================================
+                            SUMMARY
+================================================================================
+
+KEY TAKEAWAYS:
+--------------
+
+1. View is your universal container (like div)
+2. ALL text MUST be inside <Text> components
+3. Use expo-image for better image performance
+4. Pressable is the modern way to handle touches
+5. Use FlatList for long lists, ScrollView for mixed content
+6. Always wrap screens in SafeAreaView
+7. TextInput uses onChangeText (not onChange)
+
+================================================================================
+                        END OF DOCUMENT 03
+                Next: 04 - Styling in React Native
+================================================================================

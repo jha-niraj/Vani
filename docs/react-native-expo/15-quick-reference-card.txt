@@ -1,0 +1,673 @@
+================================================================================
+        REACT NATIVE WITH EXPO - COMPREHENSIVE LEARNING GUIDE
+        PART 15: QUICK REFERENCE CARD
+================================================================================
+
+A handy reference for common commands, code snippets, and patterns.
+
+================================================================================
+                        COMMAND REFERENCE
+================================================================================
+
+PROJECT COMMANDS:
+-----------------
+    npx create-expo-app@latest my-app      # Create new project
+    npx expo start                          # Start dev server
+    npx expo start --clear                  # Start with cache cleared
+    npx expo start --tunnel                 # Use tunnel (remote devices)
+    npx expo install [package]              # Install Expo-compatible package
+    npx expo-doctor                         # Check for issues
+    npx expo install --fix                  # Fix dependency versions
+
+BUILD COMMANDS:
+---------------
+    eas login                               # Login to EAS
+    eas build:configure                     # Initialize EAS
+    eas build -p ios                        # Build for iOS
+    eas build -p android                    # Build for Android
+    eas build -p all                        # Build for both
+    eas build --profile development         # Development build
+    eas build --profile preview             # Preview build
+    eas build --profile production          # Production build
+
+SUBMIT COMMANDS:
+----------------
+    eas submit -p ios                       # Submit to App Store
+    eas submit -p android                   # Submit to Play Store
+    eas update                              # OTA update
+
+DEVELOPMENT SHORTCUTS:
+----------------------
+    a                                       # Open Android
+    i                                       # Open iOS
+    w                                       # Open web
+    r                                       # Reload
+    m                                       # Open dev menu
+    j                                       # Open JS debugger
+
+DEVICE SHORTCUTS:
+-----------------
+    Cmd+D (iOS) / Cmd+M (Android)          # Open dev menu
+    Cmd+R                                   # Reload
+    Shake device                            # Open dev menu
+
+
+================================================================================
+                        COMPONENT SNIPPETS
+================================================================================
+
+BASIC COMPONENT:
+----------------
+    import { View, Text, StyleSheet } from 'react-native';
+    
+    interface Props {
+      title: string;
+    }
+    
+    export function MyComponent({ title }: Props) {
+      return (
+        <View style={styles.container}>
+          <Text style={styles.text}>{title}</Text>
+        </View>
+      );
+    }
+    
+    const styles = StyleSheet.create({
+      container: { flex: 1, padding: 16 },
+      text: { fontSize: 16 },
+    });
+
+
+SCREEN WITH DATA FETCHING:
+--------------------------
+    import { View, Text, FlatList, ActivityIndicator } from 'react-native';
+    import { useQuery } from '@tanstack/react-query';
+    
+    export default function ItemsScreen() {
+      const { data, isLoading, error, refetch } = useQuery({
+        queryKey: ['items'],
+        queryFn: fetchItems,
+      });
+      
+      if (isLoading) return <ActivityIndicator />;
+      if (error) return <Text>Error: {error.message}</Text>;
+      
+      return (
+        <FlatList
+          data={data}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <ItemCard item={item} />}
+          refreshing={isLoading}
+          onRefresh={refetch}
+        />
+      );
+    }
+
+
+FORM COMPONENT:
+---------------
+    import { useState } from 'react';
+    import { View, TextInput, Button, Alert } from 'react-native';
+    
+    export function LoginForm() {
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [loading, setLoading] = useState(false);
+      
+      const handleSubmit = async () => {
+        if (!email || !password) {
+          Alert.alert('Error', 'Please fill all fields');
+          return;
+        }
+        
+        setLoading(true);
+        try {
+          await loginApi({ email, password });
+          // Navigate on success
+        } catch (error) {
+          Alert.alert('Error', error.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      return (
+        <View style={{ padding: 16, gap: 12 }}>
+          <TextInput
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <TextInput
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+          <Button
+            title={loading ? 'Loading...' : 'Login'}
+            onPress={handleSubmit}
+            disabled={loading}
+          />
+        </View>
+      );
+    }
+
+
+================================================================================
+                        HOOK SNIPPETS
+================================================================================
+
+useFetch HOOK:
+--------------
+    function useFetch<T>(url: string) {
+      const [data, setData] = useState<T | null>(null);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState<string | null>(null);
+      
+      const fetchData = useCallback(async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          const response = await fetch(url);
+          const json = await response.json();
+          setData(json);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      }, [url]);
+      
+      useEffect(() => { fetchData(); }, [fetchData]);
+      
+      return { data, loading, error, refetch: fetchData };
+    }
+
+
+useDebounce HOOK:
+-----------------
+    function useDebounce<T>(value: T, delay: number): T {
+      const [debouncedValue, setDebouncedValue] = useState(value);
+      
+      useEffect(() => {
+        const timer = setTimeout(() => setDebouncedValue(value), delay);
+        return () => clearTimeout(timer);
+      }, [value, delay]);
+      
+      return debouncedValue;
+    }
+
+
+useAuth HOOK:
+-------------
+    function useAuth() {
+      const [user, setUser] = useState<User | null>(null);
+      const [loading, setLoading] = useState(true);
+      
+      useEffect(() => {
+        checkAuth();
+      }, []);
+      
+      const checkAuth = async () => {
+        try {
+          const token = await SecureStore.getItemAsync('token');
+          if (token) {
+            const user = await fetchUser();
+            setUser(user);
+          }
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      const login = async (email: string, password: string) => {
+        const { token, user } = await loginApi(email, password);
+        await SecureStore.setItemAsync('token', token);
+        setUser(user);
+      };
+      
+      const logout = async () => {
+        await SecureStore.deleteItemAsync('token');
+        setUser(null);
+      };
+      
+      return { user, loading, login, logout, isAuthenticated: !!user };
+    }
+
+
+================================================================================
+                    STYLE PATTERNS
+================================================================================
+
+THEME SETUP:
+------------
+    // constants/theme.ts
+    export const COLORS = {
+      primary: '#007AFF',
+      secondary: '#5856D6',
+      background: '#FFFFFF',
+      text: '#000000',
+      textSecondary: '#666666',
+      border: '#E5E5E5',
+      error: '#FF3B30',
+      success: '#34C759',
+    };
+    
+    export const SPACING = {
+      xs: 4, sm: 8, md: 16, lg: 24, xl: 32,
+    };
+    
+    export const FONT_SIZE = {
+      xs: 12, sm: 14, md: 16, lg: 20, xl: 24,
+    };
+
+
+COMMON STYLES:
+--------------
+    const styles = StyleSheet.create({
+      // Containers
+      container: { flex: 1, padding: 16 },
+      centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+      row: { flexDirection: 'row', alignItems: 'center' },
+      spaceBetween: { flexDirection: 'row', justifyContent: 'space-between' },
+      
+      // Cards
+      card: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+      },
+      
+      // Text
+      title: { fontSize: 24, fontWeight: 'bold' },
+      subtitle: { fontSize: 18, fontWeight: '600' },
+      body: { fontSize: 16 },
+      caption: { fontSize: 12, color: '#666' },
+      
+      // Inputs
+      input: {
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+      },
+      
+      // Buttons
+      button: {
+        backgroundColor: '#007AFF',
+        borderRadius: 8,
+        padding: 14,
+        alignItems: 'center',
+      },
+      buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+    });
+
+
+================================================================================
+                    NAVIGATION PATTERNS
+================================================================================
+
+EXPO ROUTER LAYOUTS:
+--------------------
+    // app/_layout.tsx (Root)
+    export default function RootLayout() {
+      return (
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        </Stack>
+      );
+    }
+    
+    // app/(tabs)/_layout.tsx
+    export default function TabLayout() {
+      return (
+        <Tabs>
+          <Tabs.Screen name="home" options={{ title: 'Home', tabBarIcon: ... }} />
+          <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: ... }} />
+        </Tabs>
+      );
+    }
+
+
+NAVIGATION METHODS:
+-------------------
+    import { router, Link } from 'expo-router';
+    
+    // Programmatic navigation
+    router.push('/home');                          // Push screen
+    router.replace('/home');                       // Replace current
+    router.back();                                 // Go back
+    router.push({ pathname: '/user/[id]', params: { id: '123' } });
+    
+    // Link component
+    <Link href="/settings">Settings</Link>
+    <Link href="/user/123" asChild><Pressable>...</Pressable></Link>
+
+
+GETTING PARAMS:
+---------------
+    // app/user/[id].tsx
+    import { useLocalSearchParams, useGlobalSearchParams } from 'expo-router';
+    
+    export default function UserScreen() {
+      const { id } = useLocalSearchParams<{ id: string }>();
+      return <Text>User: {id}</Text>;
+    }
+
+
+================================================================================
+                    COMMON EXPO APIs
+================================================================================
+
+ASYNC STORAGE:
+--------------
+    import AsyncStorage from '@react-native-async-storage/async-storage';
+    
+    await AsyncStorage.setItem('key', 'value');
+    const value = await AsyncStorage.getItem('key');
+    await AsyncStorage.removeItem('key');
+
+
+SECURE STORE:
+-------------
+    import * as SecureStore from 'expo-secure-store';
+    
+    await SecureStore.setItemAsync('token', token);
+    const token = await SecureStore.getItemAsync('token');
+    await SecureStore.deleteItemAsync('token');
+
+
+IMAGE PICKER:
+-------------
+    import * as ImagePicker from 'expo-image-picker';
+    
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+    }
+
+
+CAMERA:
+-------
+    import { CameraView, useCameraPermissions } from 'expo-camera';
+    
+    const [permission, requestPermission] = useCameraPermissions();
+    
+    if (!permission?.granted) {
+      return <Button title="Grant Permission" onPress={requestPermission} />;
+    }
+    
+    return <CameraView style={{ flex: 1 }} facing="back" />;
+
+
+LOCATION:
+---------
+    import * as Location from 'expo-location';
+    
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status === 'granted') {
+      const location = await Location.getCurrentPositionAsync();
+      console.log(location.coords.latitude, location.coords.longitude);
+    }
+
+
+HAPTICS:
+--------
+    import * as Haptics from 'expo-haptics';
+    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+
+LINKING:
+--------
+    import { Linking } from 'react-native';
+    
+    Linking.openURL('https://example.com');
+    Linking.openURL('mailto:test@example.com');
+    Linking.openURL('tel:+1234567890');
+    Linking.openSettings();
+
+
+================================================================================
+                    ANIMATION SNIPPETS
+================================================================================
+
+FADE IN (REANIMATED):
+---------------------
+    import Animated, {
+      useSharedValue,
+      useAnimatedStyle,
+      withTiming,
+    } from 'react-native-reanimated';
+    
+    function FadeIn({ children }) {
+      const opacity = useSharedValue(0);
+      
+      useEffect(() => {
+        opacity.value = withTiming(1, { duration: 500 });
+      }, []);
+      
+      const animatedStyle = useAnimatedStyle(() => ({
+        opacity: opacity.value,
+      }));
+      
+      return <Animated.View style={animatedStyle}>{children}</Animated.View>;
+    }
+
+
+SCALE ON PRESS:
+---------------
+    import { Pressable } from 'react-native';
+    import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+    
+    function ScaleButton({ children, onPress }) {
+      const scale = useSharedValue(1);
+      
+      const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+      }));
+      
+      return (
+        <Pressable
+          onPressIn={() => { scale.value = withSpring(0.95); }}
+          onPressOut={() => { scale.value = withSpring(1); }}
+          onPress={onPress}
+        >
+          <Animated.View style={animatedStyle}>{children}</Animated.View>
+        </Pressable>
+      );
+    }
+
+
+ENTERING ANIMATIONS:
+--------------------
+    import Animated, { FadeIn, FadeOut, SlideInRight } from 'react-native-reanimated';
+    
+    <Animated.View entering={FadeIn.delay(100).duration(300)}>
+      <Text>I fade in!</Text>
+    </Animated.View>
+    
+    <Animated.View
+      entering={SlideInRight}
+      exiting={FadeOut}
+    >
+      <Text>I slide in!</Text>
+    </Animated.View>
+
+
+================================================================================
+                    TYPESCRIPT TYPES
+================================================================================
+
+COMMON TYPES:
+-------------
+    // Navigation params
+    type RootStackParamList = {
+      Home: undefined;
+      Profile: { userId: string };
+      Settings: { section?: string };
+    };
+    
+    // API response
+    interface ApiResponse<T> {
+      data: T;
+      status: number;
+      message?: string;
+    }
+    
+    // Component props
+    interface ButtonProps {
+      title: string;
+      onPress: () => void;
+      disabled?: boolean;
+      loading?: boolean;
+      variant?: 'primary' | 'secondary' | 'outline';
+    }
+    
+    // User
+    interface User {
+      id: string;
+      name: string;
+      email: string;
+      avatar?: string;
+      createdAt: string;
+    }
+
+
+================================================================================
+                    FILE STRUCTURE
+================================================================================
+
+    app/                        # Expo Router pages
+    ├── (tabs)/                # Tab navigation
+    ├── (auth)/                # Auth screens
+    └── _layout.tsx            # Root layout
+    
+    components/                 # Reusable components
+    ├── ui/                    # Basic UI (Button, Input, Card)
+    └── [feature]/             # Feature-specific
+    
+    hooks/                      # Custom hooks
+    services/                   # API services
+    stores/                     # State management
+    utils/                      # Utility functions
+    constants/                  # App constants
+    types/                      # TypeScript types
+    assets/                     # Static assets
+
+
+================================================================================
+                    DEBUGGING QUICK REFERENCE
+================================================================================
+
+    npx expo start --clear           # Clear cache
+    npx react-devtools               # Open React DevTools
+    Press 'j' in terminal            # Open JS debugger
+    Cmd+D / Shake                    # Open dev menu
+    console.log(JSON.stringify(obj, null, 2))  # Pretty print
+    console.table(array)             # Table format
+    console.trace()                  # Stack trace
+
+
+================================================================================
+                    USEFUL PACKAGES
+================================================================================
+
+    # UI & Styling
+    nativewind                       # Tailwind CSS for RN
+    @shopify/flash-list              # Fast list component
+    react-native-svg                 # SVG support
+    expo-linear-gradient             # Gradient backgrounds
+    
+    # State & Data
+    @tanstack/react-query            # Server state management
+    zustand                          # Simple state management
+    
+    # Forms
+    react-hook-form                  # Form handling
+    zod                              # Validation
+    
+    # Animation
+    react-native-reanimated          # Smooth animations
+    lottie-react-native              # Lottie animations
+    moti                             # Easy animations
+    
+    # Navigation
+    expo-router                      # File-based routing
+    
+    # Storage
+    @react-native-async-storage/async-storage
+    expo-secure-store
+    
+    # Utilities
+    date-fns                         # Date manipulation
+    lodash                           # Utility functions
+
+
+================================================================================
+                    COMMON PATTERNS
+================================================================================
+
+LOADING/ERROR/DATA:
+-------------------
+    if (loading) return <LoadingSpinner />;
+    if (error) return <ErrorView message={error} onRetry={refetch} />;
+    if (!data?.length) return <EmptyState />;
+    return <DataList data={data} />;
+
+
+CONDITIONAL RENDERING:
+----------------------
+    {condition && <Component />}                 // Render if true
+    {condition ? <A /> : <B />}                  // Either/or
+    {items.length > 0 ? <List /> : <Empty />}   // List or empty
+
+
+SAFE PROPERTY ACCESS:
+---------------------
+    user?.name                    // Optional chaining
+    user?.address?.city           // Nested optional
+    user ?? 'Anonymous'           // Nullish coalescing
+
+
+================================================================================
+                END OF REACT NATIVE WITH EXPO GUIDE
+================================================================================
+
+    This comprehensive guide covers:
+    
+    📱 01. Introduction to React Native & Expo
+    🧩 02. Core Components & Basics
+    🎨 03. Styling & Layout (Flexbox)
+    📊 04. Lists & Scrolling
+    🔄 05. State & Data Flow
+    🧭 06. Navigation with Expo Router
+    📝 07. Forms & User Input
+    💾 08. Data Persistence & Storage
+    🔌 09. Common Expo APIs
+    ✨ 10. Animations
+    🌐 11. API Calls & Data Fetching
+    🚀 12. Building & Deploying
+    🐛 13. Debugging & Dev Tools
+    ⭐ 14. Best Practices & Tips
+    📋 15. Quick Reference (This document)
+    
+    Happy coding! 🎉
+
+================================================================================

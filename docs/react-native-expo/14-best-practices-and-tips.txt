@@ -1,0 +1,1113 @@
+================================================================================
+        REACT NATIVE WITH EXPO - COMPREHENSIVE LEARNING GUIDE
+        PART 14: BEST PRACTICES AND TIPS
+================================================================================
+
+This document compiles best practices, tips, and common patterns to help
+you write better React Native code.
+
+================================================================================
+                            TABLE OF CONTENTS
+================================================================================
+
+1. Project Structure Best Practices
+2. Component Best Practices
+3. Performance Best Practices
+4. TypeScript Best Practices
+5. Styling Best Practices
+6. State Management Best Practices
+7. Navigation Best Practices
+8. API & Data Best Practices
+9. Testing Best Practices
+10. Security Best Practices
+11. Accessibility Best Practices
+12. Common Mistakes to Avoid
+
+================================================================================
+                1. PROJECT STRUCTURE BEST PRACTICES
+================================================================================
+
+RECOMMENDED FOLDER STRUCTURE:
+-----------------------------
+
+    app/                        # Expo Router pages
+    ├── (auth)/                # Auth group (login, register)
+    ├── (tabs)/                # Main tab navigation
+    │   ├── home/
+    │   ├── profile/
+    │   └── _layout.tsx
+    ├── _layout.tsx            # Root layout
+    └── [...unmatched].tsx     # 404 page
+    
+    components/                 # Reusable components
+    ├── ui/                    # Basic UI components
+    │   ├── Button.tsx
+    │   ├── Input.tsx
+    │   ├── Card.tsx
+    │   └── index.ts           # Barrel export
+    ├── forms/                 # Form components
+    ├── navigation/            # Navigation components
+    └── [feature]/             # Feature-specific components
+    
+    hooks/                      # Custom hooks
+    ├── useAuth.ts
+    ├── useFetch.ts
+    └── index.ts
+    
+    services/                   # API and external services
+    ├── api.ts                 # Axios instance
+    ├── auth.service.ts
+    └── user.service.ts
+    
+    stores/                     # State management
+    ├── auth.store.ts
+    └── app.store.ts
+    
+    utils/                      # Utility functions
+    ├── format.ts
+    ├── validation.ts
+    └── helpers.ts
+    
+    constants/                  # App constants
+    ├── theme.ts
+    ├── config.ts
+    └── api.ts
+    
+    types/                      # TypeScript types
+    ├── user.ts
+    ├── api.ts
+    └── index.ts
+    
+    assets/                     # Static assets
+    ├── images/
+    ├── fonts/
+    └── icons/
+
+
+NAMING CONVENTIONS:
+-------------------
+
+    ┌────────────────────────────────────────────────────────────────────────┐
+    │                    NAMING CONVENTIONS                                   │
+    ├────────────────────────────────────────────────────────────────────────┤
+    │                                                                         │
+    │   Components      PascalCase        Button.tsx, UserCard.tsx           │
+    │   Hooks           camelCase         useAuth.ts, useFetch.ts            │
+    │   Utils/Services  camelCase         formatDate.ts, authService.ts      │
+    │   Constants       UPPER_SNAKE       MAX_RETRY, API_URL                 │
+    │   Types/Interfaces PascalCase       User, ApiResponse                  │
+    │   Files           kebab-case or     user-card.tsx or UserCard.tsx     │
+    │                   PascalCase                                            │
+    │                                                                         │
+    └────────────────────────────────────────────────────────────────────────┘
+
+
+BARREL EXPORTS:
+---------------
+Create index.ts files for cleaner imports.
+
+    // components/ui/index.ts
+    export { Button } from './Button';
+    export { Input } from './Input';
+    export { Card } from './Card';
+    export { Text } from './Text';
+    
+    // Usage
+    import { Button, Input, Card } from '@/components/ui';
+
+
+PATH ALIASES:
+-------------
+
+    // tsconfig.json
+    {
+      "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+          "@/*": ["./*"],
+          "@components/*": ["components/*"],
+          "@hooks/*": ["hooks/*"],
+          "@services/*": ["services/*"]
+        }
+      }
+    }
+    
+    // Usage
+    import { Button } from '@/components/ui';
+    import { useAuth } from '@/hooks';
+
+
+================================================================================
+                2. COMPONENT BEST PRACTICES
+================================================================================
+
+COMPONENT DESIGN PRINCIPLES:
+----------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    COMPONENT PRINCIPLES                                  │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   SINGLE RESPONSIBILITY                                                  │
+    │   └── Each component should do one thing well                           │
+    │                                                                          │
+    │   REUSABILITY                                                            │
+    │   └── Make components generic when possible                             │
+    │                                                                          │
+    │   COMPOSITION                                                            │
+    │   └── Compose small components into larger ones                         │
+    │                                                                          │
+    │   PROPS VS STATE                                                         │
+    │   └── Props for configuration, state for internal changes               │
+    │                                                                          │
+    │   SEPARATION OF CONCERNS                                                │
+    │   └── Separate UI from logic (hooks, services)                          │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+COMPONENT STRUCTURE:
+--------------------
+
+    // components/Button.tsx
+    import { Pressable, Text, StyleSheet, PressableProps } from 'react-native';
+    import { forwardRef } from 'react';
+    
+    // 1. Define props interface
+    interface ButtonProps extends PressableProps {
+      title: string;
+      variant?: 'primary' | 'secondary' | 'outline';
+      size?: 'sm' | 'md' | 'lg';
+      loading?: boolean;
+    }
+    
+    // 2. Export component with forwardRef if needed
+    export const Button = forwardRef<Pressable, ButtonProps>(
+      function Button(
+        { 
+          title, 
+          variant = 'primary', 
+          size = 'md',
+          loading = false,
+          disabled,
+          style,
+          ...props 
+        },
+        ref
+      ) {
+        // 3. Computed values
+        const isDisabled = disabled || loading;
+        
+        return (
+          <Pressable
+            ref={ref}
+            disabled={isDisabled}
+            style={({ pressed }) => [
+              styles.base,
+              styles[variant],
+              styles[size],
+              pressed && styles.pressed,
+              isDisabled && styles.disabled,
+              style,
+            ]}
+            {...props}
+          >
+            <Text style={[styles.text, styles[`${variant}Text`]]}>
+              {loading ? 'Loading...' : title}
+            </Text>
+          </Pressable>
+        );
+      }
+    );
+    
+    // 4. Styles at bottom
+    const styles = StyleSheet.create({
+      base: {
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      primary: {
+        backgroundColor: '#007AFF',
+      },
+      secondary: {
+        backgroundColor: '#5856D6',
+      },
+      outline: {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: '#007AFF',
+      },
+      sm: { paddingVertical: 8, paddingHorizontal: 12 },
+      md: { paddingVertical: 12, paddingHorizontal: 16 },
+      lg: { paddingVertical: 16, paddingHorizontal: 24 },
+      pressed: { opacity: 0.8 },
+      disabled: { opacity: 0.5 },
+      text: { fontWeight: '600' },
+      primaryText: { color: 'white' },
+      secondaryText: { color: 'white' },
+      outlineText: { color: '#007AFF' },
+    });
+
+
+AVOID PROP DRILLING:
+--------------------
+
+    // ❌ Bad - passing props through many levels
+    <App>
+      <Layout user={user}>
+        <Sidebar user={user}>
+          <UserAvatar user={user} />
+        </Sidebar>
+      </Layout>
+    </App>
+    
+    // ✅ Good - use context or state management
+    const UserContext = createContext<User | null>(null);
+    
+    function App() {
+      const [user, setUser] = useState<User | null>(null);
+      return (
+        <UserContext.Provider value={user}>
+          <Layout>
+            <Sidebar>
+              <UserAvatar /> {/* Access user via useContext */}
+            </Sidebar>
+          </Layout>
+        </UserContext.Provider>
+      );
+    }
+
+
+CONDITIONAL RENDERING:
+----------------------
+
+    // ❌ Bad - complex ternaries
+    return (
+      <View>
+        {loading ? (
+          <Spinner />
+        ) : error ? (
+          <Error message={error} />
+        ) : data ? (
+          <Content data={data} />
+        ) : (
+          <Empty />
+        )}
+      </View>
+    );
+    
+    // ✅ Good - early returns
+    if (loading) return <Spinner />;
+    if (error) return <Error message={error} />;
+    if (!data) return <Empty />;
+    
+    return <Content data={data} />;
+
+
+================================================================================
+                3. PERFORMANCE BEST PRACTICES
+================================================================================
+
+MEMOIZATION:
+------------
+
+    import { memo, useMemo, useCallback } from 'react';
+    
+    // Memoize expensive components
+    const ExpensiveList = memo(function ExpensiveList({ items }) {
+      return items.map(item => <Item key={item.id} {...item} />);
+    });
+    
+    // Memoize expensive calculations
+    function DataView({ rawData }) {
+      const processedData = useMemo(() => {
+        return rawData.filter(x => x.active).sort((a, b) => b.score - a.score);
+      }, [rawData]);
+      
+      return <List data={processedData} />;
+    }
+    
+    // Memoize callbacks passed to children
+    function Parent() {
+      const handlePress = useCallback((id: string) => {
+        console.log('Pressed:', id);
+      }, []);
+      
+      return <Child onPress={handlePress} />;
+    }
+
+
+LIST OPTIMIZATION:
+------------------
+
+    <FlatList
+      data={items}
+      renderItem={renderItem}
+      keyExtractor={(item) => item.id}
+      
+      // Performance optimizations
+      removeClippedSubviews={true}          // Unmount off-screen items
+      maxToRenderPerBatch={10}               // Render 10 items per batch
+      updateCellsBatchingPeriod={50}         // Batch updates every 50ms
+      windowSize={5}                          // Render 5 screens of content
+      initialNumToRender={10}                 // Initial render count
+      
+      // If items have fixed height
+      getItemLayout={(data, index) => ({
+        length: ITEM_HEIGHT,
+        offset: ITEM_HEIGHT * index,
+        index,
+      })}
+    />
+
+
+IMAGE OPTIMIZATION:
+-------------------
+
+    import { Image } from 'expo-image';
+    
+    // ✅ Use expo-image with proper sizing
+    <Image
+      source={{ uri: imageUrl }}
+      style={{ width: 200, height: 200 }}
+      contentFit="cover"
+      placeholder={{ blurhash }}  // Show blur while loading
+      transition={200}            // Smooth transition
+      cachePolicy="memory-disk"   // Cache aggressively
+    />
+    
+    // ✅ Use appropriate image sizes
+    // Don't load 4K images for thumbnails
+    const thumbnailUrl = `${baseUrl}?w=200&h=200&fit=crop`;
+
+
+AVOID INLINE STYLES IN LOOPS:
+-----------------------------
+
+    // ❌ Bad - creates new object every render
+    {items.map(item => (
+      <View style={{ padding: 16, margin: 8 }}>
+        <Text>{item.name}</Text>
+      </View>
+    ))}
+    
+    // ✅ Good - use StyleSheet
+    const styles = StyleSheet.create({
+      item: { padding: 16, margin: 8 },
+    });
+    
+    {items.map(item => (
+      <View style={styles.item}>
+        <Text>{item.name}</Text>
+      </View>
+    ))}
+
+
+LAZY LOADING:
+-------------
+
+    import { lazy, Suspense } from 'react';
+    
+    // Lazy load heavy components
+    const HeavyChart = lazy(() => import('./HeavyChart'));
+    
+    function Dashboard() {
+      return (
+        <Suspense fallback={<ChartSkeleton />}>
+          <HeavyChart data={data} />
+        </Suspense>
+      );
+    }
+
+
+================================================================================
+                4. TYPESCRIPT BEST PRACTICES
+================================================================================
+
+TYPE YOUR PROPS:
+----------------
+
+    // Define interfaces for all props
+    interface UserCardProps {
+      user: User;
+      onPress?: (id: string) => void;
+      showAvatar?: boolean;
+    }
+    
+    function UserCard({ user, onPress, showAvatar = true }: UserCardProps) {
+      // ...
+    }
+
+
+USE TYPE INFERENCE:
+-------------------
+
+    // ❌ Unnecessary explicit typing
+    const [count, setCount] = useState<number>(0);
+    const [name, setName] = useState<string>('');
+    
+    // ✅ Let TypeScript infer
+    const [count, setCount] = useState(0);           // number
+    const [name, setName] = useState('');            // string
+    const [user, setUser] = useState<User | null>(null); // Explicit when needed
+
+
+TYPE API RESPONSES:
+-------------------
+
+    interface ApiResponse<T> {
+      data: T;
+      status: number;
+      message?: string;
+    }
+    
+    interface User {
+      id: string;
+      name: string;
+      email: string;
+      createdAt: string;
+    }
+    
+    async function fetchUser(id: string): Promise<User> {
+      const response = await api.get<ApiResponse<User>>(`/users/${id}`);
+      return response.data.data;
+    }
+
+
+USE DISCRIMINATED UNIONS:
+-------------------------
+
+    // For state that can be in different modes
+    type RequestState<T> =
+      | { status: 'idle' }
+      | { status: 'loading' }
+      | { status: 'success'; data: T }
+      | { status: 'error'; error: string };
+    
+    function useRequest<T>() {
+      const [state, setState] = useState<RequestState<T>>({ status: 'idle' });
+      
+      // TypeScript knows the shape based on status
+      if (state.status === 'success') {
+        console.log(state.data); // data is available
+      }
+      if (state.status === 'error') {
+        console.log(state.error); // error is available
+      }
+    }
+
+
+UTILITY TYPES:
+--------------
+
+    interface User {
+      id: string;
+      name: string;
+      email: string;
+      password: string;
+    }
+    
+    // Pick specific properties
+    type PublicUser = Pick<User, 'id' | 'name'>;
+    
+    // Omit specific properties
+    type UserWithoutPassword = Omit<User, 'password'>;
+    
+    // Make all properties optional
+    type PartialUser = Partial<User>;
+    
+    // Make all properties required
+    type RequiredUser = Required<User>;
+    
+    // Create a type for creating users (without id)
+    type CreateUserDTO = Omit<User, 'id'>;
+
+
+================================================================================
+                5. STYLING BEST PRACTICES
+================================================================================
+
+USE STYLESHEET:
+---------------
+
+    // ✅ Use StyleSheet.create for performance
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+        padding: 16,
+      },
+      title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+      },
+    });
+
+
+DESIGN TOKENS:
+--------------
+
+    // constants/theme.ts
+    export const COLORS = {
+      primary: '#007AFF',
+      secondary: '#5856D6',
+      success: '#34C759',
+      warning: '#FF9500',
+      error: '#FF3B30',
+      
+      text: {
+        primary: '#000000',
+        secondary: '#6B7280',
+        disabled: '#9CA3AF',
+      },
+      
+      background: {
+        primary: '#FFFFFF',
+        secondary: '#F3F4F6',
+      },
+    } as const;
+    
+    export const SPACING = {
+      xs: 4,
+      sm: 8,
+      md: 16,
+      lg: 24,
+      xl: 32,
+    } as const;
+    
+    export const FONT_SIZE = {
+      xs: 12,
+      sm: 14,
+      md: 16,
+      lg: 18,
+      xl: 24,
+      xxl: 32,
+    } as const;
+    
+    export const BORDER_RADIUS = {
+      sm: 4,
+      md: 8,
+      lg: 16,
+      full: 9999,
+    } as const;
+
+
+CONSISTENT SPACING:
+-------------------
+
+    // ✅ Use spacing constants
+    const styles = StyleSheet.create({
+      container: {
+        padding: SPACING.md,
+        marginBottom: SPACING.lg,
+      },
+    });
+    
+    // ❌ Avoid magic numbers
+    const badStyles = StyleSheet.create({
+      container: {
+        padding: 16,
+        marginBottom: 24,
+      },
+    });
+
+
+RESPONSIVE DESIGN:
+------------------
+
+    import { Dimensions, useWindowDimensions } from 'react-native';
+    
+    // Get dimensions
+    const { width, height } = useWindowDimensions();
+    
+    // Responsive values
+    const isSmallDevice = width < 375;
+    const isTablet = width >= 768;
+    
+    const styles = StyleSheet.create({
+      container: {
+        padding: isTablet ? 32 : 16,
+      },
+      grid: {
+        flexDirection: isTablet ? 'row' : 'column',
+      },
+    });
+
+
+================================================================================
+                6. STATE MANAGEMENT BEST PRACTICES
+================================================================================
+
+WHEN TO USE WHAT:
+-----------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    STATE MANAGEMENT OPTIONS                              │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   useState                                                               │
+    │   └── Local component state                                             │
+    │   └── Form inputs, toggles, UI state                                    │
+    │                                                                          │
+    │   useReducer                                                             │
+    │   └── Complex local state with multiple sub-values                      │
+    │   └── State that depends on previous state                              │
+    │                                                                          │
+    │   Context API                                                            │
+    │   └── Theme, user preferences, auth state                               │
+    │   └── Data needed by many components                                    │
+    │                                                                          │
+    │   Zustand/Jotai                                                          │
+    │   └── Lightweight global state                                          │
+    │   └── When Redux is overkill                                            │
+    │                                                                          │
+    │   Redux Toolkit                                                          │
+    │   └── Complex app-wide state                                            │
+    │   └── Time-travel debugging needed                                      │
+    │                                                                          │
+    │   React Query/TanStack Query                                            │
+    │   └── Server state (API data)                                           │
+    │   └── Caching, refetching, optimistic updates                           │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+LIFT STATE APPROPRIATELY:
+-------------------------
+
+    // Keep state as close to where it's used as possible
+    
+    // ❌ Bad - state too high
+    function App() {
+      const [searchQuery, setSearchQuery] = useState('');
+      return (
+        <Navigator>
+          <SearchScreen query={searchQuery} setQuery={setSearchQuery} />
+          <HomeScreen /> {/* Doesn't need searchQuery */}
+        </Navigator>
+      );
+    }
+    
+    // ✅ Good - state at appropriate level
+    function SearchScreen() {
+      const [searchQuery, setSearchQuery] = useState('');
+      return <SearchInput query={searchQuery} setQuery={setSearchQuery} />;
+    }
+
+
+ZUSTAND EXAMPLE:
+----------------
+
+    // stores/auth.store.ts
+    import { create } from 'zustand';
+    import { persist, createJSONStorage } from 'zustand/middleware';
+    import AsyncStorage from '@react-native-async-storage/async-storage';
+    
+    interface AuthState {
+      user: User | null;
+      token: string | null;
+      isAuthenticated: boolean;
+      login: (user: User, token: string) => void;
+      logout: () => void;
+    }
+    
+    export const useAuthStore = create<AuthState>()(
+      persist(
+        (set) => ({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          
+          login: (user, token) => set({
+            user,
+            token,
+            isAuthenticated: true,
+          }),
+          
+          logout: () => set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+          }),
+        }),
+        {
+          name: 'auth-storage',
+          storage: createJSONStorage(() => AsyncStorage),
+        }
+      )
+    );
+    
+    // Usage
+    function Profile() {
+      const { user, logout } = useAuthStore();
+      
+      return (
+        <View>
+          <Text>{user?.name}</Text>
+          <Button title="Logout" onPress={logout} />
+        </View>
+      );
+    }
+
+
+================================================================================
+                7. NAVIGATION BEST PRACTICES
+================================================================================
+
+ORGANIZE ROUTES:
+----------------
+
+    // app/_layout.tsx
+    export default function RootLayout() {
+      const { isAuthenticated } = useAuth();
+      
+      return (
+        <Stack screenOptions={{ headerShown: false }}>
+          {isAuthenticated ? (
+            <Stack.Screen name="(tabs)" />
+          ) : (
+            <Stack.Screen name="(auth)" />
+          )}
+          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        </Stack>
+      );
+    }
+
+
+TYPE-SAFE NAVIGATION:
+---------------------
+
+    // With Expo Router's typed routes
+    // Enable in app.json: "experiments": { "typedRoutes": true }
+    
+    import { Link, router } from 'expo-router';
+    
+    // Type-safe navigation
+    router.push('/quiz/123');              // TypeScript checks route exists
+    router.push({ pathname: '/user/[id]', params: { id: '456' } });
+    
+    // Type-safe links
+    <Link href="/settings">Settings</Link>
+    <Link href={{ pathname: '/user/[id]', params: { id: user.id } }}>
+      View Profile
+    </Link>
+
+
+PREVENT BACK NAVIGATION:
+------------------------
+
+    // For flows where back shouldn't be allowed (e.g., after checkout)
+    <Stack.Screen 
+      name="success" 
+      options={{ 
+        gestureEnabled: false,
+        headerBackVisible: false,
+      }} 
+    />
+
+
+================================================================================
+                8. API & DATA BEST PRACTICES
+================================================================================
+
+CENTRALIZE API CONFIGURATION:
+-----------------------------
+
+    // services/api.ts
+    import axios from 'axios';
+    
+    const api = axios.create({
+      baseURL: process.env.API_URL,
+      timeout: 10000,
+    });
+    
+    // Add auth token
+    api.interceptors.request.use(async (config) => {
+      const token = await getToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+    
+    // Handle errors globally
+    api.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          // Handle unauthorized
+          logout();
+        }
+        return Promise.reject(error);
+      }
+    );
+    
+    export default api;
+
+
+USE REACT QUERY:
+----------------
+
+    // hooks/useUser.ts
+    import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+    
+    export function useUser(id: string) {
+      return useQuery({
+        queryKey: ['user', id],
+        queryFn: () => api.get(`/users/${id}`).then(r => r.data),
+        staleTime: 1000 * 60 * 5, // 5 minutes
+      });
+    }
+    
+    export function useUpdateUser() {
+      const queryClient = useQueryClient();
+      
+      return useMutation({
+        mutationFn: (data: UpdateUserDTO) => 
+          api.patch(`/users/${data.id}`, data),
+        onSuccess: (_, variables) => {
+          queryClient.invalidateQueries({ queryKey: ['user', variables.id] });
+        },
+      });
+    }
+
+
+================================================================================
+                9. TESTING BEST PRACTICES
+================================================================================
+
+TESTING STRUCTURE:
+------------------
+
+    __tests__/
+    ├── components/
+    │   ├── Button.test.tsx
+    │   └── UserCard.test.tsx
+    ├── hooks/
+    │   └── useAuth.test.ts
+    └── utils/
+        └── format.test.ts
+
+
+COMPONENT TESTING:
+------------------
+
+    // __tests__/components/Button.test.tsx
+    import { render, fireEvent } from '@testing-library/react-native';
+    import { Button } from '@/components/Button';
+    
+    describe('Button', () => {
+      it('renders correctly', () => {
+        const { getByText } = render(<Button title="Click me" />);
+        expect(getByText('Click me')).toBeTruthy();
+      });
+      
+      it('calls onPress when pressed', () => {
+        const onPress = jest.fn();
+        const { getByText } = render(
+          <Button title="Click me" onPress={onPress} />
+        );
+        
+        fireEvent.press(getByText('Click me'));
+        expect(onPress).toHaveBeenCalledTimes(1);
+      });
+      
+      it('shows loading state', () => {
+        const { getByText } = render(<Button title="Submit" loading />);
+        expect(getByText('Loading...')).toBeTruthy();
+      });
+    });
+
+
+================================================================================
+                10. SECURITY BEST PRACTICES
+================================================================================
+
+SECURE STORAGE:
+---------------
+
+    // ❌ Bad - storing sensitive data in AsyncStorage
+    await AsyncStorage.setItem('token', token);
+    
+    // ✅ Good - use SecureStore for sensitive data
+    import * as SecureStore from 'expo-secure-store';
+    await SecureStore.setItemAsync('token', token);
+
+
+ENVIRONMENT VARIABLES:
+----------------------
+
+    // ❌ Bad - hardcoded secrets
+    const API_KEY = 'sk_live_1234567890';
+    
+    // ✅ Good - use environment variables
+    const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
+    
+    // Never commit secrets to git
+    // Use .env files with .gitignore
+
+
+INPUT VALIDATION:
+-----------------
+
+    // Always validate user input
+    function validateEmail(email: string): boolean {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    }
+    
+    function validatePassword(password: string): string[] {
+      const errors: string[] = [];
+      if (password.length < 8) errors.push('Must be at least 8 characters');
+      if (!/[A-Z]/.test(password)) errors.push('Must contain uppercase');
+      if (!/[0-9]/.test(password)) errors.push('Must contain number');
+      return errors;
+    }
+
+
+================================================================================
+                11. ACCESSIBILITY BEST PRACTICES
+================================================================================
+
+USE ACCESSIBILITY PROPS:
+------------------------
+
+    <Pressable
+      onPress={handlePress}
+      accessible={true}
+      accessibilityLabel="Submit form"
+      accessibilityHint="Double tap to submit your information"
+      accessibilityRole="button"
+    >
+      <Text>Submit</Text>
+    </Pressable>
+
+
+ACCESSIBILITY ROLES:
+--------------------
+
+    ┌────────────────────────────────────────────────────────────────────────┐
+    │                    ACCESSIBILITY ROLES                                  │
+    ├────────────────────────────────────────────────────────────────────────┤
+    │                                                                         │
+    │   button       - Clickable button                                      │
+    │   link         - Navigation link                                       │
+    │   header       - Section header                                        │
+    │   image        - Image content                                         │
+    │   text         - Static text                                           │
+    │   search       - Search field                                          │
+    │   checkbox     - Toggle option                                         │
+    │   tab          - Tab button                                            │
+    │   alert        - Important message                                     │
+    │                                                                         │
+    └────────────────────────────────────────────────────────────────────────┘
+
+
+ADEQUATE TOUCH TARGETS:
+-----------------------
+
+    // Minimum touch target: 44x44 points
+    <Pressable
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      style={{ minWidth: 44, minHeight: 44 }}
+    >
+      <Text>Tap me</Text>
+    </Pressable>
+
+
+================================================================================
+                12. COMMON MISTAKES TO AVOID
+================================================================================
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    COMMON MISTAKES                                       │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   ❌ Using ScrollView for long lists                                    │
+    │   ✅ Use FlatList for virtualization                                    │
+    │                                                                          │
+    │   ❌ Inline functions in render                                         │
+    │   ✅ Use useCallback or define outside                                  │
+    │                                                                          │
+    │   ❌ Storing derived state                                              │
+    │   ✅ Calculate during render or useMemo                                 │
+    │                                                                          │
+    │   ❌ Ignoring TypeScript errors                                         │
+    │   ✅ Fix all type issues properly                                       │
+    │                                                                          │
+    │   ❌ Not handling loading/error states                                  │
+    │   ✅ Always show appropriate UI for each state                          │
+    │                                                                          │
+    │   ❌ Hardcoding strings in components                                   │
+    │   ✅ Use constants or i18n                                              │
+    │                                                                          │
+    │   ❌ Overfetching data                                                  │
+    │   ✅ Fetch only what you need                                           │
+    │                                                                          │
+    │   ❌ Not cleaning up effects                                            │
+    │   ✅ Return cleanup functions in useEffect                              │
+    │                                                                          │
+    │   ❌ Using index as key for lists                                       │
+    │   ✅ Use unique, stable IDs                                             │
+    │                                                                          │
+    │   ❌ Not testing on physical devices                                    │
+    │   ✅ Test on real iOS and Android devices                               │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+CLEANUP IN EFFECTS:
+-------------------
+
+    // ❌ Bad - no cleanup
+    useEffect(() => {
+      const subscription = eventEmitter.subscribe(handleEvent);
+    }, []);
+    
+    // ✅ Good - cleanup on unmount
+    useEffect(() => {
+      const subscription = eventEmitter.subscribe(handleEvent);
+      return () => subscription.unsubscribe();
+    }, []);
+
+
+STABLE KEYS:
+------------
+
+    // ❌ Bad - index as key
+    {items.map((item, index) => (
+      <Item key={index} data={item} />
+    ))}
+    
+    // ✅ Good - unique ID as key
+    {items.map((item) => (
+      <Item key={item.id} data={item} />
+    ))}
+
+
+================================================================================
+                            SUMMARY CHECKLIST
+================================================================================
+
+Before shipping your app, ensure:
+
+    □ All TypeScript errors are resolved
+    □ No console.log in production
+    □ Error boundaries in place
+    □ Loading states for all async operations
+    □ Empty states for lists
+    □ Proper error handling and messages
+    □ Accessibility labels on interactive elements
+    □ Tested on physical devices (iOS and Android)
+    □ Performance profiled for smooth 60fps
+    □ Secure storage for sensitive data
+    □ API keys not hardcoded
+    □ App works offline gracefully
+    □ Deep links configured
+    □ Crash reporting enabled
+    □ Analytics integrated
+
+================================================================================
+                        END OF DOCUMENT 14
+                    Next: 15 - Quick Reference Card
+================================================================================

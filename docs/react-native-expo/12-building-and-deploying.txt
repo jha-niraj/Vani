@@ -1,0 +1,1035 @@
+================================================================================
+        REACT NATIVE WITH EXPO - COMPREHENSIVE LEARNING GUIDE
+        PART 12: BUILDING AND DEPLOYING YOUR APP
+================================================================================
+
+This document covers how to build your app for production and deploy it
+to the App Store and Google Play Store using EAS (Expo Application Services).
+
+================================================================================
+                            TABLE OF CONTENTS
+================================================================================
+
+1. Understanding Build Process
+2. EAS Build Overview
+3. Configuring Your App
+4. Building for Development
+5. Building for Production
+6. App Store Deployment (iOS)
+7. Play Store Deployment (Android)
+8. Over-the-Air Updates
+9. CI/CD Integration
+10. Troubleshooting
+
+================================================================================
+                1. UNDERSTANDING BUILD PROCESS
+================================================================================
+
+BUILD PROCESS OVERVIEW:
+-----------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    FROM CODE TO STORE                                    │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   YOUR CODE                                                              │
+    │   (JavaScript/TypeScript + React Native)                                │
+    │        │                                                                 │
+    │        ▼                                                                 │
+    │   ┌────────────────────────────────────────┐                            │
+    │   │          EXPO / METRO BUNDLER          │                            │
+    │   │  • Bundles your JS/TS code            │                            │
+    │   │  • Transforms JSX                      │                            │
+    │   │  • Tree shakes unused code             │                            │
+    │   └────────────────┬───────────────────────┘                            │
+    │                    │                                                     │
+    │                    ▼                                                     │
+    │   ┌────────────────────────────────────────┐                            │
+    │   │             EAS BUILD                   │                            │
+    │   │  • Compiles native code                │                            │
+    │   │  • Links native dependencies           │                            │
+    │   │  • Signs with certificates             │                            │
+    │   │  • Creates installable package         │                            │
+    │   └────────────────┬───────────────────────┘                            │
+    │                    │                                                     │
+    │         ┌──────────┴──────────┐                                         │
+    │         ▼                     ▼                                         │
+    │   ┌───────────┐        ┌───────────┐                                   │
+    │   │   .ipa    │        │   .aab    │                                   │
+    │   │  (iOS)    │        │ (Android) │                                   │
+    │   └─────┬─────┘        └─────┬─────┘                                   │
+    │         │                    │                                          │
+    │         ▼                    ▼                                          │
+    │   ┌───────────┐        ┌───────────┐                                   │
+    │   │ App Store │        │Play Store │                                   │
+    │   └───────────┘        └───────────┘                                   │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+BUILD TYPES:
+------------
+
+    ┌────────────────────┬──────────────────────────────────────────────────┐
+    │     Build Type     │                    Purpose                       │
+    ├────────────────────┼──────────────────────────────────────────────────┤
+    │ Development Build  │ For testing on devices during development        │
+    │                    │ Includes dev tools, fast refresh                 │
+    ├────────────────────┼──────────────────────────────────────────────────┤
+    │ Preview Build      │ For sharing with testers (TestFlight, internal)  │
+    │                    │ Near-production, but not signed for stores       │
+    ├────────────────────┼──────────────────────────────────────────────────┤
+    │ Production Build   │ For App Store / Play Store submission            │
+    │                    │ Optimized, signed with release certificates      │
+    └────────────────────┴──────────────────────────────────────────────────┘
+
+
+================================================================================
+                    2. EAS BUILD OVERVIEW
+================================================================================
+
+EAS (Expo Application Services) is Expo's cloud build service.
+
+WHY USE EAS:
+------------
+• Build iOS apps without a Mac
+• No need to manage Xcode/Android Studio
+• Automatic code signing
+• Fast builds on cloud infrastructure
+• CI/CD integration
+
+INSTALLATION:
+-------------
+
+    # Install EAS CLI globally
+    npm install -g eas-cli
+    
+    # Login to your Expo account
+    eas login
+    
+    # Initialize EAS in your project
+    eas build:configure
+
+
+EAS.JSON STRUCTURE:
+-------------------
+This file is created in your project root.
+
+    // eas.json
+    {
+      "cli": {
+        "version": ">= 3.0.0"
+      },
+      "build": {
+        "development": {
+          "developmentClient": true,
+          "distribution": "internal",
+          "ios": {
+            "simulator": true
+          }
+        },
+        "preview": {
+          "distribution": "internal"
+        },
+        "production": {}
+      },
+      "submit": {
+        "production": {}
+      }
+    }
+
+
+BUILD PROFILES EXPLAINED:
+-------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    EAS BUILD PROFILES                                    │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   "development"                                                          │
+    │   ├── developmentClient: true  → Includes Expo dev tools                │
+    │   ├── distribution: "internal" → Not for store                          │
+    │   └── ios.simulator: true      → Works on iOS Simulator                 │
+    │                                                                          │
+    │   "preview"                                                              │
+    │   ├── distribution: "internal" → For testers via ad-hoc                 │
+    │   └── Good for beta testing before production                           │
+    │                                                                          │
+    │   "production"                                                           │
+    │   ├── distribution: "store"    → For App Store / Play Store             │
+    │   ├── Optimized for performance                                         │
+    │   └── Signed with release certificates                                  │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                    3. CONFIGURING YOUR APP
+================================================================================
+
+APP.JSON / APP.CONFIG.JS:
+-------------------------
+This file contains your app's metadata and configuration.
+
+    // app.json
+    {
+      "expo": {
+        "name": "PrepSathi",
+        "slug": "prep-sathi",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/images/icon.png",
+        "scheme": "prepsathi",
+        "userInterfaceStyle": "automatic",
+        "newArchEnabled": true,
+        
+        "splash": {
+          "image": "./assets/images/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        },
+        
+        "ios": {
+          "bundleIdentifier": "com.yourcompany.prepsathi",
+          "supportsTablet": true,
+          "buildNumber": "1",
+          "infoPlist": {
+            "NSCameraUsageDescription": "This app uses the camera to scan documents."
+          }
+        },
+        
+        "android": {
+          "package": "com.yourcompany.prepsathi",
+          "versionCode": 1,
+          "adaptiveIcon": {
+            "foregroundImage": "./assets/images/adaptive-icon.png",
+            "backgroundColor": "#ffffff"
+          },
+          "permissions": [
+            "android.permission.CAMERA"
+          ]
+        },
+        
+        "web": {
+          "bundler": "metro",
+          "output": "static",
+          "favicon": "./assets/images/favicon.png"
+        },
+        
+        "plugins": [
+          "expo-router"
+        ],
+        
+        "experiments": {
+          "typedRoutes": true
+        },
+        
+        "extra": {
+          "router": {
+            "origin": false
+          },
+          "eas": {
+            "projectId": "your-project-id-here"
+          }
+        }
+      }
+    }
+
+
+KEY CONFIGURATION FIELDS:
+-------------------------
+
+    ┌────────────────────┬──────────────────────────────────────────────────┐
+    │       Field        │                    Purpose                       │
+    ├────────────────────┼──────────────────────────────────────────────────┤
+    │ name               │ Display name in app stores                       │
+    │ slug               │ URL-friendly name for Expo                       │
+    │ version            │ User-visible version (1.0.0)                     │
+    │ icon               │ App icon (1024x1024 recommended)                 │
+    │ splash             │ Splash screen configuration                      │
+    │ scheme             │ URL scheme for deep linking                      │
+    ├────────────────────┼──────────────────────────────────────────────────┤
+    │ ios.bundleIdentifier│ Unique iOS app identifier                       │
+    │ ios.buildNumber    │ Internal iOS version number                      │
+    │ ios.infoPlist      │ iOS permissions and settings                     │
+    ├────────────────────┼──────────────────────────────────────────────────┤
+    │ android.package    │ Unique Android app identifier                    │
+    │ android.versionCode│ Internal Android version number                  │
+    │ android.permissions│ Android permissions                              │
+    └────────────────────┴──────────────────────────────────────────────────┘
+
+
+USING APP.CONFIG.JS FOR DYNAMIC CONFIG:
+---------------------------------------
+
+    // app.config.js
+    export default ({ config }) => {
+      const isProduction = process.env.APP_ENV === 'production';
+      
+      return {
+        ...config,
+        name: isProduction ? 'PrepSathi' : 'PrepSathi (Dev)',
+        slug: 'prep-sathi',
+        version: '1.0.0',
+        extra: {
+          apiUrl: isProduction
+            ? 'https://api.prepsathi.com'
+            : 'https://dev-api.prepsathi.com',
+          eas: {
+            projectId: 'your-project-id',
+          },
+        },
+      };
+    };
+
+
+ENVIRONMENT VARIABLES:
+----------------------
+
+    // eas.json with environment variables
+    {
+      "build": {
+        "development": {
+          "env": {
+            "APP_ENV": "development",
+            "API_URL": "https://dev-api.example.com"
+          }
+        },
+        "production": {
+          "env": {
+            "APP_ENV": "production",
+            "API_URL": "https://api.example.com"
+          }
+        }
+      }
+    }
+
+
+================================================================================
+                    4. BUILDING FOR DEVELOPMENT
+================================================================================
+
+Development builds include Expo dev tools and allow hot reloading.
+
+CREATE A DEVELOPMENT BUILD:
+---------------------------
+
+    # Build for iOS Simulator
+    eas build --profile development --platform ios
+    
+    # Build for Android (APK for testing)
+    eas build --profile development --platform android
+    
+    # Build for both platforms
+    eas build --profile development --platform all
+
+
+INSTALLING DEVELOPMENT BUILD:
+-----------------------------
+
+    # iOS Simulator
+    # Download .app file and drag to Simulator
+    # Or use:
+    eas build:run -p ios
+    
+    # Android (requires device or emulator)
+    eas build:run -p android
+    
+    # Or scan QR code shown in terminal
+
+
+RUNNING YOUR APP IN DEVELOPMENT BUILD:
+--------------------------------------
+
+    # Start the development server
+    npx expo start
+    
+    # Your development build will connect to this server
+
+
+DEVELOPMENT BUILD FLOW:
+-----------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    DEVELOPMENT WORKFLOW                                  │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   1. Create development build (once, or when native code changes)       │
+    │      └── eas build --profile development --platform ios                 │
+    │                                                                          │
+    │   2. Install on device/simulator                                        │
+    │      └── eas build:run -p ios                                           │
+    │                                                                          │
+    │   3. Start dev server                                                   │
+    │      └── npx expo start                                                 │
+    │                                                                          │
+    │   4. Open dev build app, connect to server                              │
+    │      └── Scan QR code or enter URL                                      │
+    │                                                                          │
+    │   5. Develop with hot reload! 🎉                                        │
+    │      └── Changes reflect instantly                                      │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+                    5. BUILDING FOR PRODUCTION
+================================================================================
+
+Production builds are optimized and ready for store submission.
+
+PRODUCTION BUILD COMMANDS:
+--------------------------
+
+    # Build for iOS (creates .ipa)
+    eas build --profile production --platform ios
+    
+    # Build for Android (creates .aab)
+    eas build --profile production --platform android
+    
+    # Build for both
+    eas build --profile production --platform all
+
+
+PRODUCTION EAS.JSON CONFIG:
+---------------------------
+
+    // eas.json
+    {
+      "build": {
+        "production": {
+          "distribution": "store",
+          "ios": {
+            "resourceClass": "m1-medium"
+          },
+          "android": {
+            "buildType": "app-bundle"
+          },
+          "env": {
+            "APP_ENV": "production"
+          }
+        }
+      }
+    }
+
+
+VERSION MANAGEMENT:
+-------------------
+Increment version before each store submission.
+
+    // app.json
+    {
+      "expo": {
+        "version": "1.0.0",        // User-visible version
+        "ios": {
+          "buildNumber": "1"       // Increment for each iOS build
+        },
+        "android": {
+          "versionCode": 1         // Increment for each Android build
+        }
+      }
+    }
+
+Or use auto-increment:
+
+    // eas.json
+    {
+      "build": {
+        "production": {
+          "autoIncrement": true    // Auto-increment build numbers
+        }
+      }
+    }
+
+
+CHECKING BUILD STATUS:
+----------------------
+
+    # List all builds
+    eas build:list
+    
+    # View specific build
+    eas build:view
+    
+    # Cancel a build
+    eas build:cancel
+
+
+================================================================================
+                6. APP STORE DEPLOYMENT (iOS)
+================================================================================
+
+PREREQUISITES:
+--------------
+• Apple Developer Account ($99/year)
+• App Store Connect account
+• App registered in App Store Connect
+
+APP STORE DEPLOYMENT FLOW:
+--------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    IOS DEPLOYMENT FLOW                                   │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   1. Configure credentials                                               │
+    │      └── eas credentials (EAS manages for you)                          │
+    │                                                                          │
+    │   2. Build production .ipa                                               │
+    │      └── eas build --profile production --platform ios                  │
+    │                                                                          │
+    │   3. Submit to App Store Connect                                        │
+    │      └── eas submit --platform ios                                      │
+    │                                                                          │
+    │   4. In App Store Connect:                                              │
+    │      ├── Add app metadata (description, screenshots)                    │
+    │      ├── Set pricing and availability                                   │
+    │      ├── Complete app information                                       │
+    │      └── Submit for review                                              │
+    │                                                                          │
+    │   5. Apple Review (1-7 days typically)                                  │
+    │                                                                          │
+    │   6. App goes live! 🎉                                                  │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+STEP 1: CREATE APP IN APP STORE CONNECT
+---------------------------------------
+1. Go to https://appstoreconnect.apple.com
+2. Click "My Apps" → "+" → "New App"
+3. Fill in:
+   - Platform: iOS
+   - Name: Your app name
+   - Primary Language
+   - Bundle ID: Match ios.bundleIdentifier
+   - SKU: Unique identifier
+
+
+STEP 2: CONFIGURE CREDENTIALS
+-----------------------------
+
+    # EAS will guide you through credentials setup
+    eas credentials
+    
+    # Options:
+    # - Let EAS manage (recommended)
+    # - Use existing credentials
+
+
+STEP 3: BUILD AND SUBMIT
+------------------------
+
+    # Build production app
+    eas build --profile production --platform ios
+    
+    # Submit to App Store Connect
+    eas submit --platform ios
+    
+    # Or combine build + submit
+    eas build --profile production --platform ios --auto-submit
+
+
+STEP 4: CONFIGURE EAS SUBMIT
+----------------------------
+
+    // eas.json
+    {
+      "submit": {
+        "production": {
+          "ios": {
+            "appleId": "your-apple-id@email.com",
+            "ascAppId": "1234567890",  // From App Store Connect
+            "appleTeamId": "TEAM_ID"
+          }
+        }
+      }
+    }
+
+
+TESTFLIGHT (BETA TESTING):
+--------------------------
+After submitting, your app appears in TestFlight for beta testing.
+
+1. Add internal testers (up to 100, instant access)
+2. Add external testers (up to 10,000, requires beta review)
+3. Get feedback before full release
+
+
+================================================================================
+                7. PLAY STORE DEPLOYMENT (Android)
+================================================================================
+
+PREREQUISITES:
+--------------
+• Google Play Developer Account ($25 one-time)
+• App created in Google Play Console
+
+PLAY STORE DEPLOYMENT FLOW:
+---------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    ANDROID DEPLOYMENT FLOW                               │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   1. Create app in Google Play Console                                  │
+    │      └── Set up store listing, content rating, etc.                     │
+    │                                                                          │
+    │   2. Build production .aab                                               │
+    │      └── eas build --profile production --platform android              │
+    │                                                                          │
+    │   3. Submit to Play Console                                             │
+    │      └── eas submit --platform android                                  │
+    │                                                                          │
+    │   4. In Play Console:                                                   │
+    │      ├── Complete store listing                                         │
+    │      ├── Add screenshots and graphics                                   │
+    │      ├── Set content rating                                             │
+    │      ├── Set pricing & distribution                                     │
+    │      └── Create release                                                 │
+    │                                                                          │
+    │   5. Google Review (hours to days)                                      │
+    │                                                                          │
+    │   6. App goes live! 🎉                                                  │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+STEP 1: CREATE APP IN GOOGLE PLAY CONSOLE
+-----------------------------------------
+1. Go to https://play.google.com/console
+2. Click "Create app"
+3. Fill in app details
+4. Complete the setup checklist
+
+
+STEP 2: SET UP SERVICE ACCOUNT (FOR EAS SUBMIT)
+------------------------------------------------
+1. Go to Google Cloud Console
+2. Create a service account
+3. Grant "Service Account User" role
+4. Create JSON key
+5. Link to Play Console (Users & permissions → Invite new users)
+
+Or use manual upload.
+
+
+STEP 3: BUILD AND SUBMIT
+------------------------
+
+    # Build production app
+    eas build --profile production --platform android
+    
+    # Submit to Play Store
+    eas submit --platform android
+    
+    # Or combine
+    eas build --profile production --platform android --auto-submit
+
+
+STEP 4: CONFIGURE EAS SUBMIT
+----------------------------
+
+    // eas.json
+    {
+      "submit": {
+        "production": {
+          "android": {
+            "serviceAccountKeyPath": "./google-service-account.json",
+            "track": "internal"  // or "alpha", "beta", "production"
+          }
+        }
+      }
+    }
+
+
+INTERNAL TESTING (RECOMMENDED FIRST):
+-------------------------------------
+1. Create internal testing release first
+2. Add testers by email
+3. Testers get instant access (no review)
+4. Test thoroughly before production release
+
+
+================================================================================
+                    8. OVER-THE-AIR UPDATES
+================================================================================
+
+OTA updates let you push JavaScript changes without going through stores.
+
+HOW IT WORKS:
+-------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    OTA UPDATE FLOW                                       │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   YOU                                                                    │
+    │   └── Push update: eas update                                           │
+    │                    │                                                     │
+    │                    ▼                                                     │
+    │   ┌────────────────────────────┐                                        │
+    │   │     EXPO SERVERS           │                                        │
+    │   │  Store JS bundle update    │                                        │
+    │   └────────────┬───────────────┘                                        │
+    │                │                                                         │
+    │                ▼                                                         │
+    │   ┌────────────────────────────┐                                        │
+    │   │     USER'S APP             │                                        │
+    │   │  1. App opens              │                                        │
+    │   │  2. Checks for updates     │                                        │
+    │   │  3. Downloads new bundle   │                                        │
+    │   │  4. Applies on next launch │                                        │
+    │   └────────────────────────────┘                                        │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+WHAT CAN BE UPDATED OTA:
+------------------------
+✅ JavaScript/TypeScript code
+✅ React components
+✅ Assets (images, fonts)
+✅ Styling changes
+
+WHAT REQUIRES A NEW BUILD:
+--------------------------
+❌ Native code changes
+❌ New native dependencies
+❌ App configuration (app.json) changes
+❌ Expo SDK version upgrades
+
+
+PUBLISHING AN UPDATE:
+---------------------
+
+    # Publish update to all users
+    eas update --branch production --message "Bug fixes"
+    
+    # Preview update before publishing
+    eas update --branch preview --message "Testing new feature"
+
+
+EAS UPDATE CONFIGURATION:
+-------------------------
+
+    // eas.json
+    {
+      "build": {
+        "production": {
+          "channel": "production"  // Links builds to update channels
+        },
+        "preview": {
+          "channel": "preview"
+        }
+      }
+    }
+
+
+CONFIGURING UPDATE BEHAVIOR IN APP:
+-----------------------------------
+
+    // app.json
+    {
+      "expo": {
+        "updates": {
+          "enabled": true,
+          "checkAutomatically": "ON_LOAD",
+          "fallbackToCacheTimeout": 30000
+        },
+        "runtimeVersion": {
+          "policy": "sdkVersion"
+        }
+      }
+    }
+
+
+MANUAL UPDATE CHECK:
+--------------------
+
+    import * as Updates from 'expo-updates';
+    
+    async function checkForUpdates() {
+      try {
+        const update = await Updates.checkForUpdateAsync();
+        
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          
+          // Optionally ask user before restarting
+          Alert.alert(
+            'Update Available',
+            'A new version is available. Restart to apply?',
+            [
+              { text: 'Later', style: 'cancel' },
+              { 
+                text: 'Restart', 
+                onPress: () => Updates.reloadAsync() 
+              },
+            ]
+          );
+        }
+      } catch (error) {
+        console.error('Error checking for updates:', error);
+      }
+    }
+
+
+================================================================================
+                    9. CI/CD INTEGRATION
+================================================================================
+
+Automate builds and deployments with CI/CD.
+
+GITHUB ACTIONS EXAMPLE:
+-----------------------
+
+    # .github/workflows/eas-build.yml
+    name: EAS Build
+    
+    on:
+      push:
+        branches:
+          - main
+          - develop
+    
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Checkout repository
+            uses: actions/checkout@v3
+          
+          - name: Setup Node.js
+            uses: actions/setup-node@v3
+            with:
+              node-version: 18.x
+              cache: npm
+          
+          - name: Setup EAS
+            uses: expo/expo-github-action@v8
+            with:
+              eas-version: latest
+              token: ${{ secrets.EXPO_TOKEN }}
+          
+          - name: Install dependencies
+            run: npm ci
+          
+          - name: Build on EAS
+            run: eas build --platform all --non-interactive
+            
+          - name: Submit to stores (main only)
+            if: github.ref == 'refs/heads/main'
+            run: eas submit --platform all --non-interactive
+
+
+SETTING UP EXPO TOKEN:
+----------------------
+1. Go to https://expo.dev/accounts/[your-username]/settings/access-tokens
+2. Create a new token
+3. Add to GitHub Secrets as EXPO_TOKEN
+
+
+CONDITIONAL BUILDS:
+-------------------
+
+    # .github/workflows/eas-build.yml
+    jobs:
+      build:
+        runs-on: ubuntu-latest
+        steps:
+          # ... setup steps ...
+          
+          # Development build for develop branch
+          - name: Build Development
+            if: github.ref == 'refs/heads/develop'
+            run: eas build --profile development --platform all --non-interactive
+          
+          # Preview build for PRs
+          - name: Build Preview
+            if: github.event_name == 'pull_request'
+            run: eas build --profile preview --platform all --non-interactive
+          
+          # Production build for main branch
+          - name: Build Production
+            if: github.ref == 'refs/heads/main'
+            run: eas build --profile production --platform all --non-interactive
+
+
+================================================================================
+                    10. TROUBLESHOOTING
+================================================================================
+
+COMMON BUILD ISSUES:
+--------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    COMMON ISSUES & SOLUTIONS                             │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   ISSUE: Build fails with missing dependency                            │
+    │   SOLUTION: Run `npx expo install` to fix versions                      │
+    │                                                                          │
+    │   ISSUE: iOS build fails with signing error                             │
+    │   SOLUTION: Run `eas credentials` to reset credentials                  │
+    │                                                                          │
+    │   ISSUE: Android build fails with duplicate classes                     │
+    │   SOLUTION: Check for conflicting native dependencies                   │
+    │                                                                          │
+    │   ISSUE: App crashes on startup (production only)                       │
+    │   SOLUTION: Check for DEV-only code, test preview build first           │
+    │                                                                          │
+    │   ISSUE: OTA update not working                                          │
+    │   SOLUTION: Ensure same runtime version in build and update             │
+    │                                                                          │
+    │   ISSUE: "This app was built for a different runtime version"           │
+    │   SOLUTION: Create new build with updated runtimeVersion                │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+
+VIEWING BUILD LOGS:
+-------------------
+
+    # View logs for a specific build
+    eas build:view
+    
+    # Download build artifacts
+    eas build:view --json
+
+
+DEBUGGING PRODUCTION ISSUES:
+----------------------------
+
+1. Use preview builds to test before production
+2. Check crash reports in App Store Connect / Play Console
+3. Add error boundaries in React components
+4. Use error tracking services (Sentry, Bugsnag)
+
+
+SENTRY INTEGRATION (ERROR TRACKING):
+------------------------------------
+
+    # Install Sentry
+    npx expo install @sentry/react-native
+    
+    // App.tsx
+    import * as Sentry from '@sentry/react-native';
+    
+    Sentry.init({
+      dsn: 'YOUR_SENTRY_DSN',
+      enableInExpoDevelopment: false,
+      debug: __DEV__,
+    });
+    
+    // Wrap your app
+    export default Sentry.wrap(App);
+
+
+REDUCING BUILD SIZE:
+--------------------
+
+    // app.json - Remove unused platforms
+    {
+      "expo": {
+        "platforms": ["ios", "android"]  // Remove "web" if not used
+      }
+    }
+    
+    // Use bundle analyzer
+    // npx react-native-bundle-visualizer
+    
+    // Optimize images - use WebP format
+    // Enable Hermes (default in new Expo projects)
+
+
+================================================================================
+                            DEPLOYMENT CHECKLIST
+================================================================================
+
+BEFORE FIRST SUBMISSION:
+------------------------
+
+    iOS:
+    □ Apple Developer Account active
+    □ App created in App Store Connect
+    □ Bundle ID configured
+    □ App icon (1024x1024)
+    □ Screenshots (all required sizes)
+    □ App description
+    □ Privacy policy URL
+    □ Support URL
+    
+    Android:
+    □ Google Play Developer Account active
+    □ App created in Play Console
+    □ Package name configured
+    □ App icon and feature graphic
+    □ Screenshots (all required sizes)
+    □ Short and full descriptions
+    □ Content rating questionnaire completed
+    □ Target age group set
+    □ Privacy policy URL
+
+
+BEFORE EACH UPDATE:
+-------------------
+
+    □ Test on physical devices
+    □ Increment version numbers
+    □ Update changelog / "What's New"
+    □ Check for breaking changes
+    □ Test OTA update path (if applicable)
+
+
+================================================================================
+                            SUMMARY
+================================================================================
+
+KEY COMMANDS:
+-------------
+
+    # Configure EAS
+    eas build:configure
+    
+    # Development build
+    eas build --profile development --platform ios
+    
+    # Production build
+    eas build --profile production --platform all
+    
+    # Submit to stores
+    eas submit --platform ios
+    eas submit --platform android
+    
+    # OTA update
+    eas update --branch production --message "Update description"
+    
+    # Check build status
+    eas build:list
+
+
+DEPLOYMENT FLOW SUMMARY:
+------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │                    RECOMMENDED DEPLOYMENT FLOW                           │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                          │
+    │   Development → Preview → Internal Testing → Beta → Production         │
+    │                                                                          │
+    │   1. Develop with dev build                                             │
+    │   2. Test with preview build                                            │
+    │   3. Internal testing (TestFlight Internal / Play Internal)             │
+    │   4. Beta testing (TestFlight External / Play Beta)                     │
+    │   5. Production release                                                 │
+    │   6. Monitor for issues                                                 │
+    │   7. Push OTA updates for JS fixes                                      │
+    │   8. Submit new build for major updates                                 │
+    │                                                                          │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                        END OF DOCUMENT 12
+                    Next: 13 - Debugging and Development Tools
+================================================================================
