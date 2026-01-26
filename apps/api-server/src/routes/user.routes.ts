@@ -70,7 +70,7 @@ userRouter.get(
         try {
             const { userId } = (req as AuthenticatedRequest).user;
 
-            const user = await prisma.prepUser.findUnique({
+            const user = await prisma.user.findUnique({
                 where: { id: userId },
                 include: {
                     currentExamType: true,
@@ -140,7 +140,7 @@ userRouter.patch(
             const { userId } = (req as AuthenticatedRequest).user;
             const data = validateRequest(updateProfileSchema, req.body);
 
-            const user = await prisma.prepUser.update({
+            const user = await prisma.user.update({
                 where: { id: userId },
                 data: {
                     ...(data.name && { name: data.name }),
@@ -181,7 +181,7 @@ userRouter.get(
                 throw new BadRequestError("Invalid username format");
             }
 
-            const existingUser = await prisma.prepUser.findUnique({
+            const existingUser = await prisma.user.findUnique({
                 where: { username: username.toLowerCase() },
             });
 
@@ -211,7 +211,7 @@ userRouter.post(
             const { username } = validateRequest(setUsernameSchema, req.body);
 
             // Check if already taken
-            const existingUser = await prisma.prepUser.findUnique({
+            const existingUser = await prisma.user.findUnique({
                 where: { username: username.toLowerCase() },
             });
 
@@ -219,7 +219,7 @@ userRouter.post(
                 throw new ConflictError("Username is already taken");
             }
 
-            const user = await prisma.prepUser.update({
+            const user = await prisma.user.update({
                 where: { id: userId },
                 data: { username: username.toLowerCase() },
             });
@@ -249,7 +249,7 @@ userRouter.patch(
             const { userId } = (req as AuthenticatedRequest).user;
             const data = validateRequest(updatePreferencesSchema, req.body);
 
-            const user = await prisma.prepUser.update({
+            const user = await prisma.user.update({
                 where: { id: userId },
                 data,
             });
@@ -305,7 +305,7 @@ userRouter.post(
                 throw new NotFoundError("Exam level not found");
             }
 
-            const user = await prisma.prepUser.update({
+            const user = await prisma.user.update({
                 where: { id: userId },
                 data: {
                     currentExamTypeId: examTypeId,
@@ -350,7 +350,7 @@ userRouter.get(
         try {
             const { userId } = (req as AuthenticatedRequest).user;
 
-            const user = await prisma.prepUser.findUnique({
+            const user = await prisma.user.findUnique({
                 where: { id: userId },
             });
 
@@ -369,7 +369,7 @@ userRouter.get(
             // Check availability
             const availableSuggestions: string[] = [];
             for (const suggestion of suggestions) {
-                const exists = await prisma.prepUser.findUnique({
+                const exists = await prisma.user.findUnique({
                     where: { username: suggestion },
                 });
                 if (!exists) {

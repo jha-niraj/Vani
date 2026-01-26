@@ -9,7 +9,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { Colors, Spacing, Typography, BorderRadius, Layout } from '@/constants/theme';
+import { Colors, Spacing, Typography,  Layout } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 // Tab icons as simple text (you can replace with actual icons)

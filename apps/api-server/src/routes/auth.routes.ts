@@ -209,14 +209,16 @@ authRouter.post(
             });
 
             // Find or create user
-            let user = await prisma.prepUser.findUnique({
-                where: { phone: normalizedPhone },
+            let user = await prisma.user.findUnique({
+                where: { 
+                    phone: normalizedPhone 
+                },
             });
 
             const isNewUser = !user;
 
             if (!user) {
-                user = await prisma.prepUser.create({
+                user = await prisma.user.create({
                     data: {
                         phone: normalizedPhone,
                         phoneVerified: true,
@@ -229,7 +231,7 @@ authRouter.post(
                 });
             } else {
                 // Update phone verified status
-                await prisma.prepUser.update({
+                await prisma.user.update({
                     where: { id: user.id },
                     data: {
                         phoneVerified: true,
@@ -300,6 +302,10 @@ authRouter.post(
 
             if (!session || session.expiresAt < new Date()) {
                 throw new BadRequestError("Invalid or expired session");
+            }
+
+            if (!session.user.phone) {
+                throw new BadRequestError("User phone not found");
             }
 
             // Generate new token

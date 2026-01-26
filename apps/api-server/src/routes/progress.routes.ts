@@ -28,12 +28,12 @@ progressRouter.get(
                 where: { userId },
             });
 
-            const user = await prisma.prepUser.findUnique({
+            const user = await prisma.user.findUnique({
                 where: { id: userId },
                 select: { dailyGoal: true },
             });
 
-            const goalMap = { CASUAL: 10, REGULAR: 25, SERIOUS: 50, INTENSE: 100 };
+            const goalMap: Record<string, number> = { CASUAL: 10, REGULAR: 25, SERIOUS: 50, INTENSE: 100 };
             const dailyGoal = goalMap[user?.dailyGoal || "REGULAR"];
 
             // Get today's progress
@@ -91,7 +91,7 @@ progressRouter.get(
         try {
             const { userId } = (req as AuthenticatedRequest).user;
 
-            const user = await prisma.prepUser.findUnique({
+            const user = await prisma.user.findUnique({
                 where: { id: userId },
                 select: { currentExamLevelId: true },
             });

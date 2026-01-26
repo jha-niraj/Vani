@@ -33,7 +33,6 @@ function useProtectedRoute() {
 		if (!isInitialized) return;
 
 		const inAuthGroup = segments[0] === '(auth)';
-		const inOnboardingGroup = segments[0] === '(onboarding)';
 		const inProtectedGroup = segments[0] === '(tabs)' || segments[0] === '(practice)';
 
 		if (!isAuthenticated && inProtectedGroup) {
@@ -47,7 +46,7 @@ function useProtectedRoute() {
 				router.replace('/(tabs)');
 			}
 		}
-	}, [isAuthenticated, isInitialized, segments, user]);
+	}, [isAuthenticated, isInitialized, segments, user, router]);
 }
 
 export default function RootLayout() {
@@ -58,7 +57,7 @@ export default function RootLayout() {
 		initialize().finally(() => {
 			SplashScreen.hideAsync();
 		});
-	}, []);
+	}, [initialize]);
 
 	useProtectedRoute();
 

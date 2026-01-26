@@ -1,30 +1,14 @@
-/**
- * Text Input Component
- * 
- * A styled text input with label, error state, and focus animations.
- */
-
 import React, { useState } from 'react';
 import {
-    View,
-    TextInput as RNTextInput,
-    Text,
-    StyleSheet,  TextInputProps as RNTextInputProps, ViewStyle,
+    View, TextInput as RNTextInput, Text, StyleSheet,
+    TextInputProps as RNTextInputProps, ViewStyle,
 } from 'react-native';
 import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withTiming,
-    interpolateColor,
+    useSharedValue, useAnimatedStyle, withTiming, interpolateColor,
 } from 'react-native-reanimated';
 import { useTheme } from '@/hooks/use-theme';
 import {
-    Typography,
-    BorderRadius,
-    Layout,
-    Spacing,
-    Animation,
-    Colors,
+    Typography, BorderRadius, Layout, Spacing, Animation, Colors,
 } from '@/constants/theme';
 
 export interface TextInputProps extends RNTextInputProps {
@@ -48,8 +32,8 @@ export function TextInput({
     style,
     ...props
 }: TextInputProps) {
-    const { isDark, colors } = useTheme();
-    const [isFocused, setIsFocused] = useState(false);
+    const { colors } = useTheme();
+    const [, setIsFocused] = useState(false);
     const focusAnim = useSharedValue(0);
 
     const handleFocus = (e: any) => {
@@ -75,9 +59,11 @@ export function TextInput({
 
     return (
         <View style={[styles.container, containerStyle]}>
-            {label && (
-                <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
-            )}
+            {
+                label && (
+                    <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
+                )
+            }
 
             <Animated.View
                 style={[
@@ -108,16 +94,18 @@ export function TextInput({
                 {rightIcon && <View style={styles.iconRight}>{rightIcon}</View>}
             </Animated.View>
 
-            {(error || hint) && (
-                <Text
-                    style={[
-                        styles.helper,
-                        { color: error ? Colors.semantic.error : colors.textTertiary },
-                    ]}
-                >
-                    {error || hint}
-                </Text>
-            )}
+            {
+                (error || hint) && (
+                    <Text
+                        style={[
+                            styles.helper,
+                            { color: error ? Colors.semantic.error : colors.textTertiary },
+                        ]}
+                    >
+                        {error || hint}
+                    </Text>
+                )
+            }
         </View>
     );
 }

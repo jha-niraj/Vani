@@ -50,7 +50,7 @@ export function Button({
     onPressOut,
     ...props
 }: ButtonProps) {
-    const { isDark, colors } = useTheme();
+    const { colors } = useTheme();
     const scale = useSharedValue(1);
 
     const animatedStyle = useAnimatedStyle(() => ({

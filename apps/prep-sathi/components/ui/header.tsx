@@ -50,7 +50,7 @@ export function Header({
   transparent = false,
   style,
 }: HeaderProps) {
-  const { isDark, colors } = useTheme();
+  const { colors } = useTheme();
   const router = useRouter();
   const backScale = useSharedValue(1);
 

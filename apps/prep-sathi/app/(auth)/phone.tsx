@@ -55,7 +55,7 @@ export default function PhoneScreen() {
             Enter your phone number
           </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            We'll send you a verification code to confirm your identity
+            We will send you a verification code to confirm your identity
           </Text>
         </Animated.View>
 

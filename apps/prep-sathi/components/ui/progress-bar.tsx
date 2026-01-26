@@ -10,7 +10,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
+  
   interpolate,
   Extrapolation,
 } from 'react-native-reanimated';
@@ -52,7 +52,7 @@ export function ProgressBar({
     } else {
       progressAnim.value = clampedProgress;
     }
-  }, [clampedProgress, animated]);
+  }, [clampedProgress, animated, progressAnim]);
 
   const animatedStyle = useAnimatedStyle(() => {
     const width = interpolate(

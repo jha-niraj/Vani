@@ -36,7 +36,7 @@ export function Badge({
   textStyle,
   onPress,
 }: BadgeProps) {
-  const { isDark, colors } = useTheme();
+  const { colors } = useTheme();
 
   const getVariantColors = (): { background: string; text: string; border: string } => {
     switch (variant) {

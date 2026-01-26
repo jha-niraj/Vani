@@ -404,7 +404,11 @@ export interface DashboardStats {
     longestStreak: number;
     todayQuestions: number;
     todayGoal: number;
-    weeklyProgress: { date: string; questions: number; correct: number }[];
+    weeklyProgress: { 
+        date: string; 
+        questions: number; 
+        correct: number 
+    }[];
 }
 
 export interface SubjectProgress {

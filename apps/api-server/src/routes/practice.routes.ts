@@ -85,7 +85,7 @@ practiceRouter.get(
             const params = validateRequest(getQuestionsSchema, req.query) as z.infer<typeof getQuestionsSchema>;
 
             // Get user's current exam level for validation
-            const user = await prisma.prepUser.findUnique({
+            const user = await prisma.user.findUnique({
                 where: { id: userId },
                 select: { currentExamLevelId: true },
             });
@@ -327,7 +327,7 @@ practiceRouter.post(
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
-                const user = await tx.prepUser.findUnique({
+                const user = await tx.user.findUnique({
                     where: { id: userId },
                     select: { dailyGoal: true },
                 });

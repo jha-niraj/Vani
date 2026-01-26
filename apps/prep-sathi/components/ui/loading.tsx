@@ -31,7 +31,7 @@ export function Loading({
   fullScreen = false,
   size = 'large',
 }: LoadingProps) {
-  const { isDark, colors } = useTheme();
+  const { colors } = useTheme();
   const scale = useSharedValue(1);
 
   React.useEffect(() => {
@@ -43,7 +43,7 @@ export function Loading({
       -1,
       true
     );
-  }, []);
+  }, [scale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],

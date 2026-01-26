@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
   FadeInDown,
@@ -17,7 +17,7 @@ import Animated, {
 import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/lib/auth-store';
 import { api, ExamType, ExamLevel } from '@/lib/api';
-import { Screen, Header, Button, Card, Loading } from '@/components/ui';
+import { Screen, Header, Button,  Loading } from '@/components/ui';
 import {
   Typography,
   Spacing,
@@ -121,7 +121,7 @@ export default function ExamSelectScreen() {
             What are you preparing for?
           </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            We'll personalize your experience based on your selection
+            We will personalize your experience based on your selection
           </Text>
         </Animated.View>
 

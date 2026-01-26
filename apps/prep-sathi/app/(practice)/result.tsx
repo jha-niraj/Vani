@@ -53,7 +53,7 @@ export default function ResultScreen() {
   useEffect(() => {
     scoreProgress.value = withDelay(300, withSpring(score, { damping: 15 }));
     circleProgress.value = withDelay(300, withTiming(score / 100, { duration: 1000 }));
-  }, [score]);
+  }, [score, scoreProgress, circleProgress]);
 
   const animatedScoreStyle = useAnimatedStyle(() => ({
     opacity: interpolate(scoreProgress.value, [0, score], [0, 1], Extrapolation.CLAMP),

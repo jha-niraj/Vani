@@ -22,7 +22,7 @@ import {
 } from '@/constants/theme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const MAX_TRANSLATE_Y = -SCREEN_HEIGHT + 50;
+// const MAX_TRANSLATE_Y = -SCREEN_HEIGHT + 50;
 
 export interface BottomSheetProps {
     children: React.ReactNode;

@@ -7,29 +7,16 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import {
-    View,
-    TextInput,
-    Text,
-    StyleSheet,
-    Pressable,
-    Keyboard,
+    View, TextInput, Text, StyleSheet, Pressable, Keyboard
 } from 'react-native';
 import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withSpring,
-    withSequence,
-    withTiming,
+    useSharedValue, useAnimatedStyle, withSpring, withSequence, 
+    withTiming, SharedValue,
 } from 'react-native-reanimated';
 import { useTheme } from '@/hooks/use-theme';
 import {
-    Typography,
-    BorderRadius,
-    Layout,
-    Spacing,
-    Animation,
-    Colors,
-    Shadows,
+    Typography, BorderRadius, Layout, Spacing, Animation, Colors, 
+    Shadows
 } from '@/constants/theme';
 
 const OTP_LENGTH = 6;
@@ -42,6 +29,84 @@ export interface OTPInputProps {
     onComplete?: (value: string) => void;
 }
 
+// Separate component for each OTP box to properly use hooks
+interface OTPBoxProps {
+    index: number;
+    digit: string;
+    isFocused: boolean;
+    error?: string;
+    scaleValue: SharedValue<number>;
+    shakeValue: SharedValue<number>;
+    inputRef: (ref: TextInput | null) => void;
+    onChangeText: (text: string) => void;
+    onKeyPress: (e: { nativeEvent: { key: string } }) => void;
+    onFocus: () => void;
+    onBlur: () => void;
+    onPress: () => void;
+}
+
+function OTPBox({
+    digit,
+    isFocused,
+    error,
+    scaleValue,
+    shakeValue,
+    inputRef,
+    onChangeText,
+    onKeyPress,
+    onFocus,
+    onBlur,
+    onPress,
+}: OTPBoxProps) {
+    const { isDark, colors } = useTheme();
+    const hasValue = !!digit;
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [
+            { scale: scaleValue.value },
+            { translateX: shakeValue.value },
+        ],
+    }));
+
+    return (
+        <Animated.View style={[animatedStyle]}>
+            <Pressable
+                onPress={onPress}
+                style={[
+                    styles.box,
+                    {
+                        backgroundColor: hasValue
+                            ? isDark ? Colors.dark.backgroundTertiary : Colors.light.backgroundSecondary
+                            : colors.inputBackground,
+                        borderColor: error
+                            ? Colors.semantic.error
+                            : isFocused
+                                ? Colors.brand.primary
+                                : hasValue
+                                    ? Colors.brand.primary + '40'
+                                    : colors.inputBorder,
+                    },
+                    isFocused && Shadows.sm,
+                ]}
+            >
+                <TextInput
+                    ref={inputRef}
+                    style={[styles.input, { color: colors.text }]}
+                    value={digit}
+                    onChangeText={onChangeText}
+                    onKeyPress={onKeyPress}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                    keyboardType="number-pad"
+                    maxLength={OTP_LENGTH}
+                    selectTextOnFocus
+                    caretHidden
+                />
+            </Pressable>
+        </Animated.View>
+    );
+}
+
 export function OTPInput({
     value,
     onChange,
@@ -49,17 +114,25 @@ export function OTPInput({
     autoFocus = true,
     onComplete,
 }: OTPInputProps) {
-    const { isDark, colors } = useTheme();
     const inputRefs = useRef<(TextInput | null)[]>([]);
     const [focusedIndex, setFocusedIndex] = useState<number | null>(autoFocus ? 0 : null);
 
-    // Animation values for each box
-    const scales = useRef(
-        Array.from({ length: OTP_LENGTH }, () => useSharedValue(1))
-    ).current;
-    const shakes = useRef(
-        Array.from({ length: OTP_LENGTH }, () => useSharedValue(0))
-    ).current;
+    // Animation values for each box - using individual hooks at component level
+    const scale0 = useSharedValue(1);
+    const scale1 = useSharedValue(1);
+    const scale2 = useSharedValue(1);
+    const scale3 = useSharedValue(1);
+    const scale4 = useSharedValue(1);
+    const scale5 = useSharedValue(1);
+    const scales = [scale0, scale1, scale2, scale3, scale4, scale5];
+
+    const shake0 = useSharedValue(0);
+    const shake1 = useSharedValue(0);
+    const shake2 = useSharedValue(0);
+    const shake3 = useSharedValue(0);
+    const shake4 = useSharedValue(0);
+    const shake5 = useSharedValue(0);
+    const shakes = [shake0, shake1, shake2, shake3, shake4, shake5];
 
     const otpArray = value.padEnd(OTP_LENGTH, '').split('').slice(0, OTP_LENGTH);
 
@@ -88,6 +161,7 @@ export function OTPInput({
                 );
             });
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error]);
 
     const handleChange = (text: string, index: number) => {
@@ -122,7 +196,7 @@ export function OTPInput({
         }
     };
 
-    const handleKeyPress = (e: any, index: number) => {
+    const handleKeyPress = (e: { nativeEvent: { key: string } }, index: number) => {
         if (e.nativeEvent.key === 'Backspace') {
             if (!otpArray[index] && index > 0) {
                 // Move to previous input if current is empty
@@ -158,55 +232,23 @@ export function OTPInput({
     return (
         <View style={styles.container}>
             <View style={styles.boxesContainer}>
-                {Array.from({ length: OTP_LENGTH }).map((_, index) => {
-                    const isFocused = focusedIndex === index;
-                    const hasValue = !!otpArray[index];
-
-                    const animatedStyle = useAnimatedStyle(() => ({
-                        transform: [
-                            { scale: scales[index].value },
-                            { translateX: shakes[index].value },
-                        ],
-                    }));
-
-                    return (
-                        <Animated.View key={index} style={[animatedStyle]}>
-                            <Pressable
-                                onPress={() => handlePress(index)}
-                                style={[
-                                    styles.box,
-                                    {
-                                        backgroundColor: hasValue
-                                            ? isDark ? Colors.dark.backgroundTertiary : Colors.light.backgroundSecondary
-                                            : colors.inputBackground,
-                                        borderColor: error
-                                            ? Colors.semantic.error
-                                            : isFocused
-                                                ? Colors.brand.primary
-                                                : hasValue
-                                                    ? Colors.brand.primary + '40'
-                                                    : colors.inputBorder,
-                                    },
-                                    isFocused && Shadows.sm,
-                                ]}
-                            >
-                                <TextInput
-                                    ref={(ref) => { inputRefs.current[index] = ref; }}
-                                    style={[styles.input, { color: colors.text }]}
-                                    value={otpArray[index]}
-                                    onChangeText={(text) => handleChange(text, index)}
-                                    onKeyPress={(e) => handleKeyPress(e, index)}
-                                    onFocus={() => handleFocus(index)}
-                                    onBlur={() => handleBlur(index)}
-                                    keyboardType="number-pad"
-                                    maxLength={OTP_LENGTH}
-                                    selectTextOnFocus
-                                    caretHidden
-                                />
-                            </Pressable>
-                        </Animated.View>
-                    );
-                })}
+                {Array.from({ length: OTP_LENGTH }).map((_, index) => (
+                    <OTPBox
+                        key={index}
+                        index={index}
+                        digit={otpArray[index]}
+                        isFocused={focusedIndex === index}
+                        error={error}
+                        scaleValue={scales[index]}
+                        shakeValue={shakes[index]}
+                        inputRef={(ref) => { inputRefs.current[index] = ref; }}
+                        onChangeText={(text) => handleChange(text, index)}
+                        onKeyPress={(e) => handleKeyPress(e, index)}
+                        onFocus={() => handleFocus(index)}
+                        onBlur={() => handleBlur(index)}
+                        onPress={() => handlePress(index)}
+                    />
+                ))}
             </View>
 
             {error && (
