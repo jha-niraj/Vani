@@ -1,14 +1,8 @@
-/**
- * API Client
- * 
- * Centralized API client for PrepSathi mobile app.
- * Handles authentication, request/response, and error handling.
- */
-
 import * as SecureStore from 'expo-secure-store';
 
 // API Configuration
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
+const API_VERSION = '/api/v1';
 
 // Token storage keys
 const ACCESS_TOKEN_KEY = 'prepsathi_access_token';
@@ -73,7 +67,7 @@ async function request<T>(
     options: RequestInit = {},
     requiresAuth = true
 ): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const url = `${API_BASE_URL}${API_VERSION}${endpoint}`;
 
     const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -132,7 +126,7 @@ async function refreshAccessToken(): Promise<boolean> {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+        const response = await fetch(`${API_BASE_URL}${API_VERSION}/auth/refresh`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ refreshToken }),
@@ -143,7 +137,7 @@ async function refreshAccessToken(): Promise<boolean> {
         }
 
         const data = await response.json();
-        await setTokens(data.accessToken, data.refreshToken);
+        await setTokens(data.data.accessToken, data.data.refreshToken);
         return true;
     } catch {
         return false;
@@ -156,28 +150,33 @@ async function refreshAccessToken(): Promise<boolean> {
 
 export const authApi = {
     sendOTP: async (phone: string) => {
-        return request<{ message: string; expiresAt: string }>(
-            '/api/auth/send-otp',
+        const response = await request<{ success: boolean; data: { message: string; expiresAt: string } }>(
+            '/auth/send-otp',
             {
                 method: 'POST',
                 body: JSON.stringify({ phone }),
             },
             false
         );
+        return response.data;
     },
 
     verifyOTP: async (phone: string, otp: string) => {
-        const data = await request<{
-            accessToken: string;
-            refreshToken: string;
-            user: {
-                id: string;
-                phone: string;
-                username: string | null;
-                isNewUser: boolean;
+        const response = await request<{
+            success: boolean;
+            data: {
+                accessToken: string;
+                refreshToken: string;
+                user: {
+                    id: string;
+                    phone: string;
+                    username: string | null;
+                    name: string | null;
+                    onboardingComplete: boolean;
+                };
             };
         }>(
-            '/api/auth/verify-otp',
+            '/auth/verify-otp',
             {
                 method: 'POST',
                 body: JSON.stringify({ phone, otp }),
@@ -185,13 +184,13 @@ export const authApi = {
             false
         );
 
-        await setTokens(data.accessToken, data.refreshToken);
-        return data;
+        await setTokens(response.data.accessToken, response.data.refreshToken);
+        return response.data;
     },
 
     logout: async () => {
         try {
-            await request('/api/auth/logout', { method: 'POST' });
+            await request('/auth/logout', { method: 'POST' });
         } finally {
             await clearTokens();
         }
@@ -206,52 +205,92 @@ export interface User {
     id: string;
     phone: string;
     username: string | null;
-    displayName: string | null;
-    avatarUrl: string | null;
-    dailyGoal: string;
-    selectedExamId: string | null;
-    selectedLevelId: string | null;
+    name: string | null;
+    email: string | null;
+    avatar: string | null;
+    preferences: {
+        dailyGoal: string;
+        reminderEnabled: boolean;
+        reminderTime: string | null;
+        language: string;
+        theme: string;
+    };
+    currentExam: {
+        type: { id: string; name: string; nameNp: string | null } | null;
+        level: { id: string; name: string; nameNp: string | null } | null;
+    } | null;
+    progress: {
+        totalQuestionsAttempted: number;
+        totalCorrect: number;
+        currentStreak: number;
+        longestStreak: number;
+    } | null;
+    onboardingComplete: boolean;
     createdAt: string;
 }
 
 export const userApi = {
     getMe: async () => {
-        return request<User>('/api/users/me');
+        const response = await request<{ success: boolean; data: User }>('/users/me');
+        return response.data;
     },
 
     updateProfile: async (data: {
-        displayName?: string;
-        avatarUrl?: string;
-        dailyGoal?: string;
+        name?: string;
+        email?: string | null;
     }) => {
-        return request<User>('/api/users/profile', {
-            method: 'PUT',
+        const response = await request<{ success: boolean; data: User }>('/users/me', {
+            method: 'PATCH',
             body: JSON.stringify(data),
         });
+        return response.data;
     },
 
     setUsername: async (username: string) => {
-        return request<{ username: string }>('/api/users/username', {
-            method: 'POST',
-            body: JSON.stringify({ username }),
-        });
+        const response = await request<{ success: boolean; data: { username: string } }>(
+            '/users/username',
+            {
+                method: 'POST',
+                body: JSON.stringify({ username }),
+            }
+        );
+        return response.data;
     },
 
     checkUsername: async (username: string) => {
-        return request<{ available: boolean; suggestions?: string[] }>(
-            `/api/users/check-username?username=${encodeURIComponent(username)}`,
+        const response = await request<{ success: boolean; data: { available: boolean; suggestions?: string[] } }>(
+            `/users/check-username?username=${encodeURIComponent(username)}`,
             { method: 'GET' }
         );
+        return response.data;
     },
 
-    selectExam: async (examTypeId: string, levelId?: string) => {
-        return request<{ examTypeId: string; levelId?: string }>(
-            '/api/users/select-exam',
+    updatePreferences: async (data: {
+        dailyGoal?: string;
+        reminderEnabled?: boolean;
+        reminderTime?: string;
+        language?: string;
+        theme?: string;
+    }) => {
+        const response = await request<{ success: boolean; data: User['preferences'] }>(
+            '/users/preferences',
             {
-                method: 'POST',
-                body: JSON.stringify({ examTypeId, levelId }),
+                method: 'PATCH',
+                body: JSON.stringify(data),
             }
         );
+        return response.data;
+    },
+
+    selectExam: async (examTypeId: string, examLevelId: string) => {
+        const response = await request<{ success: boolean; data: { examTypeId: string; examLevelId: string } }>(
+            '/users/select-exam',
+            {
+                method: 'POST',
+                body: JSON.stringify({ examTypeId, examLevelId }),
+            }
+        );
+        return response.data;
     },
 };
 
@@ -262,55 +301,105 @@ export const userApi = {
 export interface ExamType {
     id: string;
     name: string;
-    slug: string;
-    description: string;
+    nameNp: string | null;
+    description: string | null;
+    descriptionNp: string | null;
     icon: string | null;
-    hasLevels: boolean;
-    isActive: boolean;
 }
 
 export interface ExamLevel {
     id: string;
     name: string;
-    slug: string;
-    description: string;
-    order: number;
+    nameNp: string | null;
+    description: string | null;
+    descriptionNp: string | null;
+    code: string | null;
+    icon: string | null;
 }
 
 export interface Subject {
     id: string;
     name: string;
-    slug: string;
-    description: string;
+    nameNp: string | null;
+    description: string | null;
     icon: string | null;
+    color: string | null;
     order: number;
-    questionCount: number;
+    totalQuestions: number;
+    progress?: {
+        attempted: number;
+        correct: number;
+        accuracy: number;
+    };
 }
 
 export interface Topic {
     id: string;
     name: string;
-    slug: string;
-    description: string;
+    nameNp: string | null;
+    description: string | null;
     order: number;
-    questionCount: number;
+    totalQuestions: number;
+    progress?: {
+        attempted: number;
+        correct: number;
+    };
 }
 
 export const examApi = {
     getExamTypes: async () => {
-        return request<ExamType[]>('/api/exams/types', { method: 'GET' }, false);
+        const response = await request<{ success: boolean; data: ExamType[] }>(
+            '/exams/types',
+            { method: 'GET' },
+            false
+        );
+        return response.data;
     },
 
     getLevels: async (examTypeId: string) => {
-        return request<ExamLevel[]>(`/api/exams/levels/${examTypeId}`, { method: 'GET' }, false);
+        const response = await request<{ success: boolean; data: ExamLevel[] }>(
+            `/exams/types/${examTypeId}/levels`,
+            { method: 'GET' },
+            false
+        );
+        return response.data;
+    },
+
+    getLevelDetails: async (levelId: string) => {
+        const response = await request<{
+            success: boolean;
+            data: {
+                id: string;
+                name: string;
+                nameNp: string | null;
+                examType: { id: string; name: string; nameNp: string | null };
+                phases: Array<{
+                    id: string;
+                    name: string;
+                    nameNp: string | null;
+                    description: string | null;
+                    type: string;
+                }>;
+                subjects: Subject[];
+            };
+        }>(`/exams/levels/${levelId}`, { method: 'GET' });
+        return response.data;
     },
 
     getSubjects: async (levelId: string) => {
-        return request<Subject[]>(`/api/exams/subjects/${levelId}`, { method: 'GET' });
+        const response = await request<{ success: boolean; data: Subject[] }>(
+            `/exams/levels/${levelId}/subjects`,
+            { method: 'GET' }
+        );
+        return response.data;
     },
 
     getTopics: async (subjectId: string) => {
-        return request<Topic[]>(`/api/exams/topics/${subjectId}`, { method: 'GET' });
+        const response = await request<{ success: boolean; data: Topic[] }>(
+            `/exams/subjects/${subjectId}/topics`,
+            { method: 'GET' }
+        );
+        return response.data;
     },
 };
 
@@ -320,75 +409,123 @@ export const examApi = {
 
 export interface Question {
     id: string;
-    questionNumber: number;
-    text: string;
-    options: { key: string; text: string }[];
-    difficulty: string;
-    explanation?: string;
+    question: string;
+    questionNp: string | null;
+    options: Record<string, string>;
+    optionsNp: Record<string, string> | null;
+    difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+    subject: { id: string; name: string };
+    topic: { id: string; name: string } | null;
+    isBookmarked: boolean;
+    // Only available after answering
     correctAnswer?: string;
+    explanation?: string;
+    explanationNp?: string | null;
 }
 
-export interface QuizSession {
-    id: string;
-    quizType: string;
-    questionCount: number;
-    timeLimit: number | null;
-    status: string;
-    startedAt: string;
-}
-
-export interface QuizResult {
-    sessionId: string;
-    totalQuestions: number;
-    correctAnswers: number;
-    wrongAnswers: number;
-    skipped: number;
-    accuracy: number;
-    timeSpent: number;
+export interface SubmitAnswerResult {
+    isCorrect: boolean;
+    isSkipped: boolean;
+    correctAnswer: string;
+    explanation: string | null;
+    explanationNp: string | null;
+    stats: {
+        today: {
+            questionsCompleted: number;
+            questionsCorrect: number;
+            goal: number;
+            goalMet: boolean;
+        };
+        streak: number;
+    };
 }
 
 export const practiceApi = {
-    startSession: async (params: {
-        quizType: string;
+    getQuestions: async (params: {
         subjectId?: string;
         topicId?: string;
-        questionCount?: number;
-        timeLimit?: number;
-        difficulty?: string;
+        difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
+        limit?: number;
+        filter?: 'all' | 'unattempted' | 'incorrect' | 'bookmarked';
     }) => {
-        return request<QuizSession>('/api/practice/start', {
-            method: 'POST',
-            body: JSON.stringify(params),
-        });
+        const query = new URLSearchParams();
+        if (params.subjectId) query.set('subjectId', params.subjectId);
+        if (params.topicId) query.set('topicId', params.topicId);
+        if (params.difficulty) query.set('difficulty', params.difficulty);
+        if (params.limit) query.set('limit', params.limit.toString());
+        if (params.filter) query.set('filter', params.filter);
+
+        const response = await request<{
+            success: boolean;
+            data: { questions: Question[]; total: number };
+        }>(`/practice/questions?${query.toString()}`, { method: 'GET' });
+        return response.data;
     },
 
-    getQuestions: async (sessionId: string) => {
-        return request<Question[]>(`/api/practice/questions?sessionId=${sessionId}`, {
-            method: 'GET',
-        });
+    getQuestionWithAnswer: async (questionId: string) => {
+        const response = await request<{ success: boolean; data: Question & { correctAnswer: string; explanation: string } }>(
+            `/practice/questions/${questionId}`,
+            { method: 'GET' }
+        );
+        return response.data;
     },
 
     submitAnswer: async (data: {
-        sessionId: string;
         questionId: string;
-        answer: string;
-        timeSpent: number;
+        selectedAnswer: string | null;
+        timeTakenSeconds?: number;
+        sessionType?: 'practice' | 'quick_quiz' | 'mock_test';
     }) => {
-        return request<{
-            isCorrect: boolean;
-            correctAnswer: string;
-            explanation?: string;
-        }>('/api/practice/answer', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
+        const response = await request<{ success: boolean; data: SubmitAnswerResult }>(
+            '/practice/submit',
+            {
+                method: 'POST',
+                body: JSON.stringify(data),
+            }
+        );
+        return response.data;
     },
 
-    completeSession: async (sessionId: string) => {
-        return request<QuizResult>('/api/practice/complete', {
+    toggleBookmark: async (questionId: string, note?: string) => {
+        const response = await request<{
+            success: boolean;
+            data: { isBookmarked: boolean; bookmark: { id: string } | null };
+        }>('/practice/bookmark', {
             method: 'POST',
-            body: JSON.stringify({ sessionId }),
+            body: JSON.stringify({ questionId, note }),
         });
+        return response.data;
+    },
+
+    getBookmarks: async (page = 1, limit = 20) => {
+        const response = await request<{
+            success: boolean;
+            data: {
+                bookmarks: Array<{
+                    id: string;
+                    note: string | null;
+                    createdAt: string;
+                    question: Question;
+                }>;
+                total: number;
+                page: number;
+                limit: number;
+            };
+        }>(`/practice/bookmarks?page=${page}&limit=${limit}`, { method: 'GET' });
+        return response.data;
+    },
+
+    getDailyChallenge: async () => {
+        const response = await request<{
+            success: boolean;
+            data: {
+                questions: Question[];
+                total: number;
+                completed: number;
+                correct: number;
+            };
+        }>('/practice/daily-challenge', { method: 'GET' });
+        return response.data;
     },
 };
 
@@ -396,62 +533,111 @@ export const practiceApi = {
 // PROGRESS API
 // =============================================================================
 
-export interface DashboardStats {
-    totalQuestions: number;
-    correctAnswers: number;
-    accuracy: number;
-    currentStreak: number;
-    longestStreak: number;
-    todayQuestions: number;
-    todayGoal: number;
-    weeklyProgress: { 
-        date: string; 
-        questions: number; 
-        correct: number 
-    }[];
+export interface ProgressOverview {
+    overall: {
+        totalQuestionsAttempted: number;
+        totalCorrect: number;
+        totalIncorrect: number;
+        totalSkipped: number;
+        accuracy: number;
+        totalTimeSpentMinutes: number;
+    };
+    streak: {
+        current: number;
+        longest: number;
+        lastPracticeDate: string | null;
+    };
+    today: {
+        questionsCompleted: number;
+        questionsCorrect: number;
+        goal: number;
+        goalMet: boolean;
+        timeSpentMinutes: number;
+    };
 }
 
 export interface SubjectProgress {
-    subjectId: string;
-    subjectName: string;
+    id: string;
+    name: string;
+    nameNp: string | null;
+    icon: string | null;
+    color: string | null;
     totalQuestions: number;
-    correctAnswers: number;
+    attempted: number;
+    correct: number;
     accuracy: number;
-    lastPracticed: string | null;
+    completion: number;
 }
 
-export interface WeakTopic {
-    topicId: string;
-    topicName: string;
-    subjectName: string;
-    accuracy: number;
-    totalAttempts: number;
+export interface WeeklyProgress {
+    date: string;
+    dayOfWeek: string;
+    questionsCompleted: number;
+    questionsCorrect: number;
+    goalMet: boolean;
+    timeSpentMinutes: number;
+}
+
+export interface RecentActivity {
+    id: string;
+    questionId: string;
+    isCorrect: boolean;
+    isSkipped: boolean;
+    attemptedAt: string;
+    subject: { name: string };
+    topic: { name: string } | null;
 }
 
 export const progressApi = {
-    getDashboard: async () => {
-        return request<DashboardStats>('/api/progress/dashboard', { method: 'GET' });
+    getOverview: async () => {
+        const response = await request<{ success: boolean; data: ProgressOverview }>(
+            '/progress/overview',
+            { method: 'GET' }
+        );
+        return response.data;
     },
 
     getSubjectProgress: async () => {
-        return request<SubjectProgress[]>('/api/progress/subjects', { method: 'GET' });
+        const response = await request<{ success: boolean; data: SubjectProgress[] }>(
+            '/progress/subjects',
+            { method: 'GET' }
+        );
+        return response.data;
     },
 
-    getHistory: async (params?: { page?: number; limit?: number }) => {
-        const query = new URLSearchParams();
-        if (params?.page) query.set('page', params.page.toString());
-        if (params?.limit) query.set('limit', params.limit.toString());
-
-        return request<{
-            sessions: QuizResult[];
-            total: number;
-            page: number;
-            limit: number;
-        }>(`/api/progress/history?${query.toString()}`, { method: 'GET' });
+    getWeeklyProgress: async () => {
+        const response = await request<{ success: boolean; data: WeeklyProgress[] }>(
+            '/progress/weekly',
+            { method: 'GET' }
+        );
+        return response.data;
     },
 
-    getWeakTopics: async () => {
-        return request<WeakTopic[]>('/api/progress/weak-topics', { method: 'GET' });
+    getRecentActivity: async (limit = 10) => {
+        const response = await request<{ success: boolean; data: RecentActivity[] }>(
+            `/progress/recent?limit=${limit}`,
+            { method: 'GET' }
+        );
+        return response.data;
+    },
+
+    getLeaderboard: async (period: 'daily' | 'weekly' | 'monthly' | 'allTime' = 'weekly') => {
+        const response = await request<{
+            success: boolean;
+            data: {
+                leaderboard: Array<{
+                    userId: string;
+                    username: string;
+                    name: string | null;
+                    avatar: string | null;
+                    questionsCompleted: number;
+                    accuracy: number;
+                    rank: number;
+                }>;
+                userRank: number | null;
+            };
+        }>(`/progress/leaderboard?period=${period}`, { method: 'GET' });
+        return response.data;
     },
 };
 
@@ -495,46 +681,54 @@ export const aiApi = {
      * Check if AI features are available
      */
     getStatus: async () => {
-        return request<AIStatus>('/api/v1/ai/status', { method: 'GET' }, false);
+        const response = await request<{ success: boolean; data: AIStatus }>(
+            '/ai/status',
+            { method: 'GET' },
+            false
+        );
+        return response.data;
     },
 
     /**
      * Get AI explanation for a question
      */
     explainQuestion: async (questionId: string) => {
-        return request<{ success: boolean; data: AIExplanation }>(
-            '/api/v1/ai/explain',
+        const response = await request<{ success: boolean; data: AIExplanation }>(
+            '/ai/explain',
             {
                 method: 'POST',
                 body: JSON.stringify({ questionId }),
             }
         );
+        return response.data;
     },
 
     /**
      * Ask a follow-up question about a specific MCQ
      */
     askQuestion: async (questionId: string, query: string, context?: string) => {
-        return request<{ success: boolean; data: AIAskResponse }>(
-            '/api/v1/ai/ask',
+        const response = await request<{ success: boolean; data: AIAskResponse }>(
+            '/ai/ask',
             {
                 method: 'POST',
                 body: JSON.stringify({ questionId, query, context }),
             }
         );
+        return response.data;
     },
 
     /**
      * Translate a question to Nepali
      */
     translateQuestion: async (questionId: string, targetLanguage: 'np' | 'en' = 'np') => {
-        return request<{ success: boolean; data: AITranslation }>(
-            '/api/v1/ai/translate',
+        const response = await request<{ success: boolean; data: AITranslation }>(
+            '/ai/translate',
             {
                 method: 'POST',
                 body: JSON.stringify({ questionId, targetLanguage }),
             }
         );
+        return response.data;
     },
 };
 

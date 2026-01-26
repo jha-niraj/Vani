@@ -36,7 +36,7 @@ function useProtectedRoute() {
 			router.replace('/(auth)/welcome');
 		} else if (isAuthenticated && inAuthGroup) {
 			// Logged in, check if onboarding needed
-			if (!user?.username || !user?.selectedExamId) {
+			if (!user?.username || !user?.onboardingComplete) {
 				router.replace('/(onboarding)/username');
 			} else {
 				router.replace('/(tabs)');

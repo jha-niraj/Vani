@@ -1,11 +1,12 @@
 import React from 'react';
 import {
-	View, Text, ScrollView, Pressable
+	View, Text, ScrollView, Pressable, ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/lib/auth-store';
+import { useProgressOverview } from '@/hooks/use-api';
 import { Ionicons } from '@expo/vector-icons';
 
 interface QuickActionProps {
@@ -38,13 +39,18 @@ interface StatCardProps {
 	value: string;
 	label: string;
 	icon: keyof typeof Ionicons.glyphMap;
+	isLoading?: boolean;
 }
 
-function StatCard({ value, label, icon }: StatCardProps) {
+function StatCard({ value, label, icon, isLoading }: StatCardProps) {
 	return (
 		<View className="flex-1 bg-neutral-900 rounded-xl p-4 border border-neutral-800">
 			<View className="flex-row items-center justify-between mb-2">
-				<Text className="text-amber-500 text-2xl font-bold">{value}</Text>
+				{isLoading ? (
+					<ActivityIndicator color="#F59E0B" size="small" />
+				) : (
+					<Text className="text-amber-500 text-2xl font-bold">{value}</Text>
+				)}
 				<Ionicons name={icon} size={20} color="#737373" />
 			</View>
 			<Text className="text-neutral-400 text-sm">{label}</Text>
@@ -56,6 +62,7 @@ export default function HomeScreen() {
 	const router = useRouter();
 	const insets = useSafeAreaInsets();
 	const { user } = useAuthStore();
+	const { data: progress, isLoading: progressLoading } = useProgressOverview();
 
 	const greeting = () => {
 		const hour = new Date().getHours();
@@ -63,6 +70,10 @@ export default function HomeScreen() {
 		if (hour < 17) return 'Good afternoon';
 		return 'Good evening';
 	};
+
+	const todayCompleted = progress?.today?.questionsCompleted ?? 0;
+	const todayGoal = progress?.today?.goal ?? 10;
+	const goalProgress = Math.min(Math.round((todayCompleted / todayGoal) * 100), 100);
 
 	return (
 		<View
@@ -80,27 +91,30 @@ export default function HomeScreen() {
 				>
 					<Text className="text-neutral-400 text-base">{greeting()}</Text>
 					<Text className="text-white text-2xl font-bold mt-1">
-						{user?.username || 'Student'}
+						{user?.name || user?.username || 'Student'}
 					</Text>
 				</Animated.View>
 				<Animated.View
 					entering={FadeInDown.delay(200).duration(400)}
 					className="mx-6 mb-6"
 				>
-					<View className="bg-gradient-to-r from-amber-500/20 to-amber-600/10 rounded-2xl p-5 border border-amber-500/30">
+					<View className="bg-amber-500/10 rounded-2xl p-5 border border-amber-500/30">
 						<View className="flex-row items-center justify-between mb-4">
 							<View>
 								<Text className="text-white text-lg font-semibold">Daily Goal</Text>
 								<Text className="text-neutral-400 text-sm mt-1">
-									5 of 10 questions completed
+									{todayCompleted} of {todayGoal} questions completed
 								</Text>
 							</View>
-							<View className="bg-amber-500 px-3 py-1 rounded-full">
-								<Text className="text-black text-sm font-semibold">50%</Text>
+							<View className={`px-3 py-1 rounded-full ${progress?.today?.goalMet ? 'bg-emerald-500' : 'bg-amber-500'}`}>
+								<Text className="text-black text-sm font-semibold">{goalProgress}%</Text>
 							</View>
 						</View>
 						<View className="h-2 bg-neutral-800 rounded-full overflow-hidden">
-							<View className="h-full w-1/2 bg-amber-500 rounded-full" />
+							<View
+								className={`h-full rounded-full ${progress?.today?.goalMet ? 'bg-emerald-500' : 'bg-amber-500'}`}
+								style={{ width: `${goalProgress}%` }}
+							/>
 						</View>
 					</View>
 				</Animated.View>
@@ -109,9 +123,33 @@ export default function HomeScreen() {
 					className="px-6 mb-6"
 				>
 					<Text className="text-white text-lg font-semibold mb-4">Your Stats</Text>
+					<View className="flex-row gap-3 mb-3">
+						<StatCard
+							value={String(progress?.overall?.totalQuestionsAttempted ?? 0)}
+							label="Questions Done"
+							icon="checkmark-circle-outline"
+							isLoading={progressLoading}
+						/>
+						<StatCard
+							value={`${progress?.overall?.accuracy ?? 0}%`}
+							label="Accuracy"
+							icon="analytics-outline"
+							isLoading={progressLoading}
+						/>
+					</View>
 					<View className="flex-row gap-3">
-						<StatCard value="156" label="Questions Done" icon="checkmark-circle-outline" />
-						<StatCard value="78%" label="Accuracy" icon="analytics-outline" />
+						<StatCard
+							value={String(progress?.streak?.current ?? 0)}
+							label="Day Streak"
+							icon="flame-outline"
+							isLoading={progressLoading}
+						/>
+						<StatCard
+							value={`${progress?.overall?.totalTimeSpentMinutes ?? 0}m`}
+							label="Study Time"
+							icon="time-outline"
+							isLoading={progressLoading}
+						/>
 					</View>
 				</Animated.View>
 				<Animated.View
@@ -129,43 +167,33 @@ export default function HomeScreen() {
 						/>
 						<QuickAction
 							icon="book-outline"
-							title="Continue"
-							subtitle="Resume learning"
+							title="Practice"
+							subtitle="Choose a topic"
 							color="#10B981"
 							onPress={() => router.push('/(tabs)/practice')}
 						/>
 					</View>
 				</Animated.View>
-				<Animated.View
-					entering={FadeInDown.delay(500).duration(400)}
-					className="px-6"
-				>
-					<Text className="text-white text-lg font-semibold mb-4">Recent Activity</Text>
-
-					{
-						[
-							{ title: 'Science Quiz', score: '8/10', time: '2 hours ago', icon: 'flask-outline' },
-							{ title: 'Math Practice', score: '15/20', time: 'Yesterday', icon: 'calculator-outline' },
-							{ title: 'English Grammar', score: '12/15', time: '2 days ago', icon: 'book-outline' },
-						].map((activity, index) => (
-							<View
-								key={index}
-								className="flex-row items-center bg-neutral-900 rounded-xl p-4 mb-3 border border-neutral-800"
-							>
-								<View className="w-10 h-10 rounded-full bg-amber-500/20 items-center justify-center">
-									<Ionicons name={activity.icon as any} size={20} color="#F59E0B" />
-								</View>
-								<View className="flex-1 ml-4">
-									<Text className="text-white font-medium">{activity.title}</Text>
-									<Text className="text-neutral-500 text-sm">{activity.time}</Text>
-								</View>
-								<View className="bg-neutral-800 px-3 py-1 rounded-full">
-									<Text className="text-amber-500 font-semibold">{activity.score}</Text>
-								</View>
+				{progress?.streak?.current && progress.streak.current > 0 && (
+					<Animated.View
+						entering={FadeInDown.delay(500).duration(400)}
+						className="px-6"
+					>
+						<View className="bg-amber-500/10 rounded-2xl p-5 border border-amber-500/30 flex-row items-center">
+							<View className="w-14 h-14 bg-amber-500/30 rounded-full items-center justify-center">
+								<Text className="text-3xl">🔥</Text>
 							</View>
-						))
-					}
-				</Animated.View>
+							<View className="flex-1 ml-4">
+								<Text className="text-white font-bold text-lg">
+									{progress.streak.current} Day Streak!
+								</Text>
+								<Text className="text-neutral-400 text-sm mt-1">
+									Keep going! Your longest streak is {progress.streak.longest} days.
+								</Text>
+							</View>
+						</View>
+					</Animated.View>
+				)}
 			</ScrollView>
 		</View>
 	);

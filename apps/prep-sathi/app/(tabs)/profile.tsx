@@ -35,7 +35,7 @@ export default function ProfileScreen() {
             title: 'Account',
             items: [
                 { icon: '👤', label: 'Edit Profile', onPress: () => { } },
-                { icon: '🎯', label: 'Daily Goal', value: user?.dailyGoal || '10 questions', onPress: () => { } },
+                { icon: '🎯', label: 'Daily Goal', value: user?.preferences?.dailyGoal || '10 questions', onPress: () => { } },
                 { icon: '📚', label: 'Change Exam', onPress: () => router.push('/(onboarding)/exam-select') },
             ],
         },
@@ -79,11 +79,11 @@ export default function ProfileScreen() {
                     <View className="bg-neutral-900 rounded-2xl p-6 mb-6 border border-neutral-800 items-center">
                         <View className="w-20 h-20 rounded-full bg-amber-500/20 items-center justify-center mb-4">
                             <Text className="text-3xl">
-                                {(user?.displayName || user?.username || 'S')[0].toUpperCase()}
+                                {(user?.name || user?.username || 'S')[0].toUpperCase()}
                             </Text>
                         </View>
                         <Text className="text-xl font-bold text-neutral-50 mb-1">
-                            {user?.displayName || user?.username || 'Student'}
+                            {user?.name || user?.username || 'Student'}
                         </Text>
                         {
                             user?.username && (
@@ -95,7 +95,7 @@ export default function ProfileScreen() {
                         </Text>
                         <View className="bg-amber-500/20 px-4 py-1 rounded-full mt-4">
                             <Text className="text-amber-500 text-sm font-medium">
-                                {user?.selectedExamId ? 'Loksewa' : 'No exam selected'}
+                                {user?.currentExam?.type?.name || 'No exam selected'}
                             </Text>
                         </View>
                     </View>

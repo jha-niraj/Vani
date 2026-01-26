@@ -96,24 +96,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         try {
             const response = await api.auth.verifyOTP(phoneNumber, otp);
 
+            // After OTP verification, fetch full user data
+            const user = await api.user.getMe();
+            
+            const isNewUser = !response.user.onboardingComplete;
+
             set({
-                user: {
-                    id: response.user.id,
-                    phone: response.user.phone,
-                    username: response.user.username,
-                    displayName: null,
-                    avatarUrl: null,
-                    dailyGoal: 'TEN',
-                    selectedExamId: null,
-                    selectedLevelId: null,
-                    createdAt: new Date().toISOString(),
-                },
+                user,
                 isAuthenticated: true,
                 isVerifying: false,
                 isOtpSent: false,
             });
 
-            return { success: true, isNewUser: response.user.isNewUser };
+            return { success: true, isNewUser };
         } catch (error: any) {
             set({
                 isVerifying: false,

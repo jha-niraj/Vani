@@ -1,99 +1,104 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-	View, Text, ScrollView, Pressable, Alert
+	View, Text, ScrollView, Pressable, Alert, ActivityIndicator
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-
-interface Question {
-	id: string;
-	text: string;
-	options: string[];
-	correctIndex: number;
-	explanation: string;
-}
-
-const sampleQuestions: Question[] = [
-	{
-		id: '1',
-		text: 'What is the capital of Nepal?',
-		options: ['Pokhara', 'Kathmandu', 'Biratnagar', 'Lalitpur'],
-		correctIndex: 1,
-		explanation: 'Kathmandu is the capital and largest city of Nepal.',
-	},
-	{
-		id: '2',
-		text: 'Which river is the longest in Nepal?',
-		options: ['Koshi', 'Gandaki', 'Karnali', 'Bagmati'],
-		correctIndex: 2,
-		explanation: 'The Karnali River is the longest river in Nepal at 507 km.',
-	},
-	{
-		id: '3',
-		text: 'What is the highest peak in the world?',
-		options: ['K2', 'Kangchenjunga', 'Mount Everest', 'Lhotse'],
-		correctIndex: 2,
-		explanation: 'Mount Everest at 8,848.86m is the highest peak in the world.',
-	},
-	{
-		id: '4',
-		text: 'In which year was Nepal declared a Federal Democratic Republic?',
-		options: ['2006', '2007', '2008', '2009'],
-		correctIndex: 2,
-		explanation: 'Nepal was declared a Federal Democratic Republic on May 28, 2008.',
-	},
-	{
-		id: '5',
-		text: 'What is the national animal of Nepal?',
-		options: ['Tiger', 'Cow', 'Elephant', 'Rhino'],
-		correctIndex: 1,
-		explanation: 'The cow is the national animal of Nepal.',
-	},
-];
+import { api } from '@/lib/api';
+import type { Question, SubmitAnswerResult } from '@/lib/api';
 
 export default function QuizScreen() {
 	const router = useRouter();
 	const insets = useSafeAreaInsets();
-	const params = useLocalSearchParams();
+	const params = useLocalSearchParams<{ subjectId?: string; topicId?: string }>();
+
+	const [questions, setQuestions] = useState<Question[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 
 	const [currentIndex, setCurrentIndex] = useState(0);
-	const [selectedOption, setSelectedOption] = useState<number | null>(null);
+	const [selectedOption, setSelectedOption] = useState<string | null>(null);
 	const [isAnswered, setIsAnswered] = useState(false);
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [result, setResult] = useState<SubmitAnswerResult | null>(null);
 	const [score, setScore] = useState(0);
-	const [answers, setAnswers] = useState<(number | null)[]>([]);
+	const [answers, setAnswers] = useState<Array<{ questionId: string; selected: string | null; correct: boolean }>>([]);
 
-	const currentQuestion = sampleQuestions[currentIndex];
-	const progress = ((currentIndex + 1) / sampleQuestions.length) * 100;
+	// Fetch questions on mount
+	useEffect(() => {
+		async function fetchQuestions() {
+			setIsLoading(true);
+			setError(null);
+			try {
+				const data = await api.practice.getQuestions({
+					subjectId: params.subjectId,
+					topicId: params.topicId,
+					limit: 10,
+				});
+				if (data.questions.length === 0) {
+					setError('No questions available for this selection.');
+				} else {
+					setQuestions(data.questions);
+				}
+			} catch (err: any) {
+				setError(err.message || 'Failed to load questions');
+			} finally {
+				setIsLoading(false);
+			}
+		}
+		fetchQuestions();
+	}, [params.subjectId, params.topicId]);
 
-	const handleOptionSelect = (index: number) => {
-		if (isAnswered) return;
+	const currentQuestion = questions[currentIndex];
+	const progress = questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
 
-		setSelectedOption(index);
-		setIsAnswered(true);
+	const handleOptionSelect = async (optionKey: string) => {
+		if (isAnswered || isSubmitting) return;
 
-		const newAnswers = [...answers];
-		newAnswers[currentIndex] = index;
-		setAnswers(newAnswers);
+		setSelectedOption(optionKey);
+		setIsSubmitting(true);
 
-		if (index === currentQuestion.correctIndex) {
-			setScore(score + 1);
+		try {
+			const submitResult = await api.practice.submitAnswer({
+				questionId: currentQuestion.id,
+				selectedAnswer: optionKey,
+			});
+			setResult(submitResult);
+			setIsAnswered(true);
+
+			const newAnswers = [...answers];
+			newAnswers[currentIndex] = {
+				questionId: currentQuestion.id,
+				selected: optionKey,
+				correct: submitResult.isCorrect,
+			};
+			setAnswers(newAnswers);
+
+			if (submitResult.isCorrect) {
+				setScore(score + 1);
+			}
+		} catch (err: any) {
+			Alert.alert('Error', err.message || 'Failed to submit answer');
+		} finally {
+			setIsSubmitting(false);
 		}
 	};
 
 	const handleNext = () => {
-		if (currentIndex < sampleQuestions.length - 1) {
+		if (currentIndex < questions.length - 1) {
 			setCurrentIndex(currentIndex + 1);
 			setSelectedOption(null);
 			setIsAnswered(false);
+			setResult(null);
 		} else {
 			// Quiz finished
 			router.replace({
 				pathname: '/(practice)/result',
 				params: {
 					score: score.toString(),
-					total: sampleQuestions.length.toString(),
+					total: questions.length.toString(),
 				},
 			});
 		}
@@ -102,7 +107,7 @@ export default function QuizScreen() {
 	const handleExit = () => {
 		Alert.alert(
 			'Exit Quiz',
-			'Are you sure you want to exit? Your progress will be lost.',
+			'Are you sure you want to exit? Your progress will be saved.',
 			[
 				{ text: 'Cancel', style: 'cancel' },
 				{ text: 'Exit', style: 'destructive', onPress: () => router.back() },
@@ -110,37 +115,70 @@ export default function QuizScreen() {
 		);
 	};
 
-	const getOptionStyle = (index: number) => {
+	const getOptionStyle = (optionKey: string) => {
 		if (!isAnswered) {
-			return selectedOption === index
+			return selectedOption === optionKey
 				? 'border-amber-500 bg-amber-500/10'
 				: 'border-neutral-800 bg-neutral-900';
 		}
 
-		if (index === currentQuestion.correctIndex) {
+		if (optionKey === result?.correctAnswer) {
 			return 'border-emerald-500 bg-emerald-500/10';
 		}
 
-		if (selectedOption === index && index !== currentQuestion.correctIndex) {
+		if (selectedOption === optionKey && optionKey !== result?.correctAnswer) {
 			return 'border-red-500 bg-red-500/10';
 		}
 
 		return 'border-neutral-800 bg-neutral-900 opacity-50';
 	};
 
-	const getOptionIcon = (index: number) => {
+	const getOptionIcon = (optionKey: string) => {
 		if (!isAnswered) return null;
 
-		if (index === currentQuestion.correctIndex) {
+		if (optionKey === result?.correctAnswer) {
 			return <Ionicons name="checkmark-circle" size={24} color="#10B981" />;
 		}
 
-		if (selectedOption === index && index !== currentQuestion.correctIndex) {
+		if (selectedOption === optionKey && optionKey !== result?.correctAnswer) {
 			return <Ionicons name="close-circle" size={24} color="#EF4444" />;
 		}
 
 		return null;
 	};
+
+	// Loading state
+	if (isLoading) {
+		return (
+			<View className="flex-1 bg-neutral-950 items-center justify-center" style={{ paddingTop: insets.top }}>
+				<ActivityIndicator color="#F59E0B" size="large" />
+				<Text className="text-neutral-400 mt-4">Loading questions...</Text>
+			</View>
+		);
+	}
+
+	// Error state
+	if (error || questions.length === 0) {
+		return (
+			<View className="flex-1 bg-neutral-950 items-center justify-center px-6" style={{ paddingTop: insets.top }}>
+				<Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
+				<Text className="text-white text-xl font-semibold mt-4 text-center">
+					{error || 'No questions available'}
+				</Text>
+				<Text className="text-neutral-400 mt-2 text-center">
+					Please try a different subject or topic.
+				</Text>
+				<Pressable
+					onPress={() => router.back()}
+					className="mt-6 bg-amber-500 px-8 py-4 rounded-2xl"
+				>
+					<Text className="text-black font-bold text-lg">Go Back</Text>
+				</Pressable>
+			</View>
+		);
+	}
+
+	const options = Object.entries(currentQuestion.options);
 
 	return (
 		<View
@@ -159,7 +197,7 @@ export default function QuizScreen() {
 						{currentIndex + 1}
 					</Text>
 					<Text className="text-neutral-500">
-						/{sampleQuestions.length}
+						/{questions.length}
 					</Text>
 				</View>
 				<View className="w-10 h-10 rounded-full bg-amber-500/20 items-center justify-center">
@@ -183,35 +221,50 @@ export default function QuizScreen() {
 					entering={FadeInRight.duration(300)}
 					className="mb-8"
 				>
+					{
+						currentQuestion.subject && (
+							<Text className="text-amber-500 text-sm font-medium mb-2">
+								{currentQuestion.subject.name}
+								{currentQuestion.topic && ` • ${currentQuestion.topic.name}`}
+							</Text>
+						)
+					}
 					<Text className="text-white text-xl font-semibold leading-relaxed">
-						{currentQuestion.text}
+						{currentQuestion.question}
 					</Text>
 				</Animated.View>
 
 				{
-					currentQuestion.options.map((option, index) => (
+					options.map(([key, value], index) => (
 						<Animated.View
-							key={index}
+							key={key}
 							entering={FadeInDown.delay(100 + index * 50).duration(300)}
 						>
 							<Pressable
-								onPress={() => handleOptionSelect(index)}
-								disabled={isAnswered}
-								className={`flex-row items-center p-4 mb-3 rounded-2xl border-2 ${getOptionStyle(index)}`}
+								onPress={() => handleOptionSelect(key)}
+								disabled={isAnswered || isSubmitting}
+								className={`flex-row items-center p-4 mb-3 rounded-2xl border-2 ${getOptionStyle(key)}`}
 							>
 								<View className="w-8 h-8 rounded-full border-2 border-neutral-600 items-center justify-center mr-4">
 									<Text className="text-neutral-400 font-semibold">
-										{String.fromCharCode(65 + index)}
+										{key.toUpperCase()}
 									</Text>
 								</View>
-								<Text className="flex-1 text-white text-base">{option}</Text>
-								{getOptionIcon(index)}
+								<Text className="flex-1 text-white text-base">{value}</Text>
+								{
+									isSubmitting && selectedOption === key ? (
+										<ActivityIndicator size="small" color="#F59E0B" />
+									) : (
+										getOptionIcon(key)
+									)
+								}
 							</Pressable>
 						</Animated.View>
 					))
 				}
+
 				{
-					isAnswered && (
+					isAnswered && result && (
 						<Animated.View
 							entering={FadeInDown.delay(300).duration(400)}
 							className="mt-4 p-4 bg-neutral-900 rounded-2xl border border-neutral-800"
@@ -221,7 +274,7 @@ export default function QuizScreen() {
 								<Text className="text-amber-500 font-semibold ml-2">Explanation</Text>
 							</View>
 							<Text className="text-neutral-300 leading-relaxed">
-								{currentQuestion.explanation}
+								{result.explanation || 'No explanation available for this question.'}
 							</Text>
 						</Animated.View>
 					)
@@ -239,7 +292,7 @@ export default function QuizScreen() {
 							className="bg-amber-500 rounded-2xl py-4 items-center active:opacity-80"
 						>
 							<Text className="text-black font-bold text-lg">
-								{currentIndex < sampleQuestions.length - 1 ? 'Next Question' : 'See Results'}
+								{currentIndex < questions.length - 1 ? 'Next Question' : 'See Results'}
 							</Text>
 						</Pressable>
 					</Animated.View>

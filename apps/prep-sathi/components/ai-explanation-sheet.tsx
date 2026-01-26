@@ -76,7 +76,7 @@ export function AIExplanationSheet({
 
         try {
             const response = await aiApi.explainQuestion(question.id);
-            setExplanation(response.data);
+            setExplanation(response);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to get explanation');
         } finally {
@@ -94,7 +94,7 @@ export function AIExplanationSheet({
         try {
             const targetLang = isNepali ? 'en' : 'np';
             const response = await aiApi.translateQuestion(question.id, targetLang);
-            setTranslation(response.data);
+            setTranslation(response);
             setIsNepali(!isNepali);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to translate');
@@ -121,7 +121,7 @@ export function AIExplanationSheet({
             const response = await aiApi.askQuestion(question.id, userMessage, context);
             setConversation((prev) => [
                 ...prev,
-                { role: 'assistant', content: response.data.response },
+                { role: 'assistant', content: response.response },
             ]);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to get response');
