@@ -95,8 +95,8 @@ export function TextInput({
                     style={[
                         styles.input,
                         { color: colors.text },
-                        leftIcon && { paddingLeft: 0 },
-                        rightIcon && { paddingRight: 0 },
+                        leftIcon ? { paddingLeft: 0 } : undefined,
+                        rightIcon ? { paddingRight: 0 } : undefined,
                         style,
                     ]}
                     placeholderTextColor={colors.inputPlaceholder}

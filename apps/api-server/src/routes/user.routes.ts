@@ -173,7 +173,7 @@ userRouter.get(
     "/check-username/:username",
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { username } = req.params;
+            const username = req.params.username as string;
 
             // Validate format
             const validation = setUsernameSchema.safeParse({ username });

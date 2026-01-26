@@ -168,13 +168,16 @@ export class TwilioSMSService {
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                console.error("Twilio error:", error);
-                return { success: false, error: error.message || "Failed to send SMS" };
+                const errorData = await response.json() as { message?: string };
+                console.error("Twilio error:", errorData);
+                return { success: false, error: errorData.message || "Failed to send SMS" };
             }
 
-            const result = await response.json();
-            return { success: true, messageId: result.sid };
+            const result = await response.json() as { sid: string };
+            return { 
+                success: true, 
+                messageId: result.sid 
+            };
         } catch (error) {
             console.error("SMS sending error:", error);
             return { success: false, error: "Failed to send SMS" };

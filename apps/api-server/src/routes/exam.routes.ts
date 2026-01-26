@@ -48,7 +48,7 @@ examRouter.get(
     "/types/:typeId/levels",
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { typeId } = req.params;
+            const typeId = req.params.typeId as string;
 
             const examType = await prisma.examType.findUnique({
                 where: { id: typeId, isActive: true },
@@ -94,7 +94,7 @@ examRouter.get(
     optionalAuth,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { levelId } = req.params;
+            const levelId = req.params.levelId as string;
             const userId = (req as AuthenticatedRequest).user?.userId;
 
             const level = await prisma.examLevel.findUnique({
@@ -150,7 +150,8 @@ examRouter.get(
                 }
             }
 
-            const subjects = level.subjects.map((subject) => ({
+            type SubjectWithCount = (typeof level.subjects)[number];
+            const subjects = level.subjects.map((subject: SubjectWithCount) => ({
                 id: subject.id,
                 name: subject.name,
                 nameNp: subject.nameNp,
@@ -189,7 +190,7 @@ examRouter.get(
     optionalAuth,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { subjectId } = req.params;
+            const subjectId = req.params.subjectId as string;
             const userId = (req as AuthenticatedRequest).user?.userId;
 
             const subject = await prisma.subject.findUnique({
@@ -239,14 +240,17 @@ examRouter.get(
                 }
             }
 
-            const topics = subject.topics.map((topic) => ({
+            type TopicWithSubTopics = (typeof subject.topics)[number];
+            type SubTopic = TopicWithSubTopics["subTopics"][number];
+
+            const topics = subject.topics.map((topic: TopicWithSubTopics) => ({
                 id: topic.id,
                 name: topic.name,
                 nameNp: topic.nameNp,
                 description: topic.description,
                 questionCount: topic._count.questions,
                 progress: topicProgress[topic.id] || { attempted: 0, correct: 0 },
-                subTopics: topic.subTopics.map((subTopic) => ({
+                subTopics: topic.subTopics.map((subTopic: SubTopic) => ({
                     id: subTopic.id,
                     name: subTopic.name,
                     nameNp: subTopic.nameNp,

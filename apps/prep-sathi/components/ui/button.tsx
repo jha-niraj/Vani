@@ -185,8 +185,8 @@ export function Button({
                         style={[
                             sizeStyles.text,
                             variantStyles.text,
-                            leftIcon && { marginLeft: 8 },
-                            rightIcon && { marginRight: 8 },
+                            leftIcon ? { marginLeft: 8 } : undefined,
+                            rightIcon ? { marginRight: 8 } : undefined,
                             textStyle,
                         ]}
                     >

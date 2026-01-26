@@ -16,8 +16,8 @@ import {
 export type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
 
 export interface AvatarProps {
-  source?: string;
-  name?: string;
+  source?: string | null;
+  name?: string | null;
   size?: AvatarSize;
   style?: ViewStyle;
   imageStyle?: ImageStyle;

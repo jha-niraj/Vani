@@ -122,7 +122,7 @@ practiceRouter.get(
                 const attemptedSet = new Set(attemptedIds.map((a: { questionId: string }) => a.questionId));
                 
                 const allQuestions = await prisma.question.findMany({
-                    where: whereClause as Parameters<typeof prisma.question.findMany>[0]["where"],
+                    where: whereClause as Prisma.QuestionWhereInput,
                     select: { id: true },
                 });
                 questionIds = allQuestions.filter((q: { id: string }) => !attemptedSet.has(q.id)).map((q: { id: string }) => q.id);
@@ -147,7 +147,7 @@ practiceRouter.get(
 
             // Get questions
             const questions = await prisma.question.findMany({
-                where: whereClause as Parameters<typeof prisma.question.findMany>[0]["where"],
+                where: whereClause as Prisma.QuestionWhereInput,
                 take: params.limit,
                 orderBy: { createdAt: "desc" },
                 select: {
@@ -207,7 +207,7 @@ practiceRouter.get(
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { userId } = (req as AuthenticatedRequest).user;
-            const { questionId } = req.params;
+            const questionId = req.params.questionId as string;
 
             const question = await prisma.question.findUnique({
                 where: { id: questionId, isActive: true },
@@ -464,7 +464,7 @@ practiceRouter.delete(
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { userId } = (req as AuthenticatedRequest).user;
-            const { questionId } = req.params;
+            const questionId = req.params.questionId as string;
 
             await prisma.bookmark.deleteMany({
                 where: { userId, questionId },

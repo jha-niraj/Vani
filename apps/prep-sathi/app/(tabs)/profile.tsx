@@ -95,7 +95,7 @@ export default function ProfileScreen() {
                     <Card style={styles.profileCard}>
                         <Avatar
                             name={user?.displayName || user?.username}
-                            source={user?.avatarUrl || undefined}
+                            source={user?.avatarUrl}
                             size="xl"
                         />
                         <View style={styles.profileInfo}>

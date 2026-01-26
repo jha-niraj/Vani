@@ -33,7 +33,7 @@ export default function HomeScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const { user } = useAuthStore();
-  
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -65,8 +65,8 @@ export default function HomeScreen() {
     return 'Good evening';
   };
 
-  const dailyProgress = stats 
-    ? Math.min(100, (stats.todayQuestions / stats.todayGoal) * 100) 
+  const dailyProgress = stats
+    ? Math.min(100, (stats.todayQuestions / stats.todayGoal) * 100)
     : 0;
 
   return (
@@ -80,7 +80,7 @@ export default function HomeScreen() {
         }
       >
         {/* Header */}
-        <Animated.View 
+        <Animated.View
           entering={FadeInDown.delay(100).duration(500)}
           style={styles.header}
         >
@@ -93,9 +93,9 @@ export default function HomeScreen() {
             </Text>
           </View>
           <Pressable onPress={() => router.push('/(tabs)/profile')}>
-            <Avatar 
-              name={user?.displayName || user?.username} 
-              source={user?.avatarUrl || undefined}
+            <Avatar
+              name={user?.displayName || user?.username}
+              source={user?.avatarUrl}
               size="md"
             />
           </Pressable>
@@ -119,8 +119,8 @@ export default function HomeScreen() {
                 </Badge>
               )}
             </View>
-            <ProgressBar 
-              progress={dailyProgress} 
+            <ProgressBar
+              progress={dailyProgress}
               height={10}
               style={styles.progressBar}
             />
@@ -137,7 +137,7 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* Quick Actions */}
-        <Animated.View 
+        <Animated.View
           entering={FadeInUp.delay(300).duration(500)}
           style={styles.section}
         >
@@ -178,7 +178,7 @@ export default function HomeScreen() {
 
         {/* Stats Summary */}
         {stats && (
-          <Animated.View 
+          <Animated.View
             entering={FadeInUp.delay(400).duration(500)}
             style={styles.section}
           >
