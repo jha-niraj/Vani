@@ -1,387 +1,225 @@
-/**
- * Exam Selection Screen
- * 
- * Allows users to select their target exam type and level.
- */
-
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
-import { useTheme } from '@/hooks/use-theme';
-import { useAuthStore } from '@/lib/auth-store';
-import { api, ExamType, ExamLevel } from '@/lib/api';
-import { Screen, Header, Button,  Loading } from '@/components/ui';
+import React, { useState } from 'react';
 import {
-  Typography,
-  Spacing,
-  Colors,
-  BorderRadius,
-  Shadows,
-  Animation,
-} from '@/constants/theme';
+	View, Text, ScrollView, Pressable
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuthStore } from '@/lib/auth-store';
+import { Ionicons } from '@expo/vector-icons';
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-export default function ExamSelectScreen() {
-  const { colors } = useTheme();
-  const router = useRouter();
-  const { updateUser } = useAuthStore();
-  
-  const [examTypes, setExamTypes] = useState<ExamType[]>([]);
-  const [levels, setLevels] = useState<ExamLevel[]>([]);
-  const [selectedExam, setSelectedExam] = useState<ExamType | null>(null);
-  const [selectedLevel, setSelectedLevel] = useState<ExamLevel | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Fetch exam types on mount
-  useEffect(() => {
-    async function fetchExamTypes() {
-      try {
-        const data = await api.exam.getExamTypes();
-        setExamTypes(data);
-      } catch (e: any) {
-        setError(e.message);
-      }
-      setIsLoading(false);
-    }
-    fetchExamTypes();
-  }, []);
-
-  // Fetch levels when exam is selected
-  useEffect(() => {
-    if (!selectedExam?.hasLevels) {
-      setLevels([]);
-      return;
-    }
-
-    async function fetchLevels() {
-      try {
-        const data = await api.exam.getLevels(selectedExam!.id);
-        setLevels(data);
-      } catch (e: any) {
-        setError(e.message);
-      }
-    }
-    fetchLevels();
-  }, [selectedExam]);
-
-  const handleExamSelect = (exam: ExamType) => {
-    setSelectedExam(exam);
-    setSelectedLevel(null);
-  };
-
-  const handleLevelSelect = (level: ExamLevel) => {
-    setSelectedLevel(level);
-  };
-
-  const handleContinue = async () => {
-    if (!selectedExam) return;
-    if (selectedExam.hasLevels && !selectedLevel) return;
-
-    setIsSubmitting(true);
-    try {
-      await api.user.selectExam(selectedExam.id, selectedLevel?.id);
-      updateUser({ 
-        selectedExamId: selectedExam.id,
-        selectedLevelId: selectedLevel?.id || null,
-      });
-      router.replace('/(tabs)');
-    } catch (e: any) {
-      setError(e.message);
-    }
-    setIsSubmitting(false);
-  };
-
-  const canContinue = selectedExam && (!selectedExam.hasLevels || selectedLevel);
-
-  if (isLoading) {
-    return <Loading fullScreen message="Loading exams..." />;
-  }
-
-  return (
-    <Screen padding>
-      <Header title="Select Your Exam" transparent />
-      
-      <View style={styles.container}>
-        {/* Header */}
-        <Animated.View 
-          entering={FadeInDown.delay(100).duration(500)}
-          style={styles.header}
-        >
-          <Text style={[styles.title, { color: colors.text }]}>
-            What are you preparing for?
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            We will personalize your experience based on your selection
-          </Text>
-        </Animated.View>
-
-        {/* Exam Types */}
-        <Animated.View
-          entering={FadeInUp.delay(200).duration(500)}
-          style={styles.section}
-        >
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Exam Type
-          </Text>
-          <View style={styles.grid}>
-            {examTypes.map((exam, index) => (
-              <ExamCard
-                key={exam.id}
-                exam={exam}
-                isSelected={selectedExam?.id === exam.id}
-                onPress={() => handleExamSelect(exam)}
-                delay={index * 50}
-              />
-            ))}
-          </View>
-        </Animated.View>
-
-        {/* Levels (if applicable) */}
-        {selectedExam?.hasLevels && levels.length > 0 && (
-          <Animated.View
-            entering={FadeInUp.duration(400)}
-            style={styles.section}
-          >
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Level
-            </Text>
-            <View style={styles.levelsList}>
-              {levels.map((level) => (
-                <LevelCard
-                  key={level.id}
-                  level={level}
-                  isSelected={selectedLevel?.id === level.id}
-                  onPress={() => handleLevelSelect(level)}
-                />
-              ))}
-            </View>
-          </Animated.View>
-        )}
-
-        {/* Error */}
-        {error && (
-          <Text style={styles.error}>{error}</Text>
-        )}
-
-        {/* Continue Button */}
-        <View style={styles.buttonContainer}>
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            disabled={!canContinue}
-            loading={isSubmitting}
-            onPress={handleContinue}
-          >
-            Start Learning
-          </Button>
-        </View>
-      </View>
-    </Screen>
-  );
+interface Exam {
+	id: string;
+	name: string;
+	description: string;
+	icon: string;
+	levels: string[];
 }
+
+const exams: Exam[] = [
+	{
+		id: 'loksewa',
+		name: 'Loksewa',
+		description: 'Nepal Public Service Commission exams',
+		icon: '🏛️',
+		levels: ['Officer Level', 'Assistant Level', 'Non-Gazetted'],
+	},
+	{
+		id: 'tsc',
+		name: 'TSC',
+		description: 'Teacher Service Commission exams',
+		icon: '📚',
+		levels: ['Primary', 'Lower Secondary', 'Secondary'],
+	},
+	{
+		id: 'banking',
+		name: 'Banking',
+		description: 'Bank and financial institution exams',
+		icon: '🏦',
+		levels: ['Officer', 'Assistant', 'Trainee'],
+	},
+	{
+		id: 'neb',
+		name: 'NEB',
+		description: 'National Examination Board',
+		icon: '🎓',
+		levels: ['Class 10 SEE', 'Class 11', 'Class 12'],
+	},
+];
 
 interface ExamCardProps {
-  exam: ExamType;
-  isSelected: boolean;
-  onPress: () => void;
-  delay?: number;
+	exam: Exam;
+	isSelected: boolean;
+	onSelect: () => void;
 }
 
-function ExamCard({ exam, isSelected, onPress, delay = 0 }: ExamCardProps) {
-  const { colors } = useTheme();
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  return (
-    <AnimatedPressable
-      entering={FadeInUp.delay(delay).duration(400)}
-      onPress={onPress}
-      onPressIn={() => {
-        scale.value = withSpring(0.95, Animation.spring.stiff);
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, Animation.spring.default);
-      }}
-      style={[
-        styles.examCard,
-        {
-          backgroundColor: isSelected 
-            ? `${Colors.brand.primary}10` 
-            : colors.card,
-          borderColor: isSelected 
-            ? Colors.brand.primary 
-            : colors.border,
-        },
-        isSelected && Shadows.sm,
-        animatedStyle,
-      ]}
-    >
-      <Text style={styles.examIcon}>{exam.icon || '📋'}</Text>
-      <Text 
-        style={[
-          styles.examName, 
-          { color: isSelected ? Colors.brand.primary : colors.text }
-        ]}
-        numberOfLines={2}
-      >
-        {exam.name}
-      </Text>
-    </AnimatedPressable>
-  );
+function ExamCard({ exam, isSelected, onSelect }: ExamCardProps) {
+	return (
+		<Pressable
+			onPress={onSelect}
+			className={`p-5 rounded-2xl mb-3 border-2 active:opacity-80 ${isSelected
+				? 'bg-amber-500/10 border-amber-500'
+				: 'bg-neutral-900 border-neutral-800'
+				}`}
+		>
+			<View className="flex-row items-center">
+				<Text className="text-3xl mr-4">{exam.icon}</Text>
+				<View className="flex-1">
+					<Text className="text-white text-lg font-semibold">{exam.name}</Text>
+					<Text className="text-neutral-400 text-sm mt-1">{exam.description}</Text>
+				</View>
+				{
+					isSelected && (
+						<Ionicons name="checkmark-circle" size={24} color="#F59E0B" />
+					)
+				}
+			</View>
+		</Pressable>
+	);
 }
 
-interface LevelCardProps {
-  level: ExamLevel;
-  isSelected: boolean;
-  onPress: () => void;
+interface LevelChipProps {
+	level: string;
+	isSelected: boolean;
+	onSelect: () => void;
 }
 
-function LevelCard({ level, isSelected, onPress }: LevelCardProps) {
-  const { colors } = useTheme();
-
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[
-        styles.levelCard,
-        {
-          backgroundColor: isSelected 
-            ? `${Colors.brand.primary}10` 
-            : colors.card,
-          borderColor: isSelected 
-            ? Colors.brand.primary 
-            : colors.border,
-        },
-      ]}
-    >
-      <View 
-        style={[
-          styles.radio,
-          {
-            borderColor: isSelected ? Colors.brand.primary : colors.border,
-          },
-        ]}
-      >
-        {isSelected && <View style={styles.radioInner} />}
-      </View>
-      <View style={styles.levelContent}>
-        <Text 
-          style={[
-            styles.levelName, 
-            { color: isSelected ? Colors.brand.primary : colors.text }
-          ]}
-        >
-          {level.name}
-        </Text>
-        {level.description && (
-          <Text style={[styles.levelDesc, { color: colors.textSecondary }]}>
-            {level.description}
-          </Text>
-        )}
-      </View>
-    </Pressable>
-  );
+function LevelChip({ level, isSelected, onSelect }: LevelChipProps) {
+	return (
+		<Pressable
+			onPress={onSelect}
+			className={`px-5 py-3 rounded-xl mr-3 mb-3 border-2 active:opacity-80 ${isSelected
+				? 'bg-amber-500 border-amber-500'
+				: 'bg-neutral-900 border-neutral-800'
+				}`}
+		>
+			<Text
+				className={`font-medium ${isSelected ? 'text-black' : 'text-white'}`}
+			>
+				{level}
+			</Text>
+		</Pressable>
+	);
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: Spacing.base,
-  },
-  header: {
-    marginBottom: Spacing.xl,
-  },
-  title: {
-    ...Typography.h3,
-    marginBottom: Spacing.sm,
-  },
-  subtitle: {
-    ...Typography.body,
-  },
-  section: {
-    marginBottom: Spacing.xl,
-  },
-  sectionTitle: {
-    ...Typography.label,
-    marginBottom: Spacing.md,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.md,
-  },
-  examCard: {
-    width: '47%',
-    padding: Spacing.base,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 2,
-    alignItems: 'center',
-    minHeight: 100,
-  },
-  examIcon: {
-    fontSize: 28,
-    marginBottom: Spacing.sm,
-  },
-  examName: {
-    ...Typography.bodyMedium,
-    textAlign: 'center',
-  },
-  levelsList: {
-    gap: Spacing.sm,
-  },
-  levelCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.base,
-    borderRadius: BorderRadius.md,
-    borderWidth: 2,
-  },
-  radio: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.md,
-  },
-  radioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.brand.primary,
-  },
-  levelContent: {
-    flex: 1,
-  },
-  levelName: {
-    ...Typography.bodyMedium,
-  },
-  levelDesc: {
-    ...Typography.caption,
-    marginTop: 2,
-  },
-  error: {
-    ...Typography.bodySmall,
-    color: Colors.semantic.error,
-    marginBottom: Spacing.base,
-  },
-  buttonContainer: {
-    marginTop: 'auto',
-    paddingBottom: Spacing.xl,
-  },
-});
+export default function ExamSelectScreen() {
+	const router = useRouter();
+	const insets = useSafeAreaInsets();
+	const { updateUser, isLoading } = useAuthStore();
+
+	const [selectedExam, setSelectedExam] = useState<string | null>(null);
+	const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
+
+	const selectedExamData = exams.find((e) => e.id === selectedExam);
+
+	const handleContinue = () => {
+		if (!selectedExam || !selectedLevel) return;
+
+		updateUser({
+			selectedExamId: selectedExam,
+			selectedLevelId: selectedLevel
+		});
+		router.replace('/(tabs)');
+	};
+
+	const handleExamSelect = (examId: string) => {
+		setSelectedExam(examId);
+		setSelectedLevel(null); // Reset level when exam changes
+	};
+
+	return (
+		<View
+			className="flex-1 bg-neutral-950"
+			style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+		>
+			<ScrollView
+				className="flex-1 px-6"
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{ paddingBottom: 100 }}
+			>
+				<Animated.View
+					entering={FadeInDown.delay(100).duration(400)}
+					className="flex-row gap-2 mt-4 mb-8"
+				>
+					<View className="flex-1 h-1 bg-amber-500 rounded-full" />
+					<View className="flex-1 h-1 bg-amber-500 rounded-full" />
+				</Animated.View>
+				<Animated.View
+					entering={FadeInDown.delay(200).duration(400)}
+					className="w-20 h-20 bg-amber-500/20 rounded-full items-center justify-center mb-8"
+				>
+					<Ionicons name="school-outline" size={40} color="#F59E0B" />
+				</Animated.View>
+				<Animated.View entering={FadeInDown.delay(300).duration(400)}>
+					<Text className="text-white text-3xl font-bold mb-2">
+						Select your exam
+					</Text>
+					<Text className="text-neutral-400 text-base leading-relaxed">
+						Choose the exam you're preparing for to get personalized content.
+					</Text>
+				</Animated.View>
+				<Animated.View
+					entering={FadeInDown.delay(400).duration(400)}
+					className="mt-8"
+				>
+					<Text className="text-white text-lg font-semibold mb-4">Exam Type</Text>
+					{
+						exams.map((exam) => (
+							<ExamCard
+								key={exam.id}
+								exam={exam}
+								isSelected={selectedExam === exam.id}
+								onSelect={() => handleExamSelect(exam.id)}
+							/>
+						))
+					}
+				</Animated.View>
+
+				{
+					selectedExamData && (
+						<Animated.View
+							entering={FadeInDown.duration(400)}
+							className="mt-6"
+						>
+							<Text className="text-white text-lg font-semibold mb-4">
+								Select Level
+							</Text>
+							<View className="flex-row flex-wrap">
+								{
+									selectedExamData.levels.map((level) => (
+										<LevelChip
+											key={level}
+											level={level}
+											isSelected={selectedLevel === level}
+											onSelect={() => setSelectedLevel(level)}
+										/>
+									))
+								}
+							</View>
+						</Animated.View>
+					)
+				}
+			</ScrollView>
+			<Animated.View
+				entering={FadeInUp.delay(500).duration(400)}
+				className="px-6 pb-4"
+			>
+				<Pressable
+					onPress={handleContinue}
+					disabled={!selectedExam || !selectedLevel || isLoading}
+					className={`py-4 rounded-2xl items-center ${selectedExam && selectedLevel
+						? 'bg-amber-500 active:opacity-80'
+						: 'bg-neutral-800'
+						}`}
+				>
+					<Text
+						className={`font-bold text-lg ${selectedExam && selectedLevel ? 'text-black' : 'text-neutral-600'
+							}`}
+					>
+						{isLoading ? 'Setting up...' : 'Get Started'}
+					</Text>
+				</Pressable>
+			</Animated.View>
+		</View>
+	);
+}

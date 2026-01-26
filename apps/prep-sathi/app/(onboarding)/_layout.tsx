@@ -1,9 +1,3 @@
-/**
- * Onboarding Layout
- * 
- * Layout for onboarding screens (username, exam selection).
- */
-
 import { Stack } from 'expo-router';
 
 export default function OnboardingLayout() {

@@ -1,9 +1,3 @@
-/**
- * Practice Layout
- * 
- * Layout for practice/quiz screens.
- */
-
 import { Stack } from 'expo-router';
 
 export default function PracticeLayout() {

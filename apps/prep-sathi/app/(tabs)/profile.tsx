@@ -1,31 +1,15 @@
-/**
- * Profile Screen
- * 
- * User profile with settings and account options.
- */
-
 import React from 'react';
-import { 
-    View, Text, StyleSheet, ScrollView, Pressable, Alert 
+import {
+    View, Text, ScrollView, Pressable, Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, {
-    FadeInDown, useSharedValue, useAnimatedStyle, withSpring
-} from 'react-native-reanimated';
-import { useTheme } from '@/hooks/use-theme';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/lib/auth-store';
-import { 
-    Screen, Header, Card, Avatar, Badge 
-} from '@/components/ui';
-import {
-    Typography, Spacing, Colors, BorderRadius, Animation
-} from '@/constants/theme';
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function ProfileScreen() {
-    const { colors } = useTheme();
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const { user, logout } = useAuthStore();
 
     const handleLogout = () => {
@@ -82,187 +66,92 @@ export default function ProfileScreen() {
     ];
 
     return (
-        <Screen safeTop padding={false}>
-            <Header title="Profile" />
-
+        <View className="flex-1 bg-neutral-950" style={{ paddingTop: insets.top }}>
+            <View className="px-4 py-4 border-b border-neutral-800">
+                <Text className="text-2xl font-bold text-neutral-50">Profile</Text>
+            </View>
             <ScrollView
-                style={styles.container}
-                contentContainerStyle={styles.content}
+                className="flex-1"
+                contentContainerStyle={{ padding: 16 }}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Profile Card */}
                 <Animated.View entering={FadeInDown.delay(100).duration(500)}>
-                    <Card style={styles.profileCard}>
-                        <Avatar
-                            name={user?.displayName || user?.username}
-                            source={user?.avatarUrl}
-                            size="xl"
-                        />
-                        <View style={styles.profileInfo}>
-                            <Text style={[styles.profileName, { color: colors.text }]}>
-                                {user?.displayName || user?.username || 'Student'}
-                            </Text>
-                            {user?.username && (
-                                <Text style={[styles.profileUsername, { color: colors.textSecondary }]}>
-                                    @{user.username}
-                                </Text>
-                            )}
-                            <Text style={[styles.profilePhone, { color: colors.textTertiary }]}>
-                                +977 {user?.phone}
+                    <View className="bg-neutral-900 rounded-2xl p-6 mb-6 border border-neutral-800 items-center">
+                        <View className="w-20 h-20 rounded-full bg-amber-500/20 items-center justify-center mb-4">
+                            <Text className="text-3xl">
+                                {(user?.displayName || user?.username || 'S')[0].toUpperCase()}
                             </Text>
                         </View>
-                        <Badge variant="primary">
-                            {user?.selectedExamId ? 'Loksewa' : 'No exam selected'}
-                        </Badge>
-                    </Card>
+                        <Text className="text-xl font-bold text-neutral-50 mb-1">
+                            {user?.displayName || user?.username || 'Student'}
+                        </Text>
+                        {
+                            user?.username && (
+                                <Text className="text-base text-neutral-400">@{user.username}</Text>
+                            )
+                        }
+                        <Text className="text-sm text-neutral-500 mt-1">
+                            +977 {user?.phone}
+                        </Text>
+                        <View className="bg-amber-500/20 px-4 py-1 rounded-full mt-4">
+                            <Text className="text-amber-500 text-sm font-medium">
+                                {user?.selectedExamId ? 'Loksewa' : 'No exam selected'}
+                            </Text>
+                        </View>
+                    </View>
                 </Animated.View>
 
-                {/* Menu Sections */}
-                {menuItems.map((section, sectionIndex) => (
-                    <Animated.View
-                        key={section.title}
-                        entering={FadeInDown.delay(200 + sectionIndex * 100).duration(500)}
-                        style={styles.section}
-                    >
-                        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                            {section.title}
-                        </Text>
-                        <Card padding="none">
-                            {section.items.map((item, itemIndex) => (
-                                <MenuItem
-                                    key={item.label}
-                                    icon={item.icon}
-                                    label={item.label}
-                                    value={item.value}
-                                    onPress={item.onPress}
-                                    isLast={itemIndex === section.items.length - 1}
-                                />
-                            ))}
-                        </Card>
-                    </Animated.View>
-                ))}
+                {
+                    menuItems.map((section, sectionIndex) => (
+                        <Animated.View
+                            key={section.title}
+                            entering={FadeInDown.delay(200 + sectionIndex * 100).duration(500)}
+                            className="mb-6"
+                        >
+                            <Text className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-2 ml-1">
+                                {section.title}
+                            </Text>
+                            <View className="bg-neutral-900 rounded-xl border border-neutral-800 overflow-hidden">
+                                {
+                                    section.items.map((item, itemIndex) => (
+                                        <Pressable
+                                            key={item.label}
+                                            onPress={item.onPress}
+                                            className={`flex-row items-center px-4 py-4 active:bg-neutral-800 ${itemIndex < section.items.length - 1
+                                                    ? 'border-b border-neutral-800'
+                                                    : ''
+                                                }`}
+                                        >
+                                            <Text className="text-lg mr-4">{item.icon}</Text>
+                                            <Text className="flex-1 text-base text-neutral-50">{item.label}</Text>
+                                            {
+                                                item.value && (
+                                                    <Text className="text-sm text-neutral-400 mr-2">{item.value}</Text>
+                                                )
+                                            }
+                                            <Text className="text-neutral-500">›</Text>
+                                        </Pressable>
+                                    ))
+                                }
+                            </View>
+                        </Animated.View>
+                    ))
+                }
 
-                {/* Logout Button */}
                 <Animated.View
                     entering={FadeInDown.delay(600).duration(500)}
-                    style={styles.section}
+                    className="mb-8"
                 >
                     <Pressable
                         onPress={handleLogout}
-                        style={[styles.logoutButton, { backgroundColor: `${Colors.semantic.error}10` }]}
+                        className="bg-red-500/10 p-4 rounded-xl items-center active:bg-red-500/20"
                     >
-                        <Text style={styles.logoutText}>Logout</Text>
+                        <Text className="text-red-500 font-medium">Logout</Text>
                     </Pressable>
                 </Animated.View>
 
-                <View style={{ height: Spacing['2xl'] }} />
+                <View className="h-8" />
             </ScrollView>
-        </Screen>
+        </View>
     );
 }
-
-interface MenuItemProps {
-    icon: string;
-    label: string;
-    value?: string;
-    onPress: () => void;
-    isLast?: boolean;
-}
-
-function MenuItem({ icon, label, value, onPress, isLast }: MenuItemProps) {
-    const { colors } = useTheme();
-    const scale = useSharedValue(1);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
-    }));
-
-    return (
-        <AnimatedPressable
-            onPress={onPress}
-            onPressIn={() => {
-                scale.value = withSpring(0.98, Animation.spring.stiff);
-            }}
-            onPressOut={() => {
-                scale.value = withSpring(1, Animation.spring.default);
-            }}
-            style={[
-                styles.menuItem,
-                !isLast && { borderBottomWidth: 1, borderBottomColor: colors.divider },
-                animatedStyle,
-            ]}
-        >
-            <Text style={styles.menuIcon}>{icon}</Text>
-            <Text style={[styles.menuLabel, { color: colors.text }]}>{label}</Text>
-            {value && (
-                <Text style={[styles.menuValue, { color: colors.textSecondary }]}>{value}</Text>
-            )}
-            <Text style={{ color: colors.textTertiary }}>›</Text>
-        </AnimatedPressable>
-    );
-}
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    content: {
-        paddingHorizontal: Spacing.base,
-        paddingTop: Spacing.base,
-    },
-    profileCard: {
-        alignItems: 'center',
-        paddingVertical: Spacing.xl,
-        marginBottom: Spacing.xl,
-    },
-    profileInfo: {
-        alignItems: 'center',
-        marginVertical: Spacing.md,
-    },
-    profileName: {
-        ...Typography.h4,
-        marginBottom: 2,
-    },
-    profileUsername: {
-        ...Typography.body,
-    },
-    profilePhone: {
-        ...Typography.caption,
-        marginTop: 4,
-    },
-    section: {
-        marginBottom: Spacing.xl,
-    },
-    sectionTitle: {
-        ...Typography.overline,
-        marginBottom: Spacing.sm,
-        marginLeft: Spacing.xs,
-    },
-    menuItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: Spacing.md,
-        paddingHorizontal: Spacing.base,
-    },
-    menuIcon: {
-        fontSize: 18,
-        marginRight: Spacing.md,
-    },
-    menuLabel: {
-        ...Typography.body,
-        flex: 1,
-    },
-    menuValue: {
-        ...Typography.bodySmall,
-        marginRight: Spacing.sm,
-    },
-    logoutButton: {
-        padding: Spacing.base,
-        borderRadius: BorderRadius.md,
-        alignItems: 'center',
-    },
-    logoutText: {
-        ...Typography.bodyMedium,
-        color: Colors.semantic.error,
-    },
-});

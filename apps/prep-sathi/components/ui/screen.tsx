@@ -1,110 +1,73 @@
-/**
- * Screen Component
- * 
- * Base screen wrapper with safe area and common layout patterns.
- */
-
 import React from 'react';
 import {
-  View,
-  ScrollView,
-  StyleSheet,
-  ViewStyle,
-  StatusBar,
-  Platform,
-  KeyboardAvoidingView,
+    View, ScrollView, StatusBar, Platform, KeyboardAvoidingView
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/use-theme';
-import { Spacing } from '@/constants/theme';
 
 export interface ScreenProps {
-  children: React.ReactNode;
-  scroll?: boolean;
-  padding?: boolean;
-  safeTop?: boolean;
-  safeBottom?: boolean;
-  keyboardAvoiding?: boolean;
-  style?: ViewStyle;
-  contentStyle?: ViewStyle;
+    children: React.ReactNode;
+    scroll?: boolean;
+    padding?: boolean;
+    safeTop?: boolean;
+    safeBottom?: boolean;
+    keyboardAvoiding?: boolean;
+    className?: string;
+    contentClassName?: string;
 }
 
 export function Screen({
-  children,
-  scroll = false,
-  padding = true,
-  safeTop = true,
-  safeBottom = true,
-  keyboardAvoiding = false,
-  style,
-  contentStyle,
+    children,
+    scroll = false,
+    padding = true,
+    safeTop = true,
+    safeBottom = true,
+    keyboardAvoiding = false,
+    className = '',
+    contentClassName = '',
 }: ScreenProps) {
-  const { isDark, colors } = useTheme();
-  const insets = useSafeAreaInsets();
+    const { isDark, colors } = useTheme();
+    const insets = useSafeAreaInsets();
 
-  const containerStyle: ViewStyle = {
-    flex: 1,
-    backgroundColor: colors.background,
-    paddingTop: safeTop ? insets.top : 0,
-    paddingBottom: safeBottom ? insets.bottom : 0,
-    ...style,
-  };
+    const content = scroll ? (
+        <ScrollView
+            className="flex-1"
+            contentContainerClassName={`flex-grow ${padding ? 'px-4' : ''} ${contentClassName}`}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+        >
+            {children}
+        </ScrollView>
+    ) : (
+        <View className={`flex-1 ${padding ? 'px-4' : ''} ${contentClassName}`}>
+            {children}
+        </View>
+    );
 
-  const innerStyle: ViewStyle = {
-    flex: 1,
-    ...(padding && {
-      paddingHorizontal: Spacing.base,
-    }),
-    ...contentStyle,
-  };
+    const wrappedContent = keyboardAvoiding ? (
+        <KeyboardAvoidingView
+            className="flex-1"
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+            {content}
+        </KeyboardAvoidingView>
+    ) : (
+        content
+    );
 
-  const content = scroll ? (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={[
-        styles.scrollContent,
-        padding && { paddingHorizontal: Spacing.base },
-        contentStyle,
-      ]}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
-      {children}
-    </ScrollView>
-  ) : (
-    <View style={innerStyle}>{children}</View>
-  );
-
-  const wrappedContent = keyboardAvoiding ? (
-    <KeyboardAvoidingView
-      style={styles.keyboardAvoiding}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      {content}
-    </KeyboardAvoidingView>
-  ) : (
-    content
-  );
-
-  return (
-    <View style={containerStyle}>
-      <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={colors.background}
-      />
-      {wrappedContent}
-    </View>
-  );
+    return (
+        <View 
+            className={`flex-1 bg-neutral-950 ${className}`}
+            style={{
+                paddingTop: safeTop ? insets.top : 0,
+                paddingBottom: safeBottom ? insets.bottom : 0,
+            }}
+        >
+            <StatusBar
+                barStyle={isDark ? 'light-content' : 'dark-content'}
+                backgroundColor={colors.background}
+            />
+            {wrappedContent}
+        </View>
+    );
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  keyboardAvoiding: {
-    flex: 1,
-  },
-});

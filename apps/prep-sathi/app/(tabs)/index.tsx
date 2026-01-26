@@ -1,379 +1,172 @@
-/**
- * Home Screen
- * 
- * Main dashboard showing daily progress, quick actions, and continue learning.
- */
-
-import React, { useEffect, useState } from 'react';
-import { 
-	View, Text, StyleSheet, ScrollView, Pressable, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
-import Animated, {
-	FadeInDown,
-	FadeInUp,
-	useSharedValue,
-	useAnimatedStyle,
-	withSpring,
-} from 'react-native-reanimated';
-import { useTheme } from '@/hooks/use-theme';
-import { useAuthStore } from '@/lib/auth-store';
-import { api, DashboardStats } from '@/lib/api';
-import { 
-	Screen, Card, ProgressBar, Avatar, Badge 
-} from '@/components/ui';
+import React from 'react';
 import {
-	Typography, Spacing, Colors, BorderRadius, Shadows, Animation
-} from '@/constants/theme';
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-export default function HomeScreen() {
-	const { colors } = useTheme();
-	const router = useRouter();
-	const { user } = useAuthStore();
-
-	const [stats, setStats] = useState<DashboardStats | null>(null);
-	const [, setIsLoading] = useState(true);
-	const [isRefreshing, setIsRefreshing] = useState(false);
-
-	const fetchDashboard = async () => {
-		try {
-			const data = await api.progress.getDashboard();
-			setStats(data);
-		} catch (e) {
-			console.error('Failed to fetch dashboard:', e);
-		}
-		setIsLoading(false);
-	};
-
-	useEffect(() => {
-		fetchDashboard();
-	}, []);
-
-	const handleRefresh = async () => {
-		setIsRefreshing(true);
-		await fetchDashboard();
-		setIsRefreshing(false);
-	};
-
-	const getGreeting = () => {
-		const hour = new Date().getHours();
-		if (hour < 12) return 'Good morning';
-		if (hour < 17) return 'Good afternoon';
-		return 'Good evening';
-	};
-
-	const dailyProgress = stats
-		? Math.min(100, (stats.todayQuestions / stats.todayGoal) * 100)
-		: 0;
-
-	return (
-		<Screen safeTop padding={false}>
-			<ScrollView
-				style={styles.container}
-				contentContainerStyle={styles.content}
-				showsVerticalScrollIndicator={false}
-				refreshControl={
-					<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
-				}
-			>
-				<Animated.View
-					entering={FadeInDown.delay(100).duration(500)}
-					style={styles.header}
-				>
-					<View style={styles.headerLeft}>
-						<Text style={[styles.greeting, { color: colors.textSecondary }]}>
-							{getGreeting()} 👋
-						</Text>
-						<Text style={[styles.name, { color: colors.text }]}>
-							{user?.displayName || user?.username || 'Student'}
-						</Text>
-					</View>
-					<Pressable onPress={() => router.push('/(tabs)/profile')}>
-						<Avatar
-							name={user?.displayName || user?.username}
-							source={user?.avatarUrl}
-							size="md"
-						/>
-					</Pressable>
-				</Animated.View>
-				<Animated.View entering={FadeInUp.delay(200).duration(500)}>
-					<Card style={styles.dailyCard}>
-						<View style={styles.dailyHeader}>
-							<View>
-								<Text style={[styles.dailyTitle, { color: colors.text }]}>
-									Daily Goal
-								</Text>
-								<Text style={[styles.dailySubtitle, { color: colors.textSecondary }]}>
-									{stats?.todayQuestions || 0} / {stats?.todayGoal || 10} questions
-								</Text>
-							</View>
-							{
-							stats && stats.currentStreak > 0 && (
-								<Badge variant="warning">
-									🔥 {stats.currentStreak} day streak
-								</Badge>
-							)
-							}
-						</View>
-						<ProgressBar
-							progress={dailyProgress}
-							height={10}
-							style={styles.progressBar}
-						/>
-						{
-						dailyProgress >= 100 ? (
-							<Text style={[styles.dailyMessage, { color: Colors.semantic.success }]}>
-								✓ Goal completed! Great job!
-							</Text>
-						) : (
-							<Text style={[styles.dailyMessage, { color: colors.textSecondary }]}>
-								{stats?.todayGoal ? stats.todayGoal - (stats?.todayQuestions || 0) : 10} more to reach your goal
-							</Text>
-						)
-						}
-					</Card>
-				</Animated.View>
-				<Animated.View
-					entering={FadeInUp.delay(300).duration(500)}
-					style={styles.section}
-				>
-					<Text style={[styles.sectionTitle, { color: colors.text }]}>
-						Quick Practice
-					</Text>
-					<View style={styles.actionsGrid}>
-						<QuickAction
-							emoji="🎯"
-							title="Quick Quiz"
-							subtitle="10 random questions"
-							color={Colors.brand.primary}
-							onPress={() => router.push('/(practice)/quiz?type=QUICK')}
-						/>
-						<QuickAction
-							emoji="📚"
-							title="By Subject"
-							subtitle="Choose a topic"
-							color={Colors.brand.secondary}
-							onPress={() => router.push('/(tabs)/practice')}
-						/>
-						<QuickAction
-							emoji="⚡"
-							title="Weak Areas"
-							subtitle="Focus on struggles"
-							color={Colors.semantic.warning}
-							onPress={() => router.push('/(practice)/quiz?type=WEAK_TOPICS')}
-						/>
-						<QuickAction
-							emoji="📋"
-							title="Past Papers"
-							subtitle="Previous years"
-							color={Colors.semantic.success}
-							onPress={() => router.push('/(tabs)/practice')}
-						/>
-					</View>
-				</Animated.View>
-
-				{
-				stats && (
-					<Animated.View
-						entering={FadeInUp.delay(400).duration(500)}
-						style={styles.section}
-					>
-						<Text style={[styles.sectionTitle, { color: colors.text }]}>
-							Your Stats
-						</Text>
-						<View style={styles.statsGrid}>
-							<StatCard
-								label="Total Practiced"
-								value={stats.totalQuestions.toString()}
-								icon="📝"
-							/>
-							<StatCard
-								label="Accuracy"
-								value={`${Math.round(stats.accuracy)}%`}
-								icon="🎯"
-							/>
-							<StatCard
-								label="Current Streak"
-								value={stats.currentStreak.toString()}
-								icon="🔥"
-							/>
-							<StatCard
-								label="Best Streak"
-								value={stats.longestStreak.toString()}
-								icon="⭐"
-							/>
-						</View>
-					</Animated.View>
-				)
-				}
-
-				<View style={{ height: Spacing['2xl'] }} />
-			</ScrollView>
-		</Screen>
-	);
-}
+	View, Text, ScrollView, Pressable
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuthStore } from '@/lib/auth-store';
+import { Ionicons } from '@expo/vector-icons';
 
 interface QuickActionProps {
-	emoji: string;
+	icon: keyof typeof Ionicons.glyphMap;
 	title: string;
 	subtitle: string;
 	color: string;
 	onPress: () => void;
 }
 
-function QuickAction({ emoji, title, subtitle, color, onPress }: QuickActionProps) {
-	const { colors } = useTheme();
-	const scale = useSharedValue(1);
-
-	const animatedStyle = useAnimatedStyle(() => ({
-		transform: [{ scale: scale.value }],
-	}));
-
+function QuickAction({ icon, title, subtitle, color, onPress }: QuickActionProps) {
 	return (
-		<AnimatedPressable
+		<Pressable
 			onPress={onPress}
-			onPressIn={() => {
-				scale.value = withSpring(0.95, Animation.spring.stiff);
-			}}
-			onPressOut={() => {
-				scale.value = withSpring(1, Animation.spring.default);
-			}}
-			style={[
-				styles.actionCard,
-				{ backgroundColor: colors.card },
-				Shadows.sm,
-				animatedStyle,
-			]}
+			className="flex-1 bg-neutral-900 rounded-2xl p-4 border border-neutral-800 active:opacity-70"
 		>
-			<View style={[styles.actionIcon, { backgroundColor: `${color}15` }]}>
-				<Text style={styles.actionEmoji}>{emoji}</Text>
+			<View
+				className="w-12 h-12 rounded-full items-center justify-center mb-3"
+				style={{ backgroundColor: `${color}20` }}
+			>
+				<Ionicons name={icon} size={24} color={color} />
 			</View>
-			<Text style={[styles.actionTitle, { color: colors.text }]}>{title}</Text>
-			<Text style={[styles.actionSubtitle, { color: colors.textSecondary }]}>
-				{subtitle}
-			</Text>
-		</AnimatedPressable>
+			<Text className="text-white font-semibold text-base">{title}</Text>
+			<Text className="text-neutral-500 text-sm mt-1">{subtitle}</Text>
+		</Pressable>
 	);
 }
 
 interface StatCardProps {
-	label: string;
 	value: string;
-	icon: string;
+	label: string;
+	icon: keyof typeof Ionicons.glyphMap;
 }
 
-function StatCard({ label, value, icon }: StatCardProps) {
-	const { colors } = useTheme();
-
+function StatCard({ value, label, icon }: StatCardProps) {
 	return (
-		<View style={[styles.statCard, { backgroundColor: colors.backgroundSecondary }]}>
-			<Text style={styles.statIcon}>{icon}</Text>
-			<Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-			<Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
+		<View className="flex-1 bg-neutral-900 rounded-xl p-4 border border-neutral-800">
+			<View className="flex-row items-center justify-between mb-2">
+				<Text className="text-amber-500 text-2xl font-bold">{value}</Text>
+				<Ionicons name={icon} size={20} color="#737373" />
+			</View>
+			<Text className="text-neutral-400 text-sm">{label}</Text>
 		</View>
 	);
 }
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-	},
-	content: {
-		paddingHorizontal: Spacing.base,
-		paddingTop: Spacing.base,
-	},
-	header: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginBottom: Spacing.xl,
-	},
-	headerLeft: {},
-	greeting: {
-		...Typography.bodySmall,
-	},
-	name: {
-		...Typography.h3,
-	},
-	dailyCard: {
-		marginBottom: Spacing.xl,
-	},
-	dailyHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'flex-start',
-		marginBottom: Spacing.md,
-	},
-	dailyTitle: {
-		...Typography.h5,
-		marginBottom: 2,
-	},
-	dailySubtitle: {
-		...Typography.bodySmall,
-	},
-	progressBar: {
-		marginBottom: Spacing.sm,
-	},
-	dailyMessage: {
-		...Typography.caption,
-	},
-	section: {
-		marginBottom: Spacing.xl,
-	},
-	sectionTitle: {
-		...Typography.h5,
-		marginBottom: Spacing.md,
-	},
-	actionsGrid: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
-		gap: Spacing.md,
-	},
-	actionCard: {
-		width: '47%',
-		padding: Spacing.base,
-		borderRadius: BorderRadius.lg,
-	},
-	actionIcon: {
-		width: 44,
-		height: 44,
-		borderRadius: BorderRadius.md,
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginBottom: Spacing.sm,
-	},
-	actionEmoji: {
-		fontSize: 22,
-	},
-	actionTitle: {
-		...Typography.bodyMedium,
-		marginBottom: 2,
-	},
-	actionSubtitle: {
-		...Typography.caption,
-	},
-	statsGrid: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
-		gap: Spacing.sm,
-	},
-	statCard: {
-		width: '48%',
-		padding: Spacing.base,
-		borderRadius: BorderRadius.md,
-		alignItems: 'center',
-	},
-	statIcon: {
-		fontSize: 20,
-		marginBottom: Spacing.xs,
-	},
-	statValue: {
-		...Typography.h4,
-		marginBottom: 2,
-	},
-	statLabel: {
-		...Typography.caption,
-		textAlign: 'center',
-	},
-});
+export default function HomeScreen() {
+	const router = useRouter();
+	const insets = useSafeAreaInsets();
+	const { user } = useAuthStore();
+
+	const greeting = () => {
+		const hour = new Date().getHours();
+		if (hour < 12) return 'Good morning';
+		if (hour < 17) return 'Good afternoon';
+		return 'Good evening';
+	};
+
+	return (
+		<View
+			className="flex-1 bg-neutral-950"
+			style={{ paddingTop: insets.top }}
+		>
+			<ScrollView
+				className="flex-1"
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+			>
+				<Animated.View
+					entering={FadeInDown.delay(100).duration(400)}
+					className="px-6 pt-4 pb-6"
+				>
+					<Text className="text-neutral-400 text-base">{greeting()}</Text>
+					<Text className="text-white text-2xl font-bold mt-1">
+						{user?.username || 'Student'}
+					</Text>
+				</Animated.View>
+				<Animated.View
+					entering={FadeInDown.delay(200).duration(400)}
+					className="mx-6 mb-6"
+				>
+					<View className="bg-gradient-to-r from-amber-500/20 to-amber-600/10 rounded-2xl p-5 border border-amber-500/30">
+						<View className="flex-row items-center justify-between mb-4">
+							<View>
+								<Text className="text-white text-lg font-semibold">Daily Goal</Text>
+								<Text className="text-neutral-400 text-sm mt-1">
+									5 of 10 questions completed
+								</Text>
+							</View>
+							<View className="bg-amber-500 px-3 py-1 rounded-full">
+								<Text className="text-black text-sm font-semibold">50%</Text>
+							</View>
+						</View>
+						<View className="h-2 bg-neutral-800 rounded-full overflow-hidden">
+							<View className="h-full w-1/2 bg-amber-500 rounded-full" />
+						</View>
+					</View>
+				</Animated.View>
+				<Animated.View
+					entering={FadeInDown.delay(300).duration(400)}
+					className="px-6 mb-6"
+				>
+					<Text className="text-white text-lg font-semibold mb-4">Your Stats</Text>
+					<View className="flex-row gap-3">
+						<StatCard value="156" label="Questions Done" icon="checkmark-circle-outline" />
+						<StatCard value="78%" label="Accuracy" icon="analytics-outline" />
+					</View>
+				</Animated.View>
+				<Animated.View
+					entering={FadeInDown.delay(400).duration(400)}
+					className="px-6 mb-6"
+				>
+					<Text className="text-white text-lg font-semibold mb-4">Quick Actions</Text>
+					<View className="flex-row gap-3">
+						<QuickAction
+							icon="flash-outline"
+							title="Quick Quiz"
+							subtitle="10 random questions"
+							color="#F59E0B"
+							onPress={() => router.push('/(practice)/quiz')}
+						/>
+						<QuickAction
+							icon="book-outline"
+							title="Continue"
+							subtitle="Resume learning"
+							color="#10B981"
+							onPress={() => router.push('/(tabs)/practice')}
+						/>
+					</View>
+				</Animated.View>
+				<Animated.View
+					entering={FadeInDown.delay(500).duration(400)}
+					className="px-6"
+				>
+					<Text className="text-white text-lg font-semibold mb-4">Recent Activity</Text>
+
+					{
+						[
+							{ title: 'Science Quiz', score: '8/10', time: '2 hours ago', icon: 'flask-outline' },
+							{ title: 'Math Practice', score: '15/20', time: 'Yesterday', icon: 'calculator-outline' },
+							{ title: 'English Grammar', score: '12/15', time: '2 days ago', icon: 'book-outline' },
+						].map((activity, index) => (
+							<View
+								key={index}
+								className="flex-row items-center bg-neutral-900 rounded-xl p-4 mb-3 border border-neutral-800"
+							>
+								<View className="w-10 h-10 rounded-full bg-amber-500/20 items-center justify-center">
+									<Ionicons name={activity.icon as any} size={20} color="#F59E0B" />
+								</View>
+								<View className="flex-1 ml-4">
+									<Text className="text-white font-medium">{activity.title}</Text>
+									<Text className="text-neutral-500 text-sm">{activity.time}</Text>
+								</View>
+								<View className="bg-neutral-800 px-3 py-1 rounded-full">
+									<Text className="text-amber-500 font-semibold">{activity.score}</Text>
+								</View>
+							</View>
+						))
+					}
+				</Animated.View>
+			</ScrollView>
+		</View>
+	);
+}

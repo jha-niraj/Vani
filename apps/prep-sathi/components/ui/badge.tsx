@@ -5,131 +5,97 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle, TextStyle, Pressable } from 'react-native';
-import { useTheme } from '@/hooks/use-theme';
 import {
-  Typography,
-  BorderRadius,
-  Spacing,
-  Colors,
-} from '@/constants/theme';
+	View, Text, Pressable, ViewStyle, TextStyle
+} from 'react-native';
 
 export type BadgeVariant = 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info';
 export type BadgeSize = 'sm' | 'md';
 
 export interface BadgeProps {
-  children: React.ReactNode;
-  variant?: BadgeVariant;
-  size?: BadgeSize;
-  outline?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
-  onPress?: () => void;
+	children: React.ReactNode;
+	variant?: BadgeVariant;
+	size?: BadgeSize;
+	outline?: boolean;
+	style?: ViewStyle;
+	textStyle?: TextStyle;
+	onPress?: () => void;
 }
 
 export function Badge({
-  children,
-  variant = 'default',
-  size = 'md',
-  outline = false,
-  style,
-  textStyle,
-  onPress,
+	children,
+	variant = 'default',
+	size = 'md',
+	outline = false,
+	style,
+	textStyle,
+	onPress,
 }: BadgeProps) {
-  const { colors } = useTheme();
+	const getVariantClasses = () => {
+		const baseOutline = outline ? 'border' : '';
+		switch (variant) {
+			case 'primary':
+				return {
+					container: outline ? 'bg-transparent border-amber-500' : 'bg-amber-500/20',
+					text: 'text-amber-500',
+				};
+			case 'success':
+				return {
+					container: outline ? 'bg-transparent border-emerald-500' : 'bg-emerald-500/20',
+					text: 'text-emerald-500',
+				};
+			case 'warning':
+				return {
+					container: outline ? 'bg-transparent border-yellow-500' : 'bg-yellow-500/20',
+					text: 'text-yellow-600',
+				};
+			case 'error':
+				return {
+					container: outline ? 'bg-transparent border-red-500' : 'bg-red-500/20',
+					text: 'text-red-500',
+				};
+			case 'info':
+				return {
+					container: outline ? 'bg-transparent border-blue-500' : 'bg-blue-500/20',
+					text: 'text-blue-500',
+				};
+			default:
+				return {
+					container: outline ? 'bg-transparent border-neutral-600' : 'bg-neutral-800',
+					text: 'text-neutral-400',
+				};
+		}
+	};
 
-  const getVariantColors = (): { background: string; text: string; border: string } => {
-    switch (variant) {
-      case 'primary':
-        return {
-          background: outline ? 'transparent' : `${Colors.brand.primary}20`,
-          text: Colors.brand.primary,
-          border: Colors.brand.primary,
-        };
-      case 'success':
-        return {
-          background: outline ? 'transparent' : `${Colors.semantic.success}20`,
-          text: Colors.semantic.success,
-          border: Colors.semantic.success,
-        };
-      case 'warning':
-        return {
-          background: outline ? 'transparent' : `${Colors.semantic.warning}20`,
-          text: Colors.semantic.warningDark,
-          border: Colors.semantic.warning,
-        };
-      case 'error':
-        return {
-          background: outline ? 'transparent' : `${Colors.semantic.error}20`,
-          text: Colors.semantic.error,
-          border: Colors.semantic.error,
-        };
-      case 'info':
-        return {
-          background: outline ? 'transparent' : `${Colors.semantic.info}20`,
-          text: Colors.semantic.info,
-          border: Colors.semantic.info,
-        };
-      default:
-        return {
-          background: outline ? 'transparent' : colors.backgroundTertiary,
-          text: colors.textSecondary,
-          border: colors.border,
-        };
-    }
-  };
+	const sizeClasses = size === 'sm'
+		? 'px-2 py-0.5'
+		: 'px-3 py-1';
 
-  const variantColors = getVariantColors();
+	const textSizeClass = size === 'sm' ? 'text-[10px]' : 'text-xs';
 
-  const sizeStyles = size === 'sm' 
-    ? { paddingHorizontal: Spacing.xs, paddingVertical: 2 }
-    : { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.xs };
+	const variantClasses = getVariantClasses();
+	const outlineClass = outline ? 'border' : '';
 
-  const content = (
-    <Text
-      style={[
-        size === 'sm' ? styles.textSm : styles.text,
-        { color: variantColors.text },
-        textStyle,
-      ]}
-    >
-      {children}
-    </Text>
-  );
+	const containerClasses = `rounded-full self-start ${sizeClasses} ${variantClasses.container} ${outlineClass}`;
+	const textClasses = `${textSizeClass} font-semibold ${variantClasses.text}`;
 
-  const containerStyles = [
-    styles.container,
-    sizeStyles,
-    {
-      backgroundColor: variantColors.background,
-      borderColor: variantColors.border,
-      borderWidth: outline ? 1 : 0,
-    },
-    style,
-  ];
+	const content = (
+		<Text className={textClasses} style={textStyle}>
+			{children}
+		</Text>
+	);
 
-  if (onPress) {
-    return (
-      <Pressable onPress={onPress} style={containerStyles}>
-        {content}
-      </Pressable>
-    );
-  }
+	if (onPress) {
+		return (
+			<Pressable onPress={onPress} className={containerClasses} style={style}>
+				{content}
+			</Pressable>
+		);
+	}
 
-  return <View style={containerStyles}>{content}</View>;
+	return (
+		<View className={containerClasses} style={style}>
+			{content}
+		</View>
+	);
 }
-
-const styles = StyleSheet.create({
-  container: {
-    borderRadius: BorderRadius.full,
-    alignSelf: 'flex-start',
-  },
-  text: {
-    ...Typography.caption,
-    fontWeight: '600',
-  },
-  textSm: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-});

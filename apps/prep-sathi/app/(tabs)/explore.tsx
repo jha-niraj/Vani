@@ -1,112 +1,189 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { 
+	View, Text, ScrollView, Pressable 
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+interface CategoryCardProps {
+	icon: keyof typeof Ionicons.glyphMap;
+	title: string;
+	subtitle: string;
+	count: number;
+	onPress: () => void;
+}
 
-export default function TabTwoScreen() {
+function CategoryCard({ icon, title, subtitle, count, onPress }: CategoryCardProps) {
 	return (
-		<ParallaxScrollView
-			headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-			headerImage={
-				<IconSymbol
-					size={310}
-					color="#808080"
-					name="chevron.left.forwardslash.chevron.right"
-					style={styles.headerImage}
-				/>
-			}>
-			<ThemedView style={styles.titleContainer}>
-				<ThemedText
-					type="title"
-					style={{
-						fontFamily: Fonts?.sans,
-					}}>
-					Explore
-				</ThemedText>
-			</ThemedView>
-			<ThemedText>This app includes example code to help you get started.</ThemedText>
-			<Collapsible title="File-based routing">
-				<ThemedText>
-					This app has two screens:{' '}
-					<ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-					<ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-				</ThemedText>
-				<ThemedText>
-					The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-					sets up the tab navigator.
-				</ThemedText>
-				<ExternalLink href="https://docs.expo.dev/router/introduction">
-					<ThemedText type="link">Learn more</ThemedText>
-				</ExternalLink>
-			</Collapsible>
-			<Collapsible title="Android, iOS, and web support">
-				<ThemedText>
-					You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-					<ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-				</ThemedText>
-			</Collapsible>
-			<Collapsible title="Images">
-				<ThemedText>
-					For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-					<ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-					different screen densities
-				</ThemedText>
-				<Image
-					source={require('@/assets/images/react-logo.png')}
-					style={{ width: 100, height: 100, alignSelf: 'center' }}
-				/>
-				<ExternalLink href="https://reactnative.dev/docs/images">
-					<ThemedText type="link">Learn more</ThemedText>
-				</ExternalLink>
-			</Collapsible>
-			<Collapsible title="Light and dark mode components">
-				<ThemedText>
-					This template has light and dark mode support. The{' '}
-					<ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-					what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-				</ThemedText>
-				<ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-					<ThemedText type="link">Learn more</ThemedText>
-				</ExternalLink>
-			</Collapsible>
-			<Collapsible title="Animations">
-				<ThemedText>
-					This template includes an example of an animated component. The{' '}
-					<ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-					the powerful{' '}
-					<ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-						react-native-reanimated
-					</ThemedText>{' '}
-					library to create a waving hand animation.
-				</ThemedText>
-				{Platform.select({
-					ios: (
-						<ThemedText>
-							The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-							component provides a parallax effect for the header image.
-						</ThemedText>
-					),
-				})}
-			</Collapsible>
-		</ParallaxScrollView>
+		<Pressable
+			onPress={onPress}
+			className="flex-row items-center p-4 mb-3 bg-neutral-900 rounded-xl border border-neutral-800 active:opacity-70"
+		>
+			<View className="w-12 h-12 rounded-full bg-amber-500/20 items-center justify-center">
+				<Ionicons name={icon} size={24} color="#F59E0B" />
+			</View>
+			<View className="flex-1 ml-4">
+				<Text className="text-white text-base font-semibold">{title}</Text>
+				<Text className="text-neutral-400 text-sm mt-0.5">{subtitle}</Text>
+			</View>
+			<View className="items-center">
+				<Text className="text-amber-500 text-lg font-bold">{count}</Text>
+				<Text className="text-neutral-500 text-xs">items</Text>
+			</View>
+		</Pressable>
 	);
 }
 
-const styles = StyleSheet.create({
-	headerImage: {
-		color: '#808080',
-		bottom: -90,
-		left: -35,
-		position: 'absolute',
-	},
-	titleContainer: {
-		flexDirection: 'row',
-		gap: 8,
-	},
-});
+interface FeaturedCardProps {
+	title: string;
+	description: string;
+	badge: string;
+	onPress: () => void;
+}
+
+function FeaturedCard({ title, description, badge, onPress }: FeaturedCardProps) {
+	return (
+		<Pressable
+			onPress={onPress}
+			className="w-64 mr-4 bg-gradient-to-br from-amber-500/20 to-amber-600/10 rounded-2xl p-5 border border-amber-500/30 active:opacity-70"
+		>
+			<View className="px-2 py-1 bg-amber-500 rounded-full self-start mb-3">
+				<Text className="text-black text-xs font-semibold">{badge}</Text>
+			</View>
+			<Text className="text-white text-lg font-bold mb-2">{title}</Text>
+			<Text className="text-neutral-400 text-sm">{description}</Text>
+		</Pressable>
+	);
+}
+
+export default function ExploreScreen() {
+	const insets = useSafeAreaInsets();
+	const router = useRouter();
+	const [searchQuery, setSearchQuery] = useState('');
+
+	const categories = [
+		{
+			icon: 'book-outline' as const,
+			title: 'Mock Tests',
+			subtitle: 'Full-length practice exams',
+			count: 15,
+		},
+		{
+			icon: 'document-text-outline' as const,
+			title: 'Previous Year Papers',
+			subtitle: 'Past exam questions',
+			count: 25,
+		},
+		{
+			icon: 'flash-outline' as const,
+			title: 'Quick Quizzes',
+			subtitle: 'Topic-wise short tests',
+			count: 120,
+		},
+		{
+			icon: 'videocam-outline' as const,
+			title: 'Video Lessons',
+			subtitle: 'Expert explanations',
+			count: 48,
+		},
+		{
+			icon: 'newspaper-outline' as const,
+			title: 'Current Affairs',
+			subtitle: 'Latest updates',
+			count: 30,
+		},
+	];
+
+	const featured = [
+		{
+			title: 'TSC Primary Level Mock',
+			description: 'Complete simulation with 100 questions',
+			badge: 'NEW',
+		},
+		{
+			title: 'Loksewa Weekly Quiz',
+			description: 'Test your knowledge every week',
+			badge: 'POPULAR',
+		},
+		{
+			title: 'Banking Awareness',
+			description: 'Essential topics for banking exams',
+			badge: 'TRENDING',
+		},
+	];
+
+	return (
+		<View
+			className="flex-1 bg-neutral-950"
+			style={{ paddingTop: insets.top }}
+		>
+			<View className="px-6 py-4">
+				<Text className="text-white text-2xl font-bold">Explore</Text>
+				<Text className="text-neutral-400 text-sm mt-1">
+					Discover new ways to learn
+				</Text>
+			</View>
+			<View className="mx-6 mb-4">
+				<View className="flex-row items-center bg-neutral-900 rounded-xl px-4 py-3 border border-neutral-800">
+					<Ionicons name="search-outline" size={20} color="#737373" />
+					<Text className="text-neutral-500 text-base ml-3">
+						Search for topics, tests...
+					</Text>
+				</View>
+			</View>
+			<ScrollView
+				className="flex-1"
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+			>
+				<View className="mb-6">
+					<Text className="text-white text-lg font-semibold px-6 mb-4">
+						Featured
+					</Text>
+					<ScrollView
+						horizontal
+						showsHorizontalScrollIndicator={false}
+						contentContainerStyle={{ paddingHorizontal: 24 }}
+					>
+						{
+						featured.map((item, index) => (
+							<FeaturedCard
+								key={index}
+								{...item}
+								onPress={() => { }}
+							/>
+						))
+						}
+					</ScrollView>
+				</View>
+				<View className="px-6">
+					<Text className="text-white text-lg font-semibold mb-4">
+						Categories
+					</Text>
+					{
+					categories.map((category, index) => (
+						<CategoryCard
+							key={index}
+							{...category}
+							onPress={() => { }}
+						/>
+					))
+					}
+				</View>
+				<View className="mx-6 mt-6 p-5 bg-neutral-900/50 rounded-2xl border border-dashed border-neutral-700">
+					<View className="flex-row items-center mb-2">
+						<Ionicons name="rocket-outline" size={24} color="#F59E0B" />
+						<Text className="text-white text-lg font-semibold ml-3">
+							More Coming Soon
+						</Text>
+					</View>
+					<Text className="text-neutral-400 text-sm">
+						We're working on more features including study groups, live quizzes,
+						and personalized learning paths.
+					</Text>
+				</View>
+			</ScrollView>
+		</View>
+	);
+}

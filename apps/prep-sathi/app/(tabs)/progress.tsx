@@ -1,357 +1,203 @@
-/**
- * Progress Screen
- * 
- * Shows user's learning progress and statistics.
- */
-
-import React, { useEffect, useState } from 'react';
-import { 
-	View, Text, StyleSheet, ScrollView, RefreshControl 
-} from 'react-native';
-import Animated, {
-	FadeInDown, FadeInUp
-} from 'react-native-reanimated';
-import { useTheme } from '@/hooks/use-theme';
-import { 
-	api, DashboardStats, SubjectProgress, WeakTopic 
-} from '@/lib/api';
-import { 
-	Screen, Header, Card, ProgressBar, Badge, Loading 
-} from '@/components/ui';
+import React from 'react';
 import {
-	Typography, Spacing, Colors, BorderRadius
-} from '@/constants/theme';
+	View, Text, ScrollView
+} from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function ProgressScreen() {
-	const { colors } = useTheme();
+interface StatCardProps {
+	value: string;
+	label: string;
+	icon: keyof typeof Ionicons.glyphMap;
+	color: string;
+}
 
-	const [stats, setStats] = useState<DashboardStats | null>(null);
-	const [subjectProgress, setSubjectProgress] = useState<SubjectProgress[]>([]);
-	const [weakTopics, setWeakTopics] = useState<WeakTopic[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
-	const [isRefreshing, setIsRefreshing] = useState(false);
-
-	const fetchData = async () => {
-		try {
-			const [statsData, progressData, weakData] = await Promise.all([
-				api.progress.getDashboard(),
-				api.progress.getSubjectProgress(),
-				api.progress.getWeakTopics(),
-			]);
-			setStats(statsData);
-			setSubjectProgress(progressData);
-			setWeakTopics(weakData);
-		} catch {
-			// Use mock data
-			setStats({
-				totalQuestions: 245,
-				correctAnswers: 189,
-				accuracy: 77,
-				currentStreak: 5,
-				longestStreak: 12,
-				todayQuestions: 8,
-				todayGoal: 10,
-				weeklyProgress: [
-					{ date: '2026-01-20', questions: 15, correct: 12 },
-					{ date: '2026-01-21', questions: 20, correct: 16 },
-					{ date: '2026-01-22', questions: 10, correct: 7 },
-					{ date: '2026-01-23', questions: 25, correct: 21 },
-					{ date: '2026-01-24', questions: 18, correct: 14 },
-					{ date: '2026-01-25', questions: 22, correct: 18 },
-					{ date: '2026-01-26', questions: 8, correct: 6 },
-				],
-			});
-			setSubjectProgress([
-				{ subjectId: '1', subjectName: 'General Knowledge', totalQuestions: 80, correctAnswers: 65, accuracy: 81, lastPracticed: '2026-01-26' },
-				{ subjectId: '2', subjectName: 'Nepali', totalQuestions: 45, correctAnswers: 32, accuracy: 71, lastPracticed: '2026-01-25' },
-				{ subjectId: '3', subjectName: 'English', totalQuestions: 60, correctAnswers: 52, accuracy: 87, lastPracticed: '2026-01-26' },
-				{ subjectId: '4', subjectName: 'Mathematics', totalQuestions: 40, correctAnswers: 28, accuracy: 70, lastPracticed: '2026-01-24' },
-			]);
-			setWeakTopics([
-				{ topicId: '1', topicName: 'Algebra', subjectName: 'Mathematics', accuracy: 45, totalAttempts: 20 },
-				{ topicId: '2', topicName: 'Grammar Rules', subjectName: 'Nepali', accuracy: 52, totalAttempts: 15 },
-				{ topicId: '3', topicName: 'World Geography', subjectName: 'General Knowledge', accuracy: 58, totalAttempts: 12 },
-			]);
-		}
-		setIsLoading(false);
-	};
-
-	useEffect(() => {
-		fetchData();
-	}, []);
-
-	const handleRefresh = async () => {
-		setIsRefreshing(true);
-		await fetchData();
-		setIsRefreshing(false);
-	};
-
-	if (isLoading) {
-		return <Loading fullScreen message="Loading progress..." />;
-	}
-
+function StatCard({ value, label, icon, color }: StatCardProps) {
 	return (
-		<Screen safeTop padding={false}>
-			<Header title="Your Progress" />
-
-			<ScrollView
-				style={styles.container}
-				contentContainerStyle={styles.content}
-				showsVerticalScrollIndicator={false}
-				refreshControl={
-					<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
-				}
+		<View className="flex-1 bg-neutral-900 rounded-2xl p-4 border border-neutral-800">
+			<View
+				className="w-10 h-10 rounded-full items-center justify-center mb-3"
+				style={{ backgroundColor: `${color}20` }}
 			>
-				{/* Overall Stats */}
-				{stats && (
-					<Animated.View entering={FadeInDown.delay(100).duration(500)}>
-						<Card style={styles.statsCard}>
-							<Text style={[styles.sectionTitle, { color: colors.text }]}>
-								Overall Performance
-							</Text>
-							<View style={styles.statsRow}>
-								<View style={styles.statItem}>
-									<Text style={[styles.statValue, { color: Colors.brand.primary }]}>
-										{stats.totalQuestions}
-									</Text>
-									<Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-										Questions
-									</Text>
-								</View>
-								<View style={styles.statItem}>
-									<Text style={[styles.statValue, { color: Colors.semantic.success }]}>
-										{Math.round(stats.accuracy)}%
-									</Text>
-									<Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-										Accuracy
-									</Text>
-								</View>
-								<View style={styles.statItem}>
-									<Text style={[styles.statValue, { color: Colors.semantic.warning }]}>
-										{stats.currentStreak}
-									</Text>
-									<Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-										Day Streak
-									</Text>
-								</View>
-							</View>
-						</Card>
-					</Animated.View>
-				)}
-
-				{/* Weekly Activity */}
-				{stats?.weeklyProgress && (
-					<Animated.View
-						entering={FadeInUp.delay(200).duration(500)}
-						style={styles.section}
-					>
-						<Text style={[styles.sectionTitle, { color: colors.text }]}>
-							This Week
-						</Text>
-						<Card>
-							<View style={styles.weekChart}>
-								{stats.weeklyProgress.map((day, index) => (
-									<View key={day.date} style={styles.dayColumn}>
-										<View style={styles.barContainer}>
-											<View
-												style={[
-													styles.bar,
-													{
-														height: `${Math.min(100, (day.questions / 30) * 100)}%`,
-														backgroundColor: day.correct / day.questions >= 0.7
-															? Colors.semantic.success
-															: Colors.brand.primary,
-													},
-												]}
-											/>
-										</View>
-										<Text style={[styles.dayLabel, { color: colors.textSecondary }]}>
-											{['S', 'M', 'T', 'W', 'T', 'F', 'S'][new Date(day.date).getDay()]}
-										</Text>
-									</View>
-								))}
-							</View>
-						</Card>
-					</Animated.View>
-				)}
-
-				{/* Subject Progress */}
-				{subjectProgress.length > 0 && (
-					<Animated.View
-						entering={FadeInUp.delay(300).duration(500)}
-						style={styles.section}
-					>
-						<Text style={[styles.sectionTitle, { color: colors.text }]}>
-							By Subject
-						</Text>
-						{subjectProgress.map((subject) => (
-							<Card key={subject.subjectId} style={styles.subjectCard}>
-								<View style={styles.subjectHeader}>
-									<Text style={[styles.subjectName, { color: colors.text }]}>
-										{subject.subjectName}
-									</Text>
-									<Badge
-										variant={subject.accuracy >= 70 ? 'success' : subject.accuracy >= 50 ? 'warning' : 'error'}
-									>
-										{Math.round(subject.accuracy)}%
-									</Badge>
-								</View>
-								<ProgressBar
-									progress={subject.accuracy}
-									height={6}
-									color={
-										subject.accuracy >= 70
-											? Colors.semantic.success
-											: subject.accuracy >= 50
-												? Colors.semantic.warning
-												: Colors.semantic.error
-									}
-								/>
-								<Text style={[styles.subjectStats, { color: colors.textTertiary }]}>
-									{subject.correctAnswers} / {subject.totalQuestions} correct
-								</Text>
-							</Card>
-						))}
-					</Animated.View>
-				)}
-
-				{/* Weak Topics */}
-				{weakTopics.length > 0 && (
-					<Animated.View
-						entering={FadeInUp.delay(400).duration(500)}
-						style={styles.section}
-					>
-						<Text style={[styles.sectionTitle, { color: colors.text }]}>
-							Topics to Improve
-						</Text>
-						{weakTopics.map((topic) => (
-							<Card key={topic.topicId} style={styles.weakCard} variant="outlined">
-								<View style={styles.weakHeader}>
-									<View>
-										<Text style={[styles.weakTopic, { color: colors.text }]}>
-											{topic.topicName}
-										</Text>
-										<Text style={[styles.weakSubject, { color: colors.textSecondary }]}>
-											{topic.subjectName}
-										</Text>
-									</View>
-									<View style={styles.weakStats}>
-										<Text style={[styles.weakAccuracy, { color: Colors.semantic.error }]}>
-											{Math.round(topic.accuracy)}%
-										</Text>
-										<Text style={[styles.weakAttempts, { color: colors.textTertiary }]}>
-											{topic.totalAttempts} attempts
-										</Text>
-									</View>
-								</View>
-							</Card>
-						))}
-					</Animated.View>
-				)}
-
-				<View style={{ height: Spacing['2xl'] }} />
-			</ScrollView>
-		</Screen>
+				<Ionicons name={icon} size={20} color={color} />
+			</View>
+			<Text className="text-white text-2xl font-bold">{value}</Text>
+			<Text className="text-neutral-500 text-sm mt-1">{label}</Text>
+		</View>
 	);
 }
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-	},
-	content: {
-		paddingHorizontal: Spacing.base,
-		paddingTop: Spacing.base,
-	},
-	statsCard: {
-		marginBottom: Spacing.xl,
-	},
-	statsRow: {
-		flexDirection: 'row',
-		justifyContent: 'space-around',
-		marginTop: Spacing.md,
-	},
-	statItem: {
-		alignItems: 'center',
-	},
-	statValue: {
-		...Typography.h2,
-	},
-	statLabel: {
-		...Typography.caption,
-		marginTop: 2,
-	},
-	section: {
-		marginBottom: Spacing.xl,
-	},
-	sectionTitle: {
-		...Typography.h5,
-		marginBottom: Spacing.md,
-	},
-	weekChart: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'flex-end',
-		height: 120,
-	},
-	dayColumn: {
-		flex: 1,
-		alignItems: 'center',
-	},
-	barContainer: {
-		flex: 1,
-		width: 20,
-		backgroundColor: Colors.neutral.gray100,
-		borderRadius: BorderRadius.sm,
-		justifyContent: 'flex-end',
-		overflow: 'hidden',
-	},
-	bar: {
-		width: '100%',
-		borderRadius: BorderRadius.sm,
-	},
-	dayLabel: {
-		...Typography.caption,
-		marginTop: Spacing.xs,
-	},
-	subjectCard: {
-		marginBottom: Spacing.sm,
-	},
-	subjectHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginBottom: Spacing.sm,
-	},
-	subjectName: {
-		...Typography.bodyMedium,
-	},
-	subjectStats: {
-		...Typography.caption,
-		marginTop: Spacing.xs,
-	},
-	weakCard: {
-		marginBottom: Spacing.sm,
-	},
-	weakHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-	},
-	weakTopic: {
-		...Typography.bodyMedium,
-	},
-	weakSubject: {
-		...Typography.caption,
-		marginTop: 2,
-	},
-	weakStats: {
-		alignItems: 'flex-end',
-	},
-	weakAccuracy: {
-		...Typography.bodyMedium,
-	},
-	weakAttempts: {
-		...Typography.caption,
-	},
-});
+interface SubjectProgressProps {
+	name: string;
+	progress: number;
+	color: string;
+	icon: keyof typeof Ionicons.glyphMap;
+}
+
+function SubjectProgress({ name, progress, color, icon }: SubjectProgressProps) {
+	return (
+		<View className="flex-row items-center bg-neutral-900 rounded-xl p-4 mb-3 border border-neutral-800">
+			<View
+				className="w-10 h-10 rounded-full items-center justify-center"
+				style={{ backgroundColor: `${color}20` }}
+			>
+				<Ionicons name={icon} size={20} color={color} />
+			</View>
+			<View className="flex-1 ml-4">
+				<View className="flex-row items-center justify-between mb-2">
+					<Text className="text-white font-medium">{name}</Text>
+					<Text className="text-neutral-400 text-sm">{progress}%</Text>
+				</View>
+				<View className="h-2 bg-neutral-800 rounded-full overflow-hidden">
+					<View
+						className="h-full rounded-full"
+						style={{ width: `${progress}%`, backgroundColor: color }}
+					/>
+				</View>
+			</View>
+		</View>
+	);
+}
+
+export default function ProgressScreen() {
+	const insets = useSafeAreaInsets();
+
+	const weeklyData = [
+		{ day: 'Mon', value: 15 },
+		{ day: 'Tue', value: 25 },
+		{ day: 'Wed', value: 10 },
+		{ day: 'Thu', value: 30 },
+		{ day: 'Fri', value: 20 },
+		{ day: 'Sat', value: 35 },
+		{ day: 'Sun', value: 12 },
+	];
+
+	const maxValue = Math.max(...weeklyData.map((d) => d.value));
+
+	const subjects = [
+		{ name: 'Mathematics', progress: 65, color: '#F59E0B', icon: 'calculator-outline' as const },
+		{ name: 'Science', progress: 45, color: '#10B981', icon: 'flask-outline' as const },
+		{ name: 'English', progress: 80, color: '#6366F1', icon: 'book-outline' as const },
+		{ name: 'General Knowledge', progress: 55, color: '#EC4899', icon: 'globe-outline' as const },
+	];
+
+	return (
+		<View
+			className="flex-1 bg-neutral-950"
+			style={{ paddingTop: insets.top }}
+		>
+			<ScrollView
+				className="flex-1"
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+			>
+				<Animated.View
+					entering={FadeInDown.delay(100).duration(400)}
+					className="px-6 pt-4 pb-4"
+				>
+					<Text className="text-white text-2xl font-bold">Progress</Text>
+					<Text className="text-neutral-400 text-sm mt-1">
+						Track your learning journey
+					</Text>
+				</Animated.View>
+				<Animated.View
+					entering={FadeInDown.delay(200).duration(400)}
+					className="px-6 mb-6"
+				>
+					<View className="flex-row gap-3 mb-3">
+						<StatCard
+							value="156"
+							label="Total Questions"
+							icon="help-circle-outline"
+							color="#F59E0B"
+						/>
+						<StatCard
+							value="78%"
+							label="Accuracy"
+							icon="checkmark-circle-outline"
+							color="#10B981"
+						/>
+					</View>
+					<View className="flex-row gap-3">
+						<StatCard
+							value="12"
+							label="Day Streak"
+							icon="flame-outline"
+							color="#EF4444"
+						/>
+						<StatCard
+							value="4h 32m"
+							label="Study Time"
+							icon="time-outline"
+							color="#6366F1"
+						/>
+					</View>
+				</Animated.View>
+				<Animated.View
+					entering={FadeInDown.delay(300).duration(400)}
+					className="px-6 mb-6"
+				>
+					<Text className="text-white text-lg font-semibold mb-4">Weekly Activity</Text>
+					<View className="bg-neutral-900 rounded-2xl p-5 border border-neutral-800">
+						<View className="flex-row items-end justify-between h-32">
+							{
+								weeklyData.map((item, index) => {
+									const height = (item.value / maxValue) * 100;
+									const isToday = index === new Date().getDay() - 1;
+									return (
+										<View key={item.day} className="items-center flex-1">
+											<View
+												className={`w-8 rounded-t-lg ${isToday ? 'bg-amber-500' : 'bg-neutral-700'}`}
+												style={{ height: `${height}%` }}
+											/>
+											<Text
+												className={`text-xs mt-2 ${isToday ? 'text-amber-500 font-semibold' : 'text-neutral-500'}`}
+											>
+												{item.day}
+											</Text>
+										</View>
+									);
+								})
+							}
+						</View>
+						<View className="flex-row items-center justify-center mt-4 pt-4 border-t border-neutral-800">
+							<Ionicons name="trending-up" size={16} color="#10B981" />
+							<Text className="text-neutral-400 text-sm ml-2">
+								<Text className="text-emerald-500 font-semibold">+15%</Text> from last week
+							</Text>
+						</View>
+					</View>
+				</Animated.View>
+				<Animated.View
+					entering={FadeInDown.delay(400).duration(400)}
+					className="px-6"
+				>
+					<Text className="text-white text-lg font-semibold mb-4">Subject Progress</Text>
+					{
+						subjects.map((subject) => (
+							<SubjectProgress key={subject.name} {...subject} />
+						))
+					}
+				</Animated.View>
+				<Animated.View
+					entering={FadeInDown.delay(500).duration(400)}
+					className="px-6 mt-6"
+				>
+					<Text className="text-white text-lg font-semibold mb-4">Recent Achievement</Text>
+					<View className="bg-gradient-to-r from-amber-500/20 to-amber-600/10 rounded-2xl p-5 border border-amber-500/30 flex-row items-center">
+						<View className="w-14 h-14 bg-amber-500/30 rounded-full items-center justify-center">
+							<Text className="text-3xl">🏆</Text>
+						</View>
+						<View className="flex-1 ml-4">
+							<Text className="text-white font-bold text-lg">Quiz Master</Text>
+							<Text className="text-neutral-400 text-sm mt-1">
+								Completed 100 quiz questions
+							</Text>
+						</View>
+					</View>
+				</Animated.View>
+			</ScrollView>
+		</View>
+	);
+}

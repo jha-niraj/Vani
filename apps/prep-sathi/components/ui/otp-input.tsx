@@ -1,10 +1,3 @@
-/**
- * OTP Input Component
- * 
- * Block-style OTP input with 6 separate boxes.
- * Features auto-focus, paste support, and smooth animations.
- */
-
 import React, { useRef, useState, useEffect } from 'react';
 import {
     View, TextInput, Text, StyleSheet, Pressable, Keyboard
@@ -232,7 +225,8 @@ export function OTPInput({
     return (
         <View style={styles.container}>
             <View style={styles.boxesContainer}>
-                {Array.from({ length: OTP_LENGTH }).map((_, index) => (
+                {
+                Array.from({ length: OTP_LENGTH }).map((_, index) => (
                     <OTPBox
                         key={index}
                         index={index}
@@ -248,12 +242,15 @@ export function OTPInput({
                         onBlur={() => handleBlur(index)}
                         onPress={() => handlePress(index)}
                     />
-                ))}
+                ))
+                }
             </View>
 
-            {error && (
+            {
+            error && (
                 <Text style={styles.error}>{error}</Text>
-            )}
+            )
+            }
         </View>
     );
 }

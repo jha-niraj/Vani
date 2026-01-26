@@ -1,15 +1,11 @@
 import React, { useState } from 'react';
 import {
-    View, TextInput as RNTextInput, Text, StyleSheet,
+    View, TextInput as RNTextInput, Text,
     TextInputProps as RNTextInputProps, ViewStyle,
 } from 'react-native';
 import Animated, {
     useSharedValue, useAnimatedStyle, withTiming, interpolateColor,
 } from 'react-native-reanimated';
-import { useTheme } from '@/hooks/use-theme';
-import {
-    Typography, BorderRadius, Layout, Spacing, Animation, Colors,
-} from '@/constants/theme';
 
 export interface TextInputProps extends RNTextInputProps {
     label?: string;
@@ -32,19 +28,18 @@ export function TextInput({
     style,
     ...props
 }: TextInputProps) {
-    const { colors } = useTheme();
-    const [, setIsFocused] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
     const focusAnim = useSharedValue(0);
 
     const handleFocus = (e: any) => {
         setIsFocused(true);
-        focusAnim.value = withTiming(1, { duration: Animation.duration.fast });
+        focusAnim.value = withTiming(1, { duration: 150 });
         onFocus?.(e);
     };
 
     const handleBlur = (e: any) => {
         setIsFocused(false);
-        focusAnim.value = withTiming(0, { duration: Animation.duration.fast });
+        focusAnim.value = withTiming(0, { duration: 150 });
         onBlur?.(e);
     };
 
@@ -52,55 +47,46 @@ export function TextInput({
         const borderColor = interpolateColor(
             focusAnim.value,
             [0, 1],
-            [error ? Colors.semantic.error : colors.inputBorder, Colors.brand.primary]
+            [error ? '#EF4444' : '#404040', '#F59E0B']
         );
         return { borderColor };
     });
 
     return (
-        <View style={[styles.container, containerStyle]}>
+        <View className="w-full" style={containerStyle}>
             {
                 label && (
-                    <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
+                    <Text className="text-white text-sm font-medium mb-2">{label}</Text>
                 )
             }
 
             <Animated.View
-                style={[
-                    styles.inputContainer,
-                    {
-                        backgroundColor: colors.inputBackground,
-                        borderColor: error ? Colors.semantic.error : colors.inputBorder,
-                    },
-                    animatedBorderStyle,
-                ]}
+                className={`flex-row items-center h-14 rounded-xl border-2 px-4 bg-neutral-900 ${error ? 'border-red-500' : 'border-neutral-700'
+                    }`}
+                style={animatedBorderStyle}
             >
-                {leftIcon && <View style={styles.iconLeft}>{leftIcon}</View>}
+                {leftIcon && <View className="mr-3">{leftIcon}</View>}
 
                 <RNTextInput
+                    className="flex-1 text-white text-base h-full"
+                    placeholderTextColor="#737373"
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
                     style={[
-                        styles.input,
-                        { color: colors.text },
                         leftIcon ? { paddingLeft: 0 } : undefined,
                         rightIcon ? { paddingRight: 0 } : undefined,
                         style,
                     ]}
-                    placeholderTextColor={colors.inputPlaceholder}
-                    onFocus={handleFocus}
-                    onBlur={handleBlur}
                     {...props}
                 />
 
-                {rightIcon && <View style={styles.iconRight}>{rightIcon}</View>}
+                {rightIcon && <View className="ml-3">{rightIcon}</View>}
             </Animated.View>
 
             {
                 (error || hint) && (
                     <Text
-                        style={[
-                            styles.helper,
-                            { color: error ? Colors.semantic.error : colors.textTertiary },
-                        ]}
+                        className={`text-sm mt-2 ${error ? 'text-red-500' : 'text-neutral-500'}`}
                     >
                         {error || hint}
                     </Text>
@@ -109,36 +95,3 @@ export function TextInput({
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        width: '100%',
-    },
-    label: {
-        ...Typography.label,
-        marginBottom: Spacing.xs,
-    },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        height: Layout.height.input,
-        borderRadius: BorderRadius.md,
-        borderWidth: 1.5,
-        paddingHorizontal: Spacing.base,
-    },
-    input: {
-        flex: 1,
-        ...Typography.body,
-        height: '100%',
-    },
-    iconLeft: {
-        marginRight: Spacing.sm,
-    },
-    iconRight: {
-        marginLeft: Spacing.sm,
-    },
-    helper: {
-        ...Typography.caption,
-        marginTop: Spacing.xs,
-    },
-});

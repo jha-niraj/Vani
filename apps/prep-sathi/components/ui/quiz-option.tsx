@@ -1,10 +1,3 @@
-/**
- * Quiz Option Component
- * 
- * Animated option button for quiz questions.
- * Shows selection state and correct/incorrect feedback.
- */
-
 import React from 'react';
 import {
 	Text, StyleSheet, Pressable, View

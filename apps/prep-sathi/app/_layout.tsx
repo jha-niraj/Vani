@@ -1,8 +1,4 @@
-/**
- * Root Layout
- * 
- * Handles app initialization, auth state, and navigation structure.
- */
+import "../global.css";
 
 import { useEffect } from 'react';
 import { 
@@ -68,19 +64,14 @@ export default function RootLayout() {
 	return (
 		<ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
 			<Stack screenOptions={{ headerShown: false }}>
-				{/* Auth screens */}
 				<Stack.Screen name="(auth)" />
 				
-				{/* Onboarding screens */}
 				<Stack.Screen name="(onboarding)" />
 				
-				{/* Main app screens */}
 				<Stack.Screen name="(tabs)" />
 				
-				{/* Practice screens */}
 				<Stack.Screen name="(practice)" />
 				
-				{/* Modal screens */}
 				<Stack.Screen 
 					name="modal" 
 					options={{ 

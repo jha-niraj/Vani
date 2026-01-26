@@ -1,9 +1,3 @@
-/**
- * Auth Layout
- * 
- * Layout for authentication screens (welcome, phone, OTP).
- */
-
 import { Stack } from 'expo-router';
 
 export default function AuthLayout() {

@@ -1,199 +1,117 @@
-/**
- * Welcome Screen
- * 
- * First screen users see. Introduces the app and prompts to continue.
- */
-
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
-  FadeInDown,
-  FadeInUp,
+	FadeInDown, FadeInUp
 } from 'react-native-reanimated';
-import { useTheme } from '@/hooks/use-theme';
-import { Screen, Button } from '@/components/ui';
-import {
-  Typography,
-  Spacing,
-  Colors,
-} from '@/constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function WelcomeScreen() {
-  const { colors } = useTheme();
-  const router = useRouter();
+	const router = useRouter();
+	const insets = useSafeAreaInsets();
 
-  const handleContinue = () => {
-    router.push('/(auth)/phone');
-  };
+	const handleContinue = () => {
+		router.push('/(auth)/phone');
+	};
 
-  return (
-    <Screen padding safeBottom>
-      <View style={styles.container}>
-        {/* Hero Section */}
-        <Animated.View 
-          entering={FadeInDown.delay(200).duration(600)}
-          style={styles.hero}
-        >
-          <View style={styles.logoContainer}>
-            <Text style={styles.logoEmoji}>📚</Text>
-          </View>
-          
-          <Animated.Text
-            entering={FadeInUp.delay(400).duration(600)}
-            style={[styles.title, { color: colors.text }]}
-          >
-            PrepSathi
-          </Animated.Text>
-          
-          <Animated.Text
-            entering={FadeInUp.delay(500).duration(600)}
-            style={[styles.subtitle, { color: colors.textSecondary }]}
-          >
-            Your Loksewa Exam Companion
-          </Animated.Text>
-        </Animated.View>
-
-        {/* Features */}
-        <Animated.View 
-          entering={FadeInUp.delay(600).duration(600)}
-          style={styles.features}
-        >
-          <FeatureItem
-            emoji="✓"
-            title="Practice MCQs"
-            description="Thousands of questions from past exams"
-          />
-          <FeatureItem
-            emoji="📊"
-            title="Track Progress"
-            description="Monitor your improvement over time"
-          />
-          <FeatureItem
-            emoji="🎯"
-            title="Focus on Weak Areas"
-            description="AI identifies topics you need to work on"
-          />
-        </Animated.View>
-
-        {/* CTA */}
-        <Animated.View
-          entering={FadeInUp.delay(800).duration(600)}
-          style={styles.cta}
-        >
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            onPress={handleContinue}
-          >
-            Get Started
-          </Button>
-          
-          <Text style={[styles.disclaimer, { color: colors.textTertiary }]}>
-            By continuing, you agree to our Terms of Service and Privacy Policy
-          </Text>
-        </Animated.View>
-      </View>
-    </Screen>
-  );
+	return (
+		<View
+			className="flex-1 bg-neutral-950 px-6"
+			style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+		>
+			<View className="flex-1 justify-between py-8">
+				<Animated.View
+					entering={FadeInDown.delay(200).duration(600)}
+					className="items-center pt-12"
+				>
+					<View className="relative mb-8">
+						<View className="absolute -inset-3 rounded-full" />
+						<View className="w-24 h-24 rounded-3xl bg-amber-500/20 border border-amber-500/40 items-center justify-center">
+							<Text className="text-5xl">📚</Text>
+						</View>
+					</View>
+					<Animated.Text
+						entering={FadeInUp.delay(400).duration(600)}
+						className="text-4xl font-bold text-amber-500 mb-1"
+					>
+						PrepSathi
+					</Animated.Text>
+					<Animated.Text
+						entering={FadeInUp.delay(500).duration(600)}
+						className="text-base text-neutral-400 text-center"
+					>
+						Your Exam Preparation Companion
+					</Animated.Text>
+				</Animated.View>
+				<Animated.View
+					entering={FadeInUp.delay(600).duration(600)}
+					className="py-6 gap-5"
+				>
+					<FeatureItem
+						icon="✓"
+						iconColor="text-amber-500"
+						iconBg="bg-amber-500/20"
+						title="Practice MCQs"
+						description="Thousands of questions from past exams"
+					/>
+					<FeatureItem
+						icon="📊"
+						iconColor="text-orange-400"
+						iconBg="bg-orange-400/20"
+						title="Track Progress"
+						description="Monitor your improvement over time"
+					/>
+					<FeatureItem
+						icon="🎯"
+						iconColor="text-amber-600"
+						iconBg="bg-amber-600/20"
+						title="Focus on Weak Areas"
+						description="AI identifies topics you need to work on"
+					/>
+				</Animated.View>
+				<Animated.View
+					entering={FadeInUp.delay(800).duration(600)}
+					className="pt-6"
+				>
+					<Pressable
+						onPress={handleContinue}
+						className="w-full h-14 bg-amber-500 rounded-xl items-center justify-center active:bg-amber-600 shadow-lg"
+					>
+						<Text className="text-lg font-semibold text-neutral-950">
+							Get Started
+						</Text>
+					</Pressable>
+					<Text className="text-xs text-neutral-500 text-center mt-4 px-6">
+						By continuing, you agree to our Terms of Service and Privacy Policy
+					</Text>
+				</Animated.View>
+			</View>
+		</View>
+	);
 }
 
 interface FeatureItemProps {
-  emoji: string;
-  title: string;
-  description: string;
+	icon: string;
+	iconColor: string;
+	iconBg: string;
+	title: string;
+	description: string;
 }
 
-function FeatureItem({ emoji, title, description }: FeatureItemProps) {
-  const { colors } = useTheme();
-  
-  return (
-    <View style={styles.featureItem}>
-      <View style={styles.featureIcon}>
-        <Text style={styles.featureEmoji}>{emoji}</Text>
-      </View>
-      <View style={styles.featureContent}>
-        <Text style={[styles.featureTitle, { color: colors.text }]}>
-          {title}
-        </Text>
-        <Text style={[styles.featureDescription, { color: colors.textSecondary }]}>
-          {description}
-        </Text>
-      </View>
-    </View>
-  );
+function FeatureItem({ icon, iconColor, iconBg, title, description }: FeatureItemProps) {
+	return (
+		<View className="flex-row items-center py-2 px-2">
+			<View className={`w-12 h-12 rounded-xl items-center justify-center mr-4 ${iconBg}`}>
+				<Text className={`text-xl ${iconColor}`}>{icon}</Text>
+			</View>
+			<View className="flex-1">
+				<Text className="text-base font-medium text-neutral-50 mb-1">
+					{title}
+				</Text>
+				<Text className="text-sm text-neutral-400">
+					{description}
+				</Text>
+			</View>
+		</View>
+	);
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'space-between',
-    paddingVertical: Spacing['2xl'],
-  },
-  hero: {
-    alignItems: 'center',
-    paddingTop: Spacing['3xl'],
-  },
-  logoContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 24,
-    backgroundColor: `${Colors.brand.primary}15`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.xl,
-  },
-  logoEmoji: {
-    fontSize: 48,
-  },
-  title: {
-    ...Typography.h1,
-    marginBottom: Spacing.xs,
-  },
-  subtitle: {
-    ...Typography.body,
-    textAlign: 'center',
-  },
-  features: {
-    paddingVertical: Spacing.xl,
-    gap: Spacing.base,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-  },
-  featureIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: `${Colors.semantic.success}15`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.base,
-  },
-  featureEmoji: {
-    fontSize: 20,
-    color: Colors.semantic.success,
-  },
-  featureContent: {
-    flex: 1,
-  },
-  featureTitle: {
-    ...Typography.bodyMedium,
-    marginBottom: 2,
-  },
-  featureDescription: {
-    ...Typography.bodySmall,
-  },
-  cta: {
-    paddingTop: Spacing.xl,
-  },
-  disclaimer: {
-    ...Typography.caption,
-    textAlign: 'center',
-    marginTop: Spacing.base,
-    paddingHorizontal: Spacing.xl,
-  },
-});

@@ -1,53 +1,46 @@
-/**
- * Tabs Layout
- * 
- * Main app tab navigation with Home, Practice, and Profile tabs.
- */
-
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-
+import { View, Text } from 'react-native';
 import { HapticTab } from '@/components/haptic-tab';
-import { Colors, Spacing, Typography,  Layout } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 
-// Tab icons as simple text (you can replace with actual icons)
-function TabIcon({ name, color, focused }: { name: string; color: string; focused: boolean }) {
+function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 	const icons: Record<string, string> = {
 		home: '🏠',
 		practice: '📝',
 		progress: '📊',
 		profile: '👤',
 	};
-	
+
 	return (
-		<View style={[styles.tabIcon, focused && styles.tabIconFocused]}>
-			<Text style={{ fontSize: 22 }}>{icons[name] || '•'}</Text>
+		<View
+			className={`items-center justify-center w-10 h-8 rounded-lg ${
+				focused ? 'bg-amber-500/20' : ''
+			}`}
+		>
+			<Text className="text-xl">{icons[name] || '•'}</Text>
 		</View>
 	);
 }
 
 export default function TabLayout() {
-	const colorScheme = useColorScheme();
-	const colors = Colors[colorScheme ?? 'light'];
-
 	return (
 		<Tabs
 			screenOptions={{
-				tabBarActiveTintColor: colors.tint,
-				tabBarInactiveTintColor: colors.tabIconDefault,
+				tabBarActiveTintColor: '#f59e0b',
+				tabBarInactiveTintColor: '#737373',
 				headerShown: false,
 				tabBarButton: HapticTab,
 				tabBarStyle: {
-					backgroundColor: colors.tabBackground,
-					borderTopColor: colors.divider,
-					height: Layout.height.tabBar,
-					paddingBottom: Spacing.xs,
-					paddingTop: Spacing.xs,
+					backgroundColor: '#171717',
+					borderTopColor: '#262626',
+					borderTopWidth: 0.5,
+					height: 64,
+					paddingBottom: 8,
+					paddingTop: 4,
 				},
 				tabBarLabelStyle: {
-					...Typography.caption,
+					fontSize: 11,
+					fontWeight: '500',
 					marginTop: 2,
 				},
 			}}
@@ -56,8 +49,8 @@ export default function TabLayout() {
 				name="index"
 				options={{
 					title: 'Home',
-					tabBarIcon: ({ color, focused }) => (
-						<TabIcon name="home" color={color} focused={focused} />
+					tabBarIcon: ({ focused }) => (
+						<TabIcon name="home" focused={focused} />
 					),
 				}}
 			/>
@@ -65,8 +58,8 @@ export default function TabLayout() {
 				name="practice"
 				options={{
 					title: 'Practice',
-					tabBarIcon: ({ color, focused }) => (
-						<TabIcon name="practice" color={color} focused={focused} />
+					tabBarIcon: ({ focused }) => (
+						<TabIcon name="practice" focused={focused} />
 					),
 				}}
 			/>
@@ -74,8 +67,8 @@ export default function TabLayout() {
 				name="progress"
 				options={{
 					title: 'Progress',
-					tabBarIcon: ({ color, focused }) => (
-						<TabIcon name="progress" color={color} focused={focused} />
+					tabBarIcon: ({ focused }) => (
+						<TabIcon name="progress" focused={focused} />
 					),
 				}}
 			/>
@@ -83,12 +76,11 @@ export default function TabLayout() {
 				name="profile"
 				options={{
 					title: 'Profile',
-					tabBarIcon: ({ color, focused }) => (
-						<TabIcon name="profile" color={color} focused={focused} />
+					tabBarIcon: ({ focused }) => (
+						<TabIcon name="profile" focused={focused} />
 					),
 				}}
 			/>
-			{/* Hide explore from tabs */}
 			<Tabs.Screen
 				name="explore"
 				options={{
@@ -98,13 +90,3 @@ export default function TabLayout() {
 		</Tabs>
 	);
 }
-
-const styles = StyleSheet.create({
-	tabIcon: {
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	tabIconFocused: {
-		transform: [{ scale: 1.1 }],
-	},
-});

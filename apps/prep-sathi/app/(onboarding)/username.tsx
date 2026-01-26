@@ -1,242 +1,166 @@
-/**
- * Username Selection Screen
- * 
- * Allows new users to choose a unique username.
- */
-
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-} from 'react-native-reanimated';
-import { useTheme } from '@/hooks/use-theme';
-import { useAuthStore } from '@/lib/auth-store';
-import { api } from '@/lib/api';
-import { Screen, Header, Button, TextInput, Badge } from '@/components/ui';
+import React, { useState } from 'react';
 import {
-  Typography,
-  Spacing,
-  Colors,
-} from '@/constants/theme';
+	View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuthStore } from '@/lib/auth-store';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function UsernameScreen() {
-  const { colors } = useTheme();
-  const router = useRouter();
-  const { updateUser } = useAuthStore();
-  
-  const [username, setUsername] = useState('');
-  const [isChecking, setIsChecking] = useState(false);
-  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+	const router = useRouter();
+	const insets = useSafeAreaInsets();
+	const { updateUser, isLoading } = useAuthStore();
 
-  // Username validation
-  const isValidFormat = /^[a-z0-9_]{3,20}$/.test(username);
+	const [username, setUsername] = useState('');
+	const [isChecking, setIsChecking] = useState(false);
+	const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
 
-  // Debounced availability check
-  useEffect(() => {
-    if (!username || !isValidFormat) {
-      setIsAvailable(null);
-      setSuggestions([]);
-      return;
-    }
+	const isValidUsername = username.length >= 3 && /^[a-zA-Z0-9_]+$/.test(username);
 
-    const timer = setTimeout(async () => {
-      setIsChecking(true);
-      try {
-        const result = await api.user.checkUsername(username);
-        setIsAvailable(result.available);
-        setSuggestions(result.suggestions || []);
-      } catch {
-        setIsAvailable(null);
-      }
-      setIsChecking(false);
-    }, 500);
+	const handleUsernameChange = (value: string) => {
+		const cleaned = value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20);
+		setUsername(cleaned);
+		setIsAvailable(null);
 
-    return () => clearTimeout(timer);
-  }, [username, isValidFormat]);
+		// Simulate availability check
+		if (cleaned.length >= 3) {
+			setIsChecking(true);
+			setTimeout(() => {
+				setIsAvailable(cleaned !== 'admin' && cleaned !== 'test');
+				setIsChecking(false);
+			}, 500);
+		}
+	};
 
-  const handleUsernameChange = (value: string) => {
-    // Lowercase and remove invalid characters
-    const cleaned = value.toLowerCase().replace(/[^a-z0-9_]/g, '');
-    setUsername(cleaned);
-    setError(null);
-    setIsAvailable(null);
-  };
+	const handleContinue = async () => {
+		if (!isValidUsername || !isAvailable) return;
 
-  const handleContinue = async () => {
-    if (!isAvailable) return;
-    
-    setIsSubmitting(true);
-    try {
-      await api.user.setUsername(username);
-      updateUser({ username });
-      router.push('/(onboarding)/exam-select');
-    } catch (e: any) {
-      setError(e.message || 'Failed to set username');
-    }
-    setIsSubmitting(false);
-  };
+		updateUser({ username });
+		router.push('/(onboarding)/exam-select');
+	};
 
-  const handleSuggestionPress = (suggestion: string) => {
-    setUsername(suggestion);
-  };
+	return (
+		<KeyboardAvoidingView
+			behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+			className="flex-1 bg-neutral-950"
+			style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+		>
+			<View className="flex-1 px-6">
+				<Animated.View
+					entering={FadeInDown.delay(100).duration(400)}
+					className="flex-row gap-2 mt-4 mb-8"
+				>
+					<View className="flex-1 h-1 bg-amber-500 rounded-full" />
+					<View className="flex-1 h-1 bg-neutral-800 rounded-full" />
+				</Animated.View>
+				<Animated.View
+					entering={FadeInDown.delay(200).duration(400)}
+					className="w-20 h-20 bg-amber-500/20 rounded-full items-center justify-center mb-8"
+				>
+					<Ionicons name="person-outline" size={40} color="#F59E0B" />
+				</Animated.View>
+				<Animated.View entering={FadeInDown.delay(300).duration(400)}>
+					<Text className="text-white text-3xl font-bold mb-2">
+						Choose a username
+					</Text>
+					<Text className="text-neutral-400 text-base leading-relaxed">
+						This will be your unique identity on PrepSathi. You can change it later.
+					</Text>
+				</Animated.View>
+				<Animated.View
+					entering={FadeInDown.delay(400).duration(400)}
+					className="mt-8"
+				>
+					<View className="flex-row items-center bg-neutral-900 rounded-2xl px-5 py-4 border-2 border-neutral-800">
+						<Text className="text-neutral-500 text-lg mr-1">@</Text>
+						<TextInput
+							value={username}
+							onChangeText={handleUsernameChange}
+							placeholder="username"
+							placeholderTextColor="#525252"
+							autoCapitalize="none"
+							autoCorrect={false}
+							className="flex-1 text-white text-lg"
+						/>
+						{
+							isChecking && (
+								<Ionicons name="sync" size={20} color="#737373" />
+							)
+						}
+						{
+							!isChecking && isAvailable === true && (
+								<Ionicons name="checkmark-circle" size={20} color="#10B981" />
+							)
+						}
+						{
+							!isChecking && isAvailable === false && (
+								<Ionicons name="close-circle" size={20} color="#EF4444" />
+							)
+						}
+					</View>
+					<View className="mt-3">
+						{
+							username.length > 0 && username.length < 3 && (
+								<Text className="text-neutral-500 text-sm">
+									Username must be at least 3 characters
+								</Text>
+							)
+						}
+						{
+							isAvailable === false && (
+								<Text className="text-red-500 text-sm">
+									This username is already taken
+								</Text>
+							)
+						}
+						{
+							isAvailable === true && (
+								<Text className="text-emerald-500 text-sm">
+									Username is available!
+								</Text>
+							)
+						}
+					</View>
+					<View className="mt-6 p-4 bg-neutral-900/50 rounded-xl">
+						<Text className="text-neutral-400 text-sm mb-2">Username can contain:</Text>
+						<View className="flex-row flex-wrap gap-2">
+							{
+								['letters', 'numbers', 'underscores'].map((rule) => (
+									<View key={rule} className="flex-row items-center">
+										<Ionicons name="checkmark" size={14} color="#10B981" />
+										<Text className="text-neutral-500 text-sm ml-1">{rule}</Text>
+									</View>
+								))
+							}
+						</View>
+					</View>
+				</Animated.View>
 
-  const getValidationMessage = () => {
-    if (!username) return null;
-    if (username.length < 3) return 'Username must be at least 3 characters';
-    if (username.length > 20) return 'Username must be less than 20 characters';
-    if (!isValidFormat) return 'Only lowercase letters, numbers, and underscores';
-    if (isChecking) return 'Checking availability...';
-    if (isAvailable === true) return 'Username is available! ✓';
-    if (isAvailable === false) return 'Username is taken';
-    return null;
-  };
+				<View className="flex-1" />
 
-  const validationMessage = getValidationMessage();
-
-  return (
-    <Screen padding keyboardAvoiding>
-      <Header title="Create Profile" transparent />
-      
-      <View style={styles.container}>
-        {/* Header */}
-        <Animated.View 
-          entering={FadeInDown.delay(100).duration(500)}
-          style={styles.header}
-        >
-          <Text style={[styles.title, { color: colors.text }]}>
-            Choose a username
-          </Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            This is how other users will see you
-          </Text>
-        </Animated.View>
-
-        {/* Username Input */}
-        <Animated.View 
-          entering={FadeInUp.delay(200).duration(500)}
-          style={styles.inputContainer}
-        >
-          <TextInput
-            value={username}
-            onChangeText={handleUsernameChange}
-            placeholder="your_username"
-            autoFocus
-            autoCapitalize="none"
-            autoCorrect={false}
-            leftIcon={<Text style={{ color: colors.textTertiary }}>@</Text>}
-          />
-          
-          {/* Validation Message */}
-          {validationMessage && (
-            <Text
-              style={[
-                styles.validation,
-                {
-                  color: isAvailable === true
-                    ? Colors.semantic.success
-                    : isAvailable === false
-                    ? Colors.semantic.error
-                    : colors.textSecondary,
-                },
-              ]}
-            >
-              {validationMessage}
-            </Text>
-          )}
-          
-          {/* Suggestions */}
-          {suggestions.length > 0 && (
-            <View style={styles.suggestions}>
-              <Text style={[styles.suggestionsLabel, { color: colors.textSecondary }]}>
-                Try these instead:
-              </Text>
-              <View style={styles.suggestionsList}>
-                {suggestions.map((s) => (
-                  <Badge
-                    key={s}
-                    variant="primary"
-                    onPress={() => handleSuggestionPress(s)}
-                  >
-                    @{s}
-                  </Badge>
-                ))}
-              </View>
-            </View>
-          )}
-        </Animated.View>
-
-        {/* Error */}
-        {error && (
-          <Text style={styles.error}>{error}</Text>
-        )}
-
-        {/* Continue Button */}
-        <Animated.View
-          entering={FadeInUp.delay(300).duration(500)}
-          style={styles.buttonContainer}
-        >
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            disabled={!isAvailable}
-            loading={isSubmitting}
-            onPress={handleContinue}
-          >
-            Continue
-          </Button>
-        </Animated.View>
-      </View>
-    </Screen>
-  );
+				<Animated.View
+					entering={FadeInUp.delay(500).duration(400)}
+					className="pb-4"
+				>
+					<Pressable
+						onPress={handleContinue}
+						disabled={!isValidUsername || !isAvailable || isLoading}
+						className={`py-4 rounded-2xl items-center ${isValidUsername && isAvailable
+							? 'bg-amber-500 active:opacity-80'
+							: 'bg-neutral-800'
+							}`}
+					>
+						<Text
+							className={`font-bold text-lg ${isValidUsername && isAvailable ? 'text-black' : 'text-neutral-600'
+								}`}
+						>
+							{isLoading ? 'Saving...' : 'Continue'}
+						</Text>
+					</Pressable>
+				</Animated.View>
+			</View>
+		</KeyboardAvoidingView>
+	);
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: Spacing.xl,
-  },
-  header: {
-    marginBottom: Spacing['2xl'],
-  },
-  title: {
-    ...Typography.h2,
-    marginBottom: Spacing.sm,
-  },
-  subtitle: {
-    ...Typography.body,
-  },
-  inputContainer: {
-    marginBottom: Spacing.xl,
-  },
-  validation: {
-    ...Typography.bodySmall,
-    marginTop: Spacing.sm,
-  },
-  suggestions: {
-    marginTop: Spacing.base,
-  },
-  suggestionsLabel: {
-    ...Typography.caption,
-    marginBottom: Spacing.sm,
-  },
-  suggestionsList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-  },
-  error: {
-    ...Typography.bodySmall,
-    color: Colors.semantic.error,
-    marginBottom: Spacing.base,
-  },
-  buttonContainer: {
-    marginTop: 'auto',
-    paddingBottom: Spacing.xl,
-  },
-});

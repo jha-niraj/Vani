@@ -1,9 +1,3 @@
-/**
- * UI Components Barrel Export
- * 
- * Import UI components from '@/components/ui'
- */
-
 // Core components
 export { Button } from './button';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './button';
@@ -48,9 +42,6 @@ export type { LoadingProps } from './loading';
 // Modal/Sheet components
 export { BottomSheet } from './bottom-sheet';
 export type { BottomSheetProps } from './bottom-sheet';
-
-export { AIExplanationSheet } from './ai-explanation-sheet';
-export type { AIExplanationSheetProps, QuestionData } from './ai-explanation-sheet';
 
 // Legacy components (from Expo template)
 export { Collapsible } from './collapsible';

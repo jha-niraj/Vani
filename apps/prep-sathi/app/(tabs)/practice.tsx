@@ -1,314 +1,229 @@
-/**
- * Practice Screen
- * 
- * Shows subjects and topics for practice selection.
- */
-
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
-	View, Text, StyleSheet, FlatList, Pressable
+	View, Text, ScrollView, Pressable
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import Animated, {
-	FadeInDown, FadeInRight, useSharedValue, useAnimatedStyle, withSpring
-} from 'react-native-reanimated';
-import { useTheme } from '@/hooks/use-theme';
-import { api, Subject, Topic } from '@/lib/api';
-import {
-	Screen, Header, Loading
-} from '@/components/ui';
-import {
-	Typography, Spacing, Colors, BorderRadius, Shadows, Animation
-} from '@/constants/theme';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-export default function PracticeScreen() {
-	const { colors } = useTheme();
-	const router = useRouter();
-
-	const [subjects, setSubjects] = useState<Subject[]>([]);
-	const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
-	const [topics, setTopics] = useState<Topic[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
-	const [isLoadingTopics, setIsLoadingTopics] = useState(false);
-
-	useEffect(() => {
-		async function fetchSubjects() {
-			try {
-				// For now, using a placeholder level ID
-				// In real app, get from user's selected exam
-				const data = await api.exam.getSubjects('placeholder-level-id');
-				setSubjects(data);
-			} catch {
-				// Use mock data for demo
-				setSubjects([
-					{ id: '1', name: 'General Knowledge', slug: 'gk', description: 'Current affairs & GK', icon: '🌍', order: 1, questionCount: 150 },
-					{ id: '2', name: 'Nepali', slug: 'nepali', description: 'Language & grammar', icon: '📝', order: 2, questionCount: 100 },
-					{ id: '3', name: 'English', slug: 'english', description: 'Language skills', icon: '🔤', order: 3, questionCount: 120 },
-					{ id: '4', name: 'Mathematics', slug: 'math', description: 'Numbers & reasoning', icon: '🔢', order: 4, questionCount: 80 },
-					{ id: '5', name: 'Reasoning', slug: 'reasoning', description: 'Logic & aptitude', icon: '🧩', order: 5, questionCount: 90 },
-					{ id: '6', name: 'Computer', slug: 'computer', description: 'IT fundamentals', icon: '💻', order: 6, questionCount: 60 },
-				]);
-			}
-			setIsLoading(false);
-		}
-		fetchSubjects();
-	}, []);
-
-	const handleSubjectPress = async (subject: Subject) => {
-		if (selectedSubject?.id === subject.id) {
-			setSelectedSubject(null);
-			setTopics([]);
-			return;
-		}
-
-		setSelectedSubject(subject);
-		setIsLoadingTopics(true);
-
-		try {
-			const data = await api.exam.getTopics(subject.id);
-			setTopics(data);
-		} catch {
-			// Use mock topics
-			setTopics([
-				{ id: '1', name: 'Topic 1', slug: 't1', description: '', order: 1, questionCount: 30 },
-				{ id: '2', name: 'Topic 2', slug: 't2', description: '', order: 2, questionCount: 25 },
-				{ id: '3', name: 'Topic 3', slug: 't3', description: '', order: 3, questionCount: 20 },
-			]);
-		}
-		setIsLoadingTopics(false);
-	};
-
-	const handleTopicPress = (topic: Topic) => {
-		router.push(`/(practice)/quiz?subjectId=${selectedSubject?.id}&topicId=${topic.id}`);
-	};
-
-	const handleSubjectQuiz = (subject: Subject) => {
-		router.push(`/(practice)/quiz?subjectId=${subject.id}&type=SUBJECT`);
-	};
-
-	if (isLoading) {
-		return <Loading fullScreen message="Loading subjects..." />;
-	}
-
-	return (
-		<Screen safeTop>
-			<Header title="Practice" />
-
-			<FlatList
-				data={subjects}
-				keyExtractor={(item) => item.id}
-				contentContainerStyle={styles.list}
-				showsVerticalScrollIndicator={false}
-				renderItem={({ item, index }) => (
-					<SubjectCard
-						subject={item}
-						isExpanded={selectedSubject?.id === item.id}
-						topics={selectedSubject?.id === item.id ? topics : []}
-						isLoadingTopics={selectedSubject?.id === item.id && isLoadingTopics}
-						onPress={() => handleSubjectPress(item)}
-						onTopicPress={handleTopicPress}
-						onQuizAll={() => handleSubjectQuiz(item)}
-						delay={index * 50}
-					/>
-				)}
-				ListEmptyComponent={
-					<View style={styles.empty}>
-						<Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-							No subjects available
-						</Text>
-					</View>
-				}
-			/>
-		</Screen>
-	);
+interface Topic {
+	id: string;
+	name: string;
+	questionCount: number;
+	completed: number;
 }
+
+interface Subject {
+	id: string;
+	name: string;
+	icon: keyof typeof Ionicons.glyphMap;
+	color: string;
+	topics: Topic[];
+}
+
+const subjects: Subject[] = [
+	{
+		id: '1',
+		name: 'Mathematics',
+		icon: 'calculator-outline',
+		color: '#F59E0B',
+		topics: [
+			{ id: '1-1', name: 'Algebra', questionCount: 50, completed: 25 },
+			{ id: '1-2', name: 'Geometry', questionCount: 40, completed: 10 },
+			{ id: '1-3', name: 'Arithmetic', questionCount: 60, completed: 45 },
+			{ id: '1-4', name: 'Statistics', questionCount: 30, completed: 0 },
+		],
+	},
+	{
+		id: '2',
+		name: 'Science',
+		icon: 'flask-outline',
+		color: '#10B981',
+		topics: [
+			{ id: '2-1', name: 'Physics', questionCount: 45, completed: 20 },
+			{ id: '2-2', name: 'Chemistry', questionCount: 40, completed: 15 },
+			{ id: '2-3', name: 'Biology', questionCount: 50, completed: 30 },
+		],
+	},
+	{
+		id: '3',
+		name: 'English',
+		icon: 'book-outline',
+		color: '#6366F1',
+		topics: [
+			{ id: '3-1', name: 'Grammar', questionCount: 40, completed: 35 },
+			{ id: '3-2', name: 'Vocabulary', questionCount: 50, completed: 20 },
+			{ id: '3-3', name: 'Comprehension', questionCount: 30, completed: 10 },
+		],
+	},
+	{
+		id: '4',
+		name: 'General Knowledge',
+		icon: 'globe-outline',
+		color: '#EC4899',
+		topics: [
+			{ id: '4-1', name: 'Current Affairs', questionCount: 60, completed: 40 },
+			{ id: '4-2', name: 'History', questionCount: 40, completed: 15 },
+			{ id: '4-3', name: 'Geography', questionCount: 35, completed: 20 },
+		],
+	},
+];
 
 interface SubjectCardProps {
 	subject: Subject;
 	isExpanded: boolean;
-	topics: Topic[];
-	isLoadingTopics: boolean;
-	onPress: () => void;
-	onTopicPress: (topic: Topic) => void;
-	onQuizAll: () => void;
-	delay: number;
+	onToggle: () => void;
+	onTopicPress: (topicId: string) => void;
 }
 
-function SubjectCard({
-	subject,
-	isExpanded,
-	topics,
-	isLoadingTopics,
-	onPress,
-	onTopicPress,
-	onQuizAll,
-	delay,
-}: SubjectCardProps) {
-	const { colors } = useTheme();
-	const scale = useSharedValue(1);
-
-	const animatedStyle = useAnimatedStyle(() => ({
-		transform: [{ scale: scale.value }],
-	}));
+function SubjectCard({ subject, isExpanded, onToggle, onTopicPress }: SubjectCardProps) {
+	const totalQuestions = subject.topics.reduce((sum, t) => sum + t.questionCount, 0);
+	const completedQuestions = subject.topics.reduce((sum, t) => sum + t.completed, 0);
+	const progress = Math.round((completedQuestions / totalQuestions) * 100);
 
 	return (
-		<Animated.View entering={FadeInDown.delay(delay).duration(400)}>
-			<AnimatedPressable
-				onPress={onPress}
-				onPressIn={() => {
-					scale.value = withSpring(0.98, Animation.spring.stiff);
-				}}
-				onPressOut={() => {
-					scale.value = withSpring(1, Animation.spring.default);
-				}}
-				style={[
-					styles.subjectCard,
-					{
-						backgroundColor: colors.card,
-						borderColor: isExpanded ? Colors.brand.primary : colors.border,
-					},
-					Shadows.sm,
-					animatedStyle,
-				]}
+		<View className="mb-4">
+			<Pressable
+				onPress={onToggle}
+				className="bg-neutral-900 rounded-2xl p-4 border border-neutral-800 active:opacity-80"
 			>
-				<View style={styles.subjectHeader}>
-					<Text style={styles.subjectIcon}>{subject.icon || '📚'}</Text>
-					<View style={styles.subjectInfo}>
-						<Text style={[styles.subjectName, { color: colors.text }]}>
-							{subject.name}
-						</Text>
-						<Text style={[styles.subjectDesc, { color: colors.textSecondary }]}>
-							{subject.questionCount} questions
+				<View className="flex-row items-center">
+					<View
+						className="w-12 h-12 rounded-full items-center justify-center"
+						style={{ backgroundColor: `${subject.color}20` }}
+					>
+						<Ionicons name={subject.icon} size={24} color={subject.color} />
+					</View>
+					<View className="flex-1 ml-4">
+						<Text className="text-white text-lg font-semibold">{subject.name}</Text>
+						<Text className="text-neutral-500 text-sm mt-1">
+							{subject.topics.length} topics • {progress}% complete
 						</Text>
 					</View>
-					<Text style={[styles.expandIcon, { color: colors.textSecondary }]}>
-						{isExpanded ? '▲' : '▼'}
-					</Text>
+					<Ionicons
+						name={isExpanded ? 'chevron-up' : 'chevron-down'}
+						size={20}
+						color="#737373"
+					/>
 				</View>
+				<View className="mt-4 h-1.5 bg-neutral-800 rounded-full overflow-hidden">
+					<View
+						className="h-full rounded-full"
+						style={{ width: `${progress}%`, backgroundColor: subject.color }}
+					/>
+				</View>
+			</Pressable>
 
-				{
-					isExpanded && (
-						<Animated.View
-							entering={FadeInDown.duration(300)}
-							style={styles.topicsContainer}
-						>
-							{
-								isLoadingTopics ? (
-									<Loading size="small" />
-								) : (
-									<>
-										<Pressable
-											onPress={onQuizAll}
-											style={[styles.quizAllButton, { backgroundColor: `${Colors.brand.primary}10` }]}
-										>
-											<Text style={[styles.quizAllText, { color: Colors.brand.primary }]}>
-												📝 Practice All {subject.name}
-											</Text>
-										</Pressable>
-
-										{
-											topics.map((topic, idx) => (
-												<Animated.View
-													key={topic.id}
-													entering={FadeInRight.delay(idx * 50).duration(300)}
+			{
+				isExpanded && (
+					<View className="mt-2 ml-4 border-l-2 border-neutral-800 pl-4">
+						{
+							subject.topics.map((topic) => {
+								const topicProgress = Math.round((topic.completed / topic.questionCount) * 100);
+								return (
+									<Pressable
+										key={topic.id}
+										onPress={() => onTopicPress(topic.id)}
+										className="bg-neutral-900/50 rounded-xl p-4 mb-2 border border-neutral-800/50 active:opacity-70"
+									>
+										<View className="flex-row items-center justify-between">
+											<View className="flex-1">
+												<Text className="text-white font-medium">{topic.name}</Text>
+												<Text className="text-neutral-500 text-sm mt-1">
+													{topic.completed}/{topic.questionCount} questions
+												</Text>
+											</View>
+											<View className="items-center">
+												<Text
+													className="font-bold"
+													style={{ color: subject.color }}
 												>
-													<Pressable
-														onPress={() => onTopicPress(topic)}
-														style={[styles.topicItem, { borderBottomColor: colors.divider }]}
-													>
-														<View style={styles.topicInfo}>
-															<Text style={[styles.topicName, { color: colors.text }]}>
-																{topic.name}
-															</Text>
-															<Text style={[styles.topicCount, { color: colors.textTertiary }]}>
-																{topic.questionCount} questions
-															</Text>
-														</View>
-														<Text style={{ color: colors.textSecondary }}>→</Text>
-													</Pressable>
-												</Animated.View>
-											))
-										}
-									</>
-								)
-							}
-						</Animated.View>
-					)
-				}
-			</AnimatedPressable>
-		</Animated.View>
+													{topicProgress}%
+												</Text>
+											</View>
+										</View>
+									</Pressable>
+								);
+							})
+						}
+					</View>
+				)
+			}
+		</View>
 	);
 }
 
-const styles = StyleSheet.create({
-	list: {
-		padding: Spacing.base,
-		gap: Spacing.md,
-	},
-	subjectCard: {
-		borderRadius: BorderRadius.lg,
-		borderWidth: 2,
-		overflow: 'hidden',
-	},
-	subjectHeader: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		padding: Spacing.base,
-	},
-	subjectIcon: {
-		fontSize: 28,
-		marginRight: Spacing.md,
-	},
-	subjectInfo: {
-		flex: 1,
-	},
-	subjectName: {
-		...Typography.bodyMedium,
-		marginBottom: 2,
-	},
-	subjectDesc: {
-		...Typography.caption,
-	},
-	expandIcon: {
-		fontSize: 12,
-	},
-	topicsContainer: {
-		borderTopWidth: 1,
-		borderTopColor: Colors.neutral.gray200,
-		paddingHorizontal: Spacing.base,
-		paddingBottom: Spacing.sm,
-	},
-	quizAllButton: {
-		padding: Spacing.md,
-		borderRadius: BorderRadius.md,
-		marginVertical: Spacing.sm,
-		alignItems: 'center',
-	},
-	quizAllText: {
-		...Typography.bodyMedium,
-	},
-	topicItem: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		paddingVertical: Spacing.md,
-		borderBottomWidth: 1,
-	},
-	topicInfo: {},
-	topicName: {
-		...Typography.body,
-		marginBottom: 2,
-	},
-	topicCount: {
-		...Typography.caption,
-	},
-	empty: {
-		alignItems: 'center',
-		paddingVertical: Spacing['3xl'],
-	},
-	emptyText: {
-		...Typography.body,
-	},
-});
+export default function PracticeScreen() {
+	const router = useRouter();
+	const insets = useSafeAreaInsets();
+	const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
+
+	const handleTopicPress = (topicId: string) => {
+		router.push({
+			pathname: '/(practice)/quiz',
+			params: { topicId },
+		});
+	};
+
+	return (
+		<View
+			className="flex-1 bg-neutral-950"
+			style={{ paddingTop: insets.top }}
+		>
+			<Animated.View
+				entering={FadeInDown.delay(100).duration(400)}
+				className="px-6 pt-4 pb-4"
+			>
+				<Text className="text-white text-2xl font-bold">Practice</Text>
+				<Text className="text-neutral-400 text-sm mt-1">
+					Choose a subject to start practicing
+				</Text>
+			</Animated.View>
+			<Animated.View
+				entering={FadeInDown.delay(200).duration(400)}
+				className="mx-6 mb-6"
+			>
+				<Pressable
+					onPress={() => router.push('/(practice)/quiz')}
+					className="bg-amber-500 rounded-2xl p-5 flex-row items-center justify-between active:opacity-80"
+				>
+					<View className="flex-1">
+						<Text className="text-black text-lg font-bold">Quick Practice</Text>
+						<Text className="text-black/70 text-sm mt-1">
+							10 random questions from all subjects
+						</Text>
+					</View>
+					<View className="w-12 h-12 bg-black/20 rounded-full items-center justify-center">
+						<Ionicons name="flash" size={24} color="#000" />
+					</View>
+				</Pressable>
+			</Animated.View>
+			<ScrollView
+				className="flex-1 px-6"
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+			>
+				<Animated.View entering={FadeInDown.delay(300).duration(400)}>
+					<Text className="text-white text-lg font-semibold mb-4">By Subject</Text>
+
+					{
+						subjects.map((subject) => (
+							<SubjectCard
+								key={subject.id}
+								subject={subject}
+								isExpanded={expandedSubject === subject.id}
+								onToggle={() =>
+									setExpandedSubject(
+										expandedSubject === subject.id ? null : subject.id
+									)
+								}
+								onTopicPress={handleTopicPress}
+							/>
+						))
+					}
+				</Animated.View>
+			</ScrollView>
+		</View>
+	);
+}

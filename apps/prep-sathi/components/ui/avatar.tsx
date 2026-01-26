@@ -1,14 +1,7 @@
-/**
- * Avatar Component
- * 
- * User avatar with initials fallback.
- */
-
 import React from 'react';
-import { 
-	View, Text, Image, StyleSheet, ViewStyle, ImageStyle 
+import {
+	View, Text, Image, ViewStyle, ImageStyle
 } from 'react-native';
-import { Colors } from '@/constants/theme';
 
 export type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -27,29 +20,12 @@ export function Avatar({
 	style,
 	imageStyle,
 }: AvatarProps) {
-	const getSize = (): number => {
+	const getSizeClasses = () => {
 		switch (size) {
-			case 'sm':
-				return 32;
-			case 'lg':
-				return 56;
-			case 'xl':
-				return 80;
-			default:
-				return 44;
-		}
-	};
-
-	const getFontSize = (): number => {
-		switch (size) {
-			case 'sm':
-				return 12;
-			case 'lg':
-				return 20;
-			case 'xl':
-				return 28;
-			default:
-				return 16;
+			case 'sm': return { container: 'w-8 h-8', text: 'text-xs' };
+			case 'lg': return { container: 'w-14 h-14', text: 'text-xl' };
+			case 'xl': return { container: 'w-20 h-20', text: 'text-3xl' };
+			default: return { container: 'w-11 h-11', text: 'text-base' };
 		}
 	};
 
@@ -61,60 +37,26 @@ export function Avatar({
 		return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 	};
 
-	const sizeValue = getSize();
+	const sizeClasses = getSizeClasses();
 
 	if (source) {
 		return (
 			<Image
 				source={{ uri: source }}
-				style={[
-					styles.image,
-					{
-						width: sizeValue,
-						height: sizeValue,
-						borderRadius: sizeValue / 2,
-					},
-					imageStyle,
-				]}
+				className={`${sizeClasses.container} rounded-full`}
+				style={imageStyle}
 			/>
 		);
 	}
 
 	return (
 		<View
-			style={[
-				styles.container,
-				{
-					width: sizeValue,
-					height: sizeValue,
-					borderRadius: sizeValue / 2,
-					backgroundColor: Colors.brand.primary,
-				},
-				style,
-			]}
+			className={`${sizeClasses.container} rounded-full bg-amber-500 items-center justify-center`}
+			style={style}
 		>
-			<Text
-				style={[
-					styles.initials,
-					{ fontSize: getFontSize() },
-				]}
-			>
+			<Text className={`${sizeClasses.text} text-white font-semibold`}>
 				{name ? getInitials(name) : '?'}
 			</Text>
 		</View>
 	);
 }
-
-const styles = StyleSheet.create({
-	container: {
-		alignItems: 'center',
-		justifyContent: 'center',
-	},
-	image: {
-		resizeMode: 'cover',
-	},
-	initials: {
-		color: Colors.neutral.white,
-		fontWeight: '600',
-	},
-});
