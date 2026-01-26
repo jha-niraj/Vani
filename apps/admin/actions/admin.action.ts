@@ -252,8 +252,7 @@ export async function verifyAccessCode(email: string, accessCode: string): Promi
                     email: email.toLowerCase(),
                     name: invitation.name || email.split("@")[0],
                     hashedPassword: tempPassword,
-                    emailVerified: true,
-                    role: "Admin"
+                    role: "ADMIN"
                 }
             })
         }
@@ -459,58 +458,333 @@ export async function getDashboardStats(): Promise<AdminResponse<any>> {
 
         const now = new Date()
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
         const today = new Date(now.setHours(0, 0, 0, 0))
 
         const [
+            // Admin stats
+            totalAdmins,
+            activeAdmins,
+            
+            // Mobile App User Stats (PrepUser)
             totalUsers,
             newUsersThisMonth,
-            totalAdmins
+            newUsersThisWeek,
+            activeUsersToday,
+            
+            // Content Stats
+            totalQuestions,
+            verifiedQuestions,
+            totalSubjects,
+            totalTopics,
+            totalExamTypes,
+            
+            // Engagement Stats
+            totalQuestionAttempts,
+            attemptsThisWeek,
+            todayAttempts,
+            
+            // Mock Test Stats
+            totalMockTests,
+            mockTestResultsCount
         ] = await Promise.all([
+            // Admin stats
+            prisma.adminAccess.count({ where: { status: "ACTIVE" } }),
+            prisma.adminAccess.count({ where: { status: "ACTIVE", lastLoginAt: { gte: sevenDaysAgo } } }),
+            
+            // Mobile App User Stats
             prisma.user.count(),
-            prisma.user.count({
-                where: { 
-                    createdAt: { 
-                        gte: thirtyDaysAgo 
-                    } 
-                }
-            }),
-            prisma.adminAccess.count({
-                where: { 
-                    status: "ACTIVE" 
-                }
-            })
+            prisma.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+            prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+            prisma.user.count({ where: { lastActiveAt: { gte: today } } }),
+            
+            // Content Stats
+            prisma.question.count(),
+            prisma.question.count({ where: { isVerified: true } }),
+            prisma.subject.count(),
+            prisma.topic.count(),
+            prisma.examType.count(),
+            
+            // Engagement Stats
+            prisma.questionAttempt.count(),
+            prisma.questionAttempt.count({ where: { attemptedAt: { gte: sevenDaysAgo } } }),
+            prisma.questionAttempt.count({ where: { attemptedAt: { gte: today } } }),
+            
+            // Mock Test Stats
+            prisma.mockTest.count({ where: { isActive: true } }),
+            prisma.mockTestResult.count()
         ])
 
-        // Get active users today based on createdAt
-        const activeToday = await prisma.user.count({
-            where: { createdAt: { gte: today } }
-        })
+        // Calculate growth rates
+        const userGrowthRate = totalUsers > 0 
+            ? Math.round((newUsersThisMonth / totalUsers) * 100) 
+            : 0
+        
+        const weeklyGrowthRate = totalUsers > 0 
+            ? Math.round((newUsersThisWeek / totalUsers) * 100) 
+            : 0
 
-        // Calculate total credits (using xp balance from users)
-        let totalCredits = 0
-        try {
-            const xpSum = await prisma.user.aggregate({
-                _sum: { currentXp: true }
-            })
-            totalCredits = xpSum._sum.currentXp || 0
-        } catch {
-            // XP model might not exist or have different fields
-        }
+        // Get correct answer stats
+        const correctAttempts = await prisma.questionAttempt.count({
+            where: { isCorrect: true }
+        })
+        const overallAccuracy = totalQuestionAttempts > 0 
+            ? Math.round((correctAttempts / totalQuestionAttempts) * 100) 
+            : 0
 
         return {
             success: true,
             data: {
-                totalUsers,
-                newUsersThisMonth,
-                activeToday,
+                // User metrics
+                totalUsers: totalUsers,
+                newUsersThisMonth: newUsersThisMonth,
+                newUsersThisWeek: newUsersThisWeek,
+                activeToday: activeUsersToday,
+                userGrowthRate,
+                weeklyGrowthRate,
+                
+                // Admin metrics
                 totalAdmins,
-                totalCredits,
-                growthRate: totalUsers > 0 ? Math.round((newUsersThisMonth / totalUsers) * 100) : 0
+                activeAdmins,
+                
+                // Content metrics
+                totalQuestions,
+                verifiedQuestions,
+                totalSubjects,
+                totalTopics,
+                totalExamTypes,
+                
+                // Engagement metrics
+                totalQuestionAttempts,
+                attemptsThisWeek,
+                attemptsToday: todayAttempts,
+                overallAccuracy,
+                
+                // Mock test metrics
+                totalMockTests,
+                mockTestsTaken: mockTestResultsCount
             }
         }
     } catch (error) {
         console.error("Get dashboard stats error:", error)
         return { success: false, error: "Failed to fetch dashboard stats" }
+    }
+}
+
+// Get user progress analytics for admin dashboard
+export async function getUserProgressAnalytics(options?: {
+    limit?: number
+    sortBy?: 'accuracy' | 'attempts' | 'lastActive' | 'streak'
+    sortOrder?: 'asc' | 'desc'
+}): Promise<AdminResponse<any>> {
+    try {
+        const { success, error } = await checkAdminAccess()
+        if (!success) return { success: false, error }
+
+        const limit = options?.limit || 20
+        const sortBy = options?.sortBy || 'lastActive'
+        const sortOrder = options?.sortOrder || 'desc'
+
+        // Get top users with their progress
+        const usersWithProgress = await prisma.user.findMany({
+            take: limit,
+            orderBy: sortBy === 'lastActive' 
+                ? { lastActiveAt: sortOrder }
+                : sortBy === 'streak'
+                    ? { progress: { currentStreak: sortOrder } }
+                    : undefined,
+            include: {
+                progress: true,
+                _count: {
+                    select: {
+                        questionAttempts: true,
+                        mockTestResults: true,
+                        dailyProgress: true
+                    }
+                }
+            }
+        })
+
+        // Calculate per-user stats
+        const userStats = usersWithProgress.map(user => ({
+            id: user.id,
+            name: user.name || 'Anonymous',
+            phone: user.phone,
+            username: user.username,
+            status: user.status,
+            
+            // Progress
+            totalAttempted: user.progress?.totalQuestionsAttempted || 0,
+            totalCorrect: user.progress?.totalCorrect || 0,
+            accuracy: user.progress?.totalQuestionsAttempted 
+                ? Math.round((user.progress.totalCorrect / user.progress.totalQuestionsAttempted) * 100)
+                : 0,
+            
+            // Streaks
+            currentStreak: user.progress?.currentStreak || 0,
+            longestStreak: user.progress?.longestStreak || 0,
+            
+            // Counts
+            questionAttempts: user._count.questionAttempts,
+            mockTestsTaken: user._count.mockTestResults,
+            daysActive: user._count.dailyProgress,
+            
+            // Activity
+            lastActiveAt: user.lastActiveAt,
+            createdAt: user.createdAt
+        }))
+
+        // Sort by accuracy or attempts if needed
+        if (sortBy === 'accuracy') {
+            userStats.sort((a, b) => sortOrder === 'desc' 
+                ? b.accuracy - a.accuracy 
+                : a.accuracy - b.accuracy)
+        } else if (sortBy === 'attempts') {
+            userStats.sort((a, b) => sortOrder === 'desc' 
+                ? b.totalAttempted - a.totalAttempted 
+                : a.totalAttempted - b.totalAttempted)
+        }
+
+        return {
+            success: true,
+            data: userStats
+        }
+    } catch (error) {
+        console.error("Get user progress analytics error:", error)
+        return { success: false, error: "Failed to fetch user progress analytics" }
+    }
+}
+
+// Get subject-wise performance analytics
+export async function getSubjectAnalytics(): Promise<AdminResponse<any>> {
+    try {
+        const { success, error } = await checkAdminAccess()
+        if (!success) return { success: false, error }
+
+        // Get all subjects with their question counts
+        const subjects = await prisma.subject.findMany({
+            include: {
+                examLevel: {
+                    select: { name: true }
+                },
+                _count: {
+                    select: {
+                        questions: true,
+                        topics: true
+                    }
+                }
+            }
+        })
+
+        // Get attempt stats per subject
+        const subjectStats = await Promise.all(
+            subjects.map(async (subject) => {
+                const attempts = await prisma.questionAttempt.count({
+                    where: {
+                        question: { subjectId: subject.id }
+                    }
+                })
+                
+                const correctAttempts = await prisma.questionAttempt.count({
+                    where: {
+                        question: { subjectId: subject.id },
+                        isCorrect: true
+                    }
+                })
+
+                return {
+                    id: subject.id,
+                    name: subject.name,
+                    nameNp: subject.nameNp,
+                    examLevel: subject.examLevel.name,
+                    totalQuestions: subject._count.questions,
+                    totalTopics: subject._count.topics,
+                    totalAttempts: attempts,
+                    correctAttempts,
+                    accuracy: attempts > 0 ? Math.round((correctAttempts / attempts) * 100) : 0,
+                    isActive: subject.isActive
+                }
+            })
+        )
+
+        return {
+            success: true,
+            data: subjectStats
+        }
+    } catch (error) {
+        console.error("Get subject analytics error:", error)
+        return { success: false, error: "Failed to fetch subject analytics" }
+    }
+}
+
+// Get daily activity trends for charts
+export async function getDailyActivityTrends(days: number = 30): Promise<AdminResponse<any>> {
+    try {
+        const { success, error } = await checkAdminAccess()
+        if (!success) return { success: false, error }
+
+        const startDate = new Date()
+        startDate.setDate(startDate.getDate() - days)
+        startDate.setHours(0, 0, 0, 0)
+
+        // Get daily progress records
+        const dailyProgress = await prisma.dailyProgress.findMany({
+            where: {
+                date: { gte: startDate }
+            },
+            orderBy: { date: 'asc' }
+        })
+
+        // Group by date
+        const trendsByDate: Record<string, {
+            date: string
+            totalAttempts: number
+            totalCorrect: number
+            usersActive: number
+            goalsCompleted: number
+        }> = {}
+
+        dailyProgress.forEach(dp => {
+            const dateKey = dp.date.toISOString().split('T')[0]
+            if (dateKey) {
+                if (!trendsByDate[dateKey]) {
+                    trendsByDate[dateKey] = {
+                        date: dateKey,
+                        totalAttempts: 0,
+                        totalCorrect: 0,
+                        usersActive: 0,
+                        goalsCompleted: 0
+                    }
+                }
+                trendsByDate[dateKey].totalAttempts += dp.questionsCompleted
+                trendsByDate[dateKey].totalCorrect += dp.questionsCorrect
+                trendsByDate[dateKey].usersActive += 1
+                if (dp.goalMet) trendsByDate[dateKey].goalsCompleted += 1
+            }
+        })
+
+        // Get new users by date
+        const newUsersByDate = await prisma.user.groupBy({
+            by: ['createdAt'],
+            where: {
+                createdAt: { gte: startDate }
+            },
+            _count: true
+        })
+
+        return {
+            success: true,
+            data: {
+                activityTrends: Object.values(trendsByDate),
+                newUsersTrend: newUsersByDate.map(item => ({
+                    date: item.createdAt.toISOString().split('T')[0],
+                    count: item._count
+                }))
+            }
+        }
+    } catch (error) {
+        console.error("Get daily activity trends error:", error)
+        return { success: false, error: "Failed to fetch daily activity trends" }
     }
 }
 
@@ -635,5 +909,350 @@ export async function changeAdminPassword(currentPassword: string, newPassword: 
     } catch (error) {
         console.error("Change password error:", error)
         return { success: false, error: "Failed to change password" }
+    }
+}
+
+// ============================================================================
+// PREPSATHI USER MANAGEMENT
+// ============================================================================
+
+interface GetUsersInput {
+    page?: number
+    limit?: number
+    search?: string
+    status?: string
+}
+
+export async function getUsers(input: GetUsersInput = {}): Promise<AdminResponse<any>> {
+    try {
+        const { success, error } = await checkAdminAccess()
+        if (!success) return { success: false, error }
+
+        const { page = 1, limit = 20, search, status } = input
+
+        const where: any = {}
+        
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: "insensitive" } },
+                { phone: { contains: search } },
+                { email: { contains: search, mode: "insensitive" } },
+                { username: { contains: search, mode: "insensitive" } }
+            ]
+        }
+        
+        if (status) {
+            where.status = status
+        }
+
+        const [users, total] = await Promise.all([
+            prisma.user.findMany({
+                where,
+                orderBy: { createdAt: "desc" },
+                skip: (page - 1) * limit,
+                take: limit,
+                include: {
+                    _count: {
+                        select: { questionAttempts: true }
+                    },
+                    progress: {
+                        select: {
+                            totalQuestionsAttempted: true,
+                            totalCorrect: true,
+                            currentStreak: true,
+                            longestStreak: true
+                        }
+                    }
+                }
+            }),
+            prisma.user.count({ where })
+        ])
+
+        return {
+            success: true,
+            data: {
+                users,
+                pagination: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit)
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Get users error:", error)
+        return { success: false, error: "Failed to fetch users" }
+    }
+}
+
+export async function getUserDetails(userId: string): Promise<AdminResponse<any>> {
+    try {
+        const { success, error } = await checkAdminAccess()
+        if (!success) return { success: false, error }
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: {
+                currentExamType: { select: { name: true } },
+                currentExamLevel: { select: { name: true } },
+                progress: true,
+                dailyProgress: {
+                    orderBy: { date: "desc" },
+                    take: 30
+                }
+            }
+        })
+
+        if (!user) {
+            return { success: false, error: "User not found" }
+        }
+
+        return { success: true, data: user }
+    } catch (error) {
+        console.error("Get user details error:", error)
+        return { success: false, error: "Failed to fetch user details" }
+    }
+}
+
+// ============================================================================
+// QUESTION MANAGEMENT
+// ============================================================================
+
+interface GetQuestionsInput {
+    page?: number
+    limit?: number
+    search?: string
+    subjectId?: string
+    difficulty?: string
+    verified?: boolean
+}
+
+export async function getQuestions(input: GetQuestionsInput = {}): Promise<AdminResponse<any>> {
+    try {
+        const { success, error } = await checkAdminAccess()
+        if (!success) return { success: false, error }
+
+        const { page = 1, limit = 20, search, subjectId, difficulty, verified } = input
+
+        const where: any = {}
+        
+        if (search) {
+            where.OR = [
+                { question: { contains: search, mode: "insensitive" } },
+                { questionNp: { contains: search, mode: "insensitive" } }
+            ]
+        }
+        
+        if (subjectId) where.subjectId = subjectId
+        if (difficulty) where.difficulty = difficulty
+        if (verified !== undefined) where.isVerified = verified
+
+        const [questions, total] = await Promise.all([
+            prisma.question.findMany({
+                where,
+                orderBy: { createdAt: "desc" },
+                skip: (page - 1) * limit,
+                take: limit,
+                include: {
+                    subject: { select: { id: true, name: true } },
+                    topic: { select: { id: true, name: true } }
+                }
+            }),
+            prisma.question.count({ where })
+        ])
+
+        return {
+            success: true,
+            data: {
+                questions,
+                pagination: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit)
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Get questions error:", error)
+        return { success: false, error: "Failed to fetch questions" }
+    }
+}
+
+export async function getSubjects(): Promise<AdminResponse<any>> {
+    try {
+        const { success, error } = await checkAdminAccess()
+        if (!success) return { success: false, error }
+
+        const subjects = await prisma.subject.findMany({
+            where: { isActive: true },
+            orderBy: { order: "asc" },
+            include: {
+                topics: {
+                    where: { isActive: true },
+                    orderBy: { order: "asc" },
+                    select: { id: true, name: true }
+                }
+            }
+        })
+
+        return { success: true, data: subjects }
+    } catch (error) {
+        console.error("Get subjects error:", error)
+        return { success: false, error: "Failed to fetch subjects" }
+    }
+}
+
+export async function updateQuestion(questionId: string, data: Partial<{
+    isVerified: boolean
+    isActive: boolean
+    difficulty: "EASY" | "MEDIUM" | "HARD"
+}>): Promise<AdminResponse<any>> {
+    try {
+        const accessCheck = await checkAdminAccess()
+        if (!accessCheck.success) return { success: false, error: accessCheck.error }
+
+        const updateData: Record<string, unknown> = {}
+        if (data.isActive !== undefined) updateData.isActive = data.isActive
+        if (data.isVerified !== undefined) updateData.isVerified = data.isVerified
+        if (data.difficulty) updateData.difficulty = data.difficulty
+        
+        if (data.isVerified) {
+            updateData.verifiedBy = accessCheck.data?.adminAccess.id
+            updateData.verifiedAt = new Date()
+        }
+
+        const question = await prisma.question.update({
+            where: { id: questionId },
+            data: updateData
+        })
+
+        return { success: true, data: question }
+    } catch (error) {
+        console.error("Update question error:", error)
+        return { success: false, error: "Failed to update question" }
+    }
+}
+
+// ============================================================================
+// ANALYTICS
+// ============================================================================
+
+interface GetAnalyticsInput {
+    range?: "7d" | "30d" | "90d" | "all"
+}
+
+export async function getAnalytics(input: GetAnalyticsInput = {}): Promise<AdminResponse<any>> {
+    try {
+        const { success, error } = await checkAdminAccess()
+        if (!success) return { success: false, error }
+
+        const { range = "30d" } = input
+        
+        // Calculate date range
+        const now = new Date()
+        let startDate: Date | undefined
+        
+        if (range === "7d") startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        else if (range === "30d") startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        else if (range === "90d") startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+
+        // Overview stats
+        const [totalUsers, activeUsers, totalQuestions, totalAttempts, avgStats] = await Promise.all([
+            prisma.user.count(),
+            prisma.user.count({
+                where: startDate ? { lastActiveAt: { gte: startDate } } : undefined
+            }),
+            prisma.question.count({ where: { isActive: true } }),
+            prisma.questionAttempt.count({
+                where: startDate ? { attemptedAt: { gte: startDate } } : undefined
+            }),
+            prisma.questionAttempt.aggregate({
+                where: startDate ? { attemptedAt: { gte: startDate } } : undefined,
+                _avg: { timeTakenSeconds: true },
+                _count: { isCorrect: true }
+            })
+        ])
+
+        // Calculate average accuracy
+        const correctAttempts = await prisma.questionAttempt.count({
+            where: {
+                isCorrect: true,
+                ...(startDate && { attemptedAt: { gte: startDate } })
+            }
+        })
+        const avgAccuracy = totalAttempts > 0 ? (correctAttempts / totalAttempts) * 100 : 0
+
+        // Subject stats
+        const subjects = await prisma.subject.findMany({
+            where: { isActive: true },
+            include: {
+                _count: { select: { questions: true } },
+                questions: {
+                    select: { attemptCount: true, correctCount: true }
+                }
+            }
+        })
+
+        const subjectStats = subjects.map(subject => {
+            const totalAttempts = subject.questions.reduce((sum, q) => sum + q.attemptCount, 0)
+            const totalCorrect = subject.questions.reduce((sum, q) => sum + q.correctCount, 0)
+            return {
+                subject: subject.name,
+                questions: subject._count.questions,
+                attempts: totalAttempts,
+                accuracy: totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0
+            }
+        })
+
+        // Topic performance (sorted by accuracy, lowest first)
+        const topics = await prisma.topic.findMany({
+            where: { isActive: true },
+            include: {
+                subject: { select: { name: true } },
+                questions: {
+                    select: { attemptCount: true, correctCount: true, avgTimeSeconds: true }
+                }
+            }
+        })
+
+        const topicPerformance = topics
+            .map(topic => {
+                const totalAttempts = topic.questions.reduce((sum, q) => sum + q.attemptCount, 0)
+                const totalCorrect = topic.questions.reduce((sum, q) => sum + q.correctCount, 0)
+                const avgTimes = topic.questions.filter(q => q.avgTimeSeconds).map(q => q.avgTimeSeconds!)
+                const avgTime = avgTimes.length > 0 ? Math.round(avgTimes.reduce((a, b) => a + b, 0) / avgTimes.length) : 0
+                return {
+                    topic: topic.name,
+                    subject: topic.subject.name,
+                    accuracy: totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0,
+                    avgTime
+                }
+            })
+            .filter(t => t.accuracy > 0)
+            .sort((a, b) => a.accuracy - b.accuracy)
+            .slice(0, 10)
+
+        return {
+            success: true,
+            data: {
+                overview: {
+                    totalUsers,
+                    activeUsers,
+                    totalQuestions,
+                    totalAttempts,
+                    avgAccuracy: Math.round(avgAccuracy * 10) / 10,
+                    avgSessionMinutes: Math.round((avgStats._avg.timeTakenSeconds || 0) / 60)
+                },
+                userGrowth: [], // Would need raw SQL or date grouping
+                subjectStats,
+                topicPerformance,
+                dailyActivity: [] // Would need raw SQL or date grouping
+            }
+        }
+    } catch (error) {
+        console.error("Get analytics error:", error)
+        return { success: false, error: "Failed to fetch analytics" }
     }
 }

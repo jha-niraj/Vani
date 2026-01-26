@@ -5,7 +5,7 @@ import {
     Shield, UserPlus, Mail, Copy, Trash2, Settings, Loader2
 } from "lucide-react"
 import { motion } from "framer-motion"
-import { cn } from "@/lib/utils"
+import { cn } from "@repo/ui/lib/utils"
 import { toast } from "@repo/ui/components/ui/sonner"
 import {
     getAdminUsers, getPendingInvitations, createAdminInvitation, revokeInvitation

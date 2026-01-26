@@ -27,16 +27,3 @@ export {
     type OTPData,
     type PhoneAuthStorageAdapter,
 } from './phone-auth';
-
-// =========================================================
-// IMPORTANT: Separate imports for different runtime contexts
-// =========================================================
-// For MIDDLEWARE (Edge Runtime):
-//   import { withAuth, type NextRequestWithAuth } from '@repo/auth/middleware';
-//
-// For CLIENT components (React):
-//   import { signIn, signOut, useSession, SessionProvider } from '@repo/auth/client';
-//
-// For PHONE AUTH (Mobile/Web):
-//   import { PhoneAuthService, validateNepalPhone } from '@repo/auth';
-// =========================================================

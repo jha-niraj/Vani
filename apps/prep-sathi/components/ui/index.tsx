@@ -45,6 +45,13 @@ export type { HeaderProps } from './header';
 export { Loading } from './loading';
 export type { LoadingProps } from './loading';
 
+// Modal/Sheet components
+export { BottomSheet } from './bottom-sheet';
+export type { BottomSheetProps } from './bottom-sheet';
+
+export { AIExplanationSheet } from './ai-explanation-sheet';
+export type { AIExplanationSheetProps, QuestionData } from './ai-explanation-sheet';
+
 // Legacy components (from Expo template)
 export { Collapsible } from './collapsible';
 export { IconSymbol } from './icon-symbol';

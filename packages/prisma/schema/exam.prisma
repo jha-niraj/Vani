@@ -1,17 +1,12 @@
 // ============================================================================
-// PREPSATHI - EXAM PREPARATION PLATFORM MODELS
+// EXAM CONTENT & LEARNING MODELS
+// Contains all exam structure, questions, and mock test related models
+// User-related models are in schema.prisma
 // ============================================================================
 
 // ============================================================================
-// ENUMS
+// ENUMS FOR EXAM CONTENT
 // ============================================================================
-
-enum UserStatus {
-    ACTIVE
-    INACTIVE
-    SUSPENDED
-    DELETED
-}
 
 enum ExamPhaseType {
     MCQ
@@ -23,127 +18,6 @@ enum QuestionDifficulty {
     EASY
     MEDIUM
     HARD
-}
-
-enum DailyGoal {
-    CASUAL      // 10 questions
-    REGULAR     // 25 questions
-    SERIOUS     // 50 questions
-    INTENSE     // 100 questions
-}
-
-enum Language {
-    EN
-    NP
-}
-
-enum Theme {
-    LIGHT
-    DARK
-    SYSTEM
-}
-
-enum OTPPurpose {
-    LOGIN
-    SIGNUP
-    PASSWORD_RESET
-    PHONE_VERIFICATION
-}
-
-enum OTPStatus {
-    PENDING
-    VERIFIED
-    EXPIRED
-    FAILED
-}
-
-// ============================================================================
-// USER MODELS
-// ============================================================================
-
-model PrepUser {
-    id                  String      @id @default(cuid())
-    phone               String      @unique
-    phoneVerified       Boolean     @default(false)
-    
-    // Profile
-    name                String?
-    username            String?     @unique
-    email               String?     @unique
-    avatar              String?
-    dateOfBirth         DateTime?
-    
-    status              UserStatus  @default(ACTIVE)
-    
-    // Preferences
-    dailyGoal           DailyGoal   @default(REGULAR)
-    reminderEnabled     Boolean     @default(true)
-    reminderTime        String?     @default("19:00") // 7 PM default
-    language            Language    @default(EN)
-    theme               Theme       @default(SYSTEM)
-    
-    // Current Preparation
-    currentExamTypeId   String?
-    currentExamType     ExamType?   @relation("UserCurrentExam", fields: [currentExamTypeId], references: [id])
-    
-    currentExamLevelId  String?
-    currentExamLevel    ExamLevel?  @relation("UserCurrentLevel", fields: [currentExamLevelId], references: [id])
-    
-    // Timestamps
-    createdAt           DateTime    @default(now())
-    updatedAt           DateTime    @updatedAt
-    lastActiveAt        DateTime?
-    
-    // Relations
-    progress            UserProgress?
-    questionAttempts    QuestionAttempt[]
-    mockTestResults     MockTestResult[]
-    bookmarks           Bookmark[]
-    dailyProgress       DailyProgress[]
-    sessions            UserSession[]
-    notifications       UserNotification[]
-    
-    @@index([phone])
-    @@index([username])
-    @@index([currentExamTypeId])
-    @@index([currentExamLevelId])
-}
-
-model UserSession {
-    id              String      @id @default(cuid())
-    
-    userId          String
-    user            PrepUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
-    
-    token           String      @unique
-    deviceInfo      String?     // Device type, OS, etc.
-    ipAddress       String?
-    
-    expiresAt       DateTime
-    createdAt       DateTime    @default(now())
-    lastAccessedAt  DateTime    @default(now())
-    
-    @@index([userId])
-    @@index([token])
-}
-
-model OTPVerification {
-    id              String      @id @default(cuid())
-    
-    phone           String
-    code            String      // Hashed OTP code
-    purpose         OTPPurpose
-    status          OTPStatus   @default(PENDING)
-    
-    attempts        Int         @default(0)
-    maxAttempts     Int         @default(3)
-    
-    expiresAt       DateTime
-    verifiedAt      DateTime?
-    createdAt       DateTime    @default(now())
-    
-    @@index([phone, purpose])
-    @@index([expiresAt])
 }
 
 // ============================================================================
@@ -167,7 +41,7 @@ model ExamType {
     
     // Relations
     levels          ExamLevel[]
-    users           PrepUser[]  @relation("UserCurrentExam")
+    users           User[]      @relation("UserCurrentExam")
     
     @@index([isActive])
 }
@@ -194,7 +68,7 @@ model ExamLevel {
     // Relations
     phases          ExamPhase[]
     subjects        Subject[]
-    users           PrepUser[]  @relation("UserCurrentLevel")
+    users           User[]      @relation("UserCurrentLevel")
     mockTests       MockTest[]
     
     @@unique([examTypeId, code])
@@ -341,105 +215,6 @@ model Question {
 }
 
 // ============================================================================
-// USER PROGRESS & TRACKING MODELS
-// ============================================================================
-
-model UserProgress {
-    id                      String      @id @default(cuid())
-    
-    userId                  String      @unique
-    user                    PrepUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
-    
-    // Overall Stats
-    totalQuestionsAttempted Int         @default(0)
-    totalCorrect            Int         @default(0)
-    totalIncorrect          Int         @default(0)
-    totalSkipped            Int         @default(0)
-    totalTimeSpentSeconds   Int         @default(0)
-    
-    // Streak
-    currentStreak           Int         @default(0)
-    longestStreak           Int         @default(0)
-    lastPracticeDate        DateTime?
-    
-    // Subject-wise progress (JSON for flexibility)
-    // Format: { "subjectId": { attempted: 100, correct: 80, ... } }
-    subjectProgress         Json        @default("{}")
-    
-    // Topic-wise progress
-    topicProgress           Json        @default("{}")
-    
-    createdAt               DateTime    @default(now())
-    updatedAt               DateTime    @updatedAt
-    
-    @@index([userId])
-}
-
-model DailyProgress {
-    id                  String      @id @default(cuid())
-    
-    userId              String
-    user                PrepUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
-    
-    date                DateTime    @db.Date
-    
-    questionsCompleted  Int         @default(0)
-    questionsCorrect    Int         @default(0)
-    goal                Int         @default(25)
-    goalMet             Boolean     @default(false)
-    timeSpentSeconds    Int         @default(0)
-    
-    createdAt           DateTime    @default(now())
-    updatedAt           DateTime    @updatedAt
-    
-    @@unique([userId, date])
-    @@index([userId, date])
-}
-
-model QuestionAttempt {
-    id              String      @id @default(cuid())
-    
-    userId          String
-    user            PrepUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
-    
-    questionId      String
-    question        Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
-    
-    selectedAnswer  String?     // 'a', 'b', 'c', 'd', or null if skipped
-    isCorrect       Boolean
-    isSkipped       Boolean     @default(false)
-    
-    timeTakenSeconds Int?
-    
-    // Context
-    sessionType     String?     // 'practice', 'mock_test', 'quick_quiz'
-    mockTestId      String?
-    
-    attemptedAt     DateTime    @default(now())
-    
-    @@index([userId, questionId])
-    @@index([userId, attemptedAt])
-    @@index([questionId])
-}
-
-model Bookmark {
-    id              String      @id @default(cuid())
-    
-    userId          String
-    user            PrepUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
-    
-    questionId      String
-    question        Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
-    
-    note            String?     // Optional user note
-    
-    createdAt       DateTime    @default(now())
-    
-    @@unique([userId, questionId])
-    @@index([userId])
-}
-
-// ============================================================================
 // MOCK TEST MODELS
 // ============================================================================
 
@@ -491,11 +266,111 @@ model MockTestQuestion {
     @@index([mockTestId])
 }
 
+// ============================================================================
+// USER LEARNING PROGRESS MODELS
+// These track user's progress, attempts, and results on exams
+// ============================================================================
+
+model UserProgress {
+    id                      String      @id @default(cuid())
+    
+    userId                  String      @unique
+    user                    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    
+    // Overall Stats
+    totalQuestionsAttempted Int         @default(0)
+    totalCorrect            Int         @default(0)
+    totalIncorrect          Int         @default(0)
+    totalSkipped            Int         @default(0)
+    totalTimeSpentSeconds   Int         @default(0)
+    
+    // Streak
+    currentStreak           Int         @default(0)
+    longestStreak           Int         @default(0)
+    lastPracticeDate        DateTime?
+    
+    // Subject-wise progress (JSON for flexibility)
+    // Format: { "subjectId": { attempted: 100, correct: 80, ... } }
+    subjectProgress         Json        @default("{}")
+    
+    // Topic-wise progress
+    topicProgress           Json        @default("{}")
+    
+    createdAt               DateTime    @default(now())
+    updatedAt               DateTime    @updatedAt
+    
+    @@index([userId])
+}
+
+model DailyProgress {
+    id                  String      @id @default(cuid())
+    
+    userId              String
+    user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    
+    date                DateTime    @db.Date
+    
+    questionsCompleted  Int         @default(0)
+    questionsCorrect    Int         @default(0)
+    goal                Int         @default(25)
+    goalMet             Boolean     @default(false)
+    timeSpentSeconds    Int         @default(0)
+    
+    createdAt           DateTime    @default(now())
+    updatedAt           DateTime    @updatedAt
+    
+    @@unique([userId, date])
+    @@index([userId, date])
+}
+
+model QuestionAttempt {
+    id              String      @id @default(cuid())
+    
+    userId          String
+    user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    
+    questionId      String
+    question        Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+    
+    selectedAnswer  String?     // 'a', 'b', 'c', 'd', or null if skipped
+    isCorrect       Boolean
+    isSkipped       Boolean     @default(false)
+    
+    timeTakenSeconds Int?
+    
+    // Context
+    sessionType     String?     // 'practice', 'mock_test', 'quick_quiz'
+    mockTestId      String?
+    
+    attemptedAt     DateTime    @default(now())
+    
+    @@index([userId, questionId])
+    @@index([userId, attemptedAt])
+    @@index([questionId])
+}
+
+model Bookmark {
+    id              String      @id @default(cuid())
+    
+    userId          String
+    user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    
+    questionId      String
+    question        Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+    
+    note            String?     // Optional user note
+    
+    createdAt       DateTime    @default(now())
+    
+    @@unique([userId, questionId])
+    @@index([userId])
+}
+
 model MockTestResult {
     id                  String      @id @default(cuid())
     
     userId              String
-    user                PrepUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
     
     mockTestId          String
     mockTest            MockTest    @relation(fields: [mockTestId], references: [id], onDelete: Cascade)
@@ -529,32 +404,7 @@ model MockTestResult {
 }
 
 // ============================================================================
-// NOTIFICATION MODELS
-// ============================================================================
-
-model UserNotification {
-    id              String      @id @default(cuid())
-    
-    userId          String
-    user            PrepUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
-    
-    title           String
-    body            String
-    type            String      // 'reminder', 'streak', 'achievement', 'update'
-    
-    data            Json?       // Additional data for deep linking
-    
-    isRead          Boolean     @default(false)
-    readAt          DateTime?
-    
-    createdAt       DateTime    @default(now())
-    
-    @@index([userId, isRead])
-    @@index([userId, createdAt])
-}
-
-// ============================================================================
-// SYSTEM MODELS
+// SYSTEM CONFIG MODEL
 // ============================================================================
 
 model AppConfig {

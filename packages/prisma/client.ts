@@ -3,9 +3,9 @@ export * from "@prisma/client";
 
 // Explicitly re-export the Role enum and other types
 export { 
-    Role, Prisma 
+    Role, Prisma
 } from "@prisma/client";
 
 export type { 
-    User, Post 
+    User 
 } from "@prisma/client";

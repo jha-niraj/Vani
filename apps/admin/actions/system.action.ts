@@ -136,10 +136,10 @@ export async function getSystemHealth(): Promise<Response> {
             }
         })
 
-        // Get active users using activity entries in last 24 hours
-        const recentActivities = await prisma.activityEntry.count({
+        // Get active users using PrepUser sessions in last 24 hours
+        const recentActivities = await prisma.user.count({
             where: {
-                createdAt: {
+                lastActiveAt: {
                     gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
                 }
             }

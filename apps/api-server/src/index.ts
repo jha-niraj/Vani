@@ -12,6 +12,7 @@ import { userRouter } from "./routes/user.routes.js";
 import { examRouter } from "./routes/exam.routes.js";
 import { practiceRouter } from "./routes/practice.routes.js";
 import { progressRouter } from "./routes/progress.routes.js";
+import { aiRouter } from "./routes/ai.routes.js";
 
 const app: Express = express();
 const PORT = process.env.PORT || 3001;
@@ -57,6 +58,7 @@ app.use("/api/v1/users", userRouter);
 app.use("/api/v1/exams", examRouter);
 app.use("/api/v1/practice", practiceRouter);
 app.use("/api/v1/progress", progressRouter);
+app.use("/api/v1/ai", aiRouter);
 
 // ============================================================================
 // ERROR HANDLING

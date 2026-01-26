@@ -451,6 +451,89 @@ export const progressApi = {
     },
 };
 
+// =============================================================================
+// AI API
+// =============================================================================
+
+export interface AIExplanation {
+    questionId: string;
+    explanation: string;
+    correctAnswer: string;
+    subject: string;
+    topic: string;
+}
+
+export interface AITranslation {
+    questionId: string;
+    question: string;
+    options: { a: string; b: string; c: string; d: string };
+    explanation: string | null;
+    cached: boolean;
+}
+
+export interface AIAskResponse {
+    questionId: string;
+    query: string;
+    response: string;
+}
+
+export interface AIStatus {
+    available: boolean;
+    features: {
+        explain: boolean;
+        ask: boolean;
+        translate: boolean;
+    };
+}
+
+export const aiApi = {
+    /**
+     * Check if AI features are available
+     */
+    getStatus: async () => {
+        return request<AIStatus>('/api/v1/ai/status', { method: 'GET' }, false);
+    },
+
+    /**
+     * Get AI explanation for a question
+     */
+    explainQuestion: async (questionId: string) => {
+        return request<{ success: boolean; data: AIExplanation }>(
+            '/api/v1/ai/explain',
+            {
+                method: 'POST',
+                body: JSON.stringify({ questionId }),
+            }
+        );
+    },
+
+    /**
+     * Ask a follow-up question about a specific MCQ
+     */
+    askQuestion: async (questionId: string, query: string, context?: string) => {
+        return request<{ success: boolean; data: AIAskResponse }>(
+            '/api/v1/ai/ask',
+            {
+                method: 'POST',
+                body: JSON.stringify({ questionId, query, context }),
+            }
+        );
+    },
+
+    /**
+     * Translate a question to Nepali
+     */
+    translateQuestion: async (questionId: string, targetLanguage: 'np' | 'en' = 'np') => {
+        return request<{ success: boolean; data: AITranslation }>(
+            '/api/v1/ai/translate',
+            {
+                method: 'POST',
+                body: JSON.stringify({ questionId, targetLanguage }),
+            }
+        );
+    },
+};
+
 // Export all APIs
 export const api = {
     auth: authApi,
@@ -458,4 +541,5 @@ export const api = {
     exam: examApi,
     practice: practiceApi,
     progress: progressApi,
+    ai: aiApi,
 };

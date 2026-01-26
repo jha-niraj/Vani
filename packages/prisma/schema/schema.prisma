@@ -8,21 +8,285 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+// ============================================================================
+// CORE ENUMS
+// ============================================================================
+
 enum Role {
     USER
     ADMIN
 }
 
-model User {
-    id             String   @id @default(cuid())
-    email          String   @unique
-    name           String?
-    hashedPassword String
-    image          String?
-    address        String?
-    role           Role     @default(USER)
-    createdAt      DateTime @default(now())
-    updatedAt      DateTime @updatedAt
+enum UserStatus {
+    ACTIVE
+    INACTIVE
+    SUSPENDED
+    DELETED
+}
 
-    admin AdminAccess? @relation("UserAdminAccess")
+enum DailyGoal {
+    CASUAL      // 10 questions
+    REGULAR     // 25 questions
+    SERIOUS     // 50 questions
+    INTENSE     // 100 questions
+}
+
+enum Language {
+    EN
+    NP
+}
+
+enum Theme {
+    LIGHT
+    DARK
+    SYSTEM
+}
+
+enum OTPPurpose {
+    LOGIN
+    SIGNUP
+    PASSWORD_RESET
+    PHONE_VERIFICATION
+}
+
+enum OTPStatus {
+    PENDING
+    VERIFIED
+    EXPIRED
+    FAILED
+}
+
+// ============================================================================
+// UNIFIED USER MODEL
+// This model serves both admin panel and mobile app users
+// ============================================================================
+
+model User {
+    id                  String      @id @default(cuid())
+    
+    // Authentication - Email (for admin) or Phone (for mobile)
+    email               String?     @unique
+    phone               String?     @unique
+    hashedPassword      String?     // For admin users
+    phoneVerified       Boolean     @default(false)
+    emailVerified       Boolean     @default(false)
+    
+    // Profile
+    name                String?
+    username            String?     @unique
+    image               String?
+    avatar              String?
+    address             String?
+    dateOfBirth         DateTime?
+    
+    // Role & Status
+    role                Role        @default(USER)
+    status              UserStatus  @default(ACTIVE)
+    isActive            Boolean     @default(true)
+    
+    // Preferences (for mobile users)
+    dailyGoal           DailyGoal   @default(REGULAR)
+    reminderEnabled     Boolean     @default(true)
+    reminderTime        String?     @default("19:00") // 7 PM default
+    language            Language    @default(EN)
+    theme               Theme       @default(SYSTEM)
+    
+    // Current Preparation (for mobile users)
+    currentExamTypeId   String?
+    currentExamType     ExamType?   @relation("UserCurrentExam", fields: [currentExamTypeId], references: [id])
+    
+    currentExamLevelId  String?
+    currentExamLevel    ExamLevel?  @relation("UserCurrentLevel", fields: [currentExamLevelId], references: [id])
+    
+    // Timestamps
+    createdAt           DateTime    @default(now())
+    updatedAt           DateTime    @updatedAt
+    lastActiveAt        DateTime?
+    lastLoginAt         DateTime?
+
+    // Relations - Admin
+    admin               AdminAccess? @relation("UserAdminAccess")
+    
+    // Relations - Learning Progress
+    progress            UserProgress?
+    questionAttempts    QuestionAttempt[]
+    mockTestResults     MockTestResult[]
+    bookmarks           Bookmark[]
+    dailyProgress       DailyProgress[]
+    sessions            UserSession[]
+    notifications       UserNotification[]
+    
+    @@index([email])
+    @@index([phone])
+    @@index([username])
+    @@index([role])
+    @@index([status])
+    @@index([isActive])
+    @@index([currentExamTypeId])
+    @@index([currentExamLevelId])
+}
+
+// ============================================================================
+// OTP VERIFICATION MODEL
+// ============================================================================
+
+model OTPVerification {
+    id              String      @id @default(cuid())
+    
+    phone           String
+    code            String      // Hashed OTP code
+    purpose         OTPPurpose
+    status          OTPStatus   @default(PENDING)
+    
+    attempts        Int         @default(0)
+    maxAttempts     Int         @default(3)
+    
+    expiresAt       DateTime
+    verifiedAt      DateTime?
+    createdAt       DateTime    @default(now())
+    
+    @@index([phone, purpose])
+    @@index([expiresAt])
+}
+
+// ============================================================================
+// USER SESSION MODEL
+// ============================================================================
+
+model UserSession {
+    id              String      @id @default(cuid())
+    
+    userId          String
+    user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    
+    token           String      @unique
+    deviceInfo      String?     // Device type, OS, etc.
+    ipAddress       String?
+    
+    expiresAt       DateTime
+    createdAt       DateTime    @default(now())
+    lastAccessedAt  DateTime    @default(now())
+    
+    @@index([userId])
+    @@index([token])
+}
+
+// ============================================================================
+// USER NOTIFICATION MODEL
+// ============================================================================
+
+model UserNotification {
+    id              String      @id @default(cuid())
+    
+    userId          String
+    user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    
+    title           String
+    body            String
+    type            String      // 'reminder', 'streak', 'achievement', 'update'
+    
+    data            Json?       // Additional data for deep linking
+    
+    isRead          Boolean     @default(false)
+    readAt          DateTime?
+    
+    createdAt       DateTime    @default(now())
+    
+    @@index([userId, isRead])
+    @@index([userId, createdAt])
+}
+
+// ============================================================================
+// ANALYTICS CACHE MODELS
+// These models cache aggregated data for fast dashboard loading
+// ============================================================================
+
+// Daily aggregated stats for admin dashboard
+model DailyAnalytics {
+    id                      String      @id @default(cuid())
+    
+    date                    DateTime    @db.Date @unique
+    
+    // User metrics
+    totalUsers              Int         @default(0)
+    newUsersToday           Int         @default(0)
+    activeUsersToday        Int         @default(0)
+    
+    // Question metrics
+    totalQuestions          Int         @default(0)
+    questionsAttemptedToday Int         @default(0)
+    correctAnswersToday     Int         @default(0)
+    
+    // Engagement metrics
+    avgSessionDurationSecs  Int         @default(0)
+    totalSessionsToday      Int         @default(0)
+    
+    // Goal completion
+    usersMetGoalToday       Int         @default(0)
+    
+    createdAt               DateTime    @default(now())
+    updatedAt               DateTime    @updatedAt
+    
+    @@index([date])
+}
+
+// Subject-level analytics for admin dashboard
+model SubjectAnalytics {
+    id                  String      @id @default(cuid())
+    
+    subjectId           String
+    subjectName         String
+    
+    date                DateTime    @db.Date
+    
+    totalAttempts       Int         @default(0)
+    correctAttempts     Int         @default(0)
+    avgAccuracy         Float       @default(0)
+    avgTimeSecs         Float       @default(0)
+    
+    createdAt           DateTime    @default(now())
+    
+    @@unique([subjectId, date])
+    @@index([subjectId])
+    @@index([date])
+}
+
+// User activity summary for admin to quickly view user progress
+model UserActivitySummary {
+    id                      String      @id @default(cuid())
+    
+    userId                  String      @unique  // References User.id
+    
+    // Cached user info for quick display
+    userName                String?
+    userPhone               String?
+    userEmail               String?
+    
+    // Progress summary
+    totalQuestionsAttempted Int         @default(0)
+    totalCorrect            Int         @default(0)
+    overallAccuracy         Float       @default(0)
+    
+    // Streak info
+    currentStreak           Int         @default(0)
+    longestStreak           Int         @default(0)
+    
+    // Activity
+    totalTimeSpentMins      Int         @default(0)
+    lastActiveAt            DateTime?
+    
+    // Goal tracking
+    daysGoalMet             Int         @default(0)
+    currentGoal             String      @default("REGULAR")
+    
+    // Mock test performance
+    mockTestsTaken          Int         @default(0)
+    avgMockTestScore        Float       @default(0)
+    
+    createdAt               DateTime    @default(now())
+    updatedAt               DateTime    @updatedAt
+    
+    @@index([userId])
+    @@index([lastActiveAt])
+    @@index([overallAccuracy])
 }
