@@ -8,7 +8,7 @@ const protectedRoutes = [
 	'/settings',
 	'/interact',
 	'/library',
-    'tasks'
+    '/tasks'
 ]
 
 // Public routes that don't require authentication (allow exploration)
@@ -87,7 +87,7 @@ export default withAuth(
 			}
 
 			// If user is trying to access signin/register, redirect based on onboarding status
-			if (nextUrl.pathname === '/signin' || nextUrl.pathname === '/') {
+			if (nextUrl.pathname === '/') {
 				const redirectUrl = onboardingCompleted ? '/home' : '/onboarding'
 				return NextResponse.redirect(new URL(redirectUrl, nextUrl.origin))
 			}

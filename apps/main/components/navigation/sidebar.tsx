@@ -7,6 +7,9 @@ import {
 } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
 import { ThemeToggle } from "@repo/ui/components/themetoggle"
+import { signOut, useSession } from "@repo/auth/client"
+import { Button } from "@repo/ui/components/ui/button"
+import Image from "next/image"
 
 const navItems = [
     { name: "Record", href: "/home", icon: Mic },
@@ -16,13 +19,13 @@ const navItems = [
     { name: "Settings", href: "/settings", icon: Settings },
 ]
 
-export function Navigation() {
-    const pathname = usePathname()
+export function Sidebar() {
+    const pathname = usePathname();
+    const { data: session } = useSession();
 
     return (
         <>
-            {/* Desktop sidebar */}
-            <aside className="hidden md:flex w-56 flex-col border-r bg-card/50 backdrop-blur-sm px-3 py-5 h-[calc(100vh-5rem)] sticky top-20">
+            <aside className="hidden md:flex w-56 flex-col border-r bg-card/50 backdrop-blur-sm px-3 py-5 h-screen sticky top-20">
                 <div className="px-3 mb-6">
                     <div className="flex items-center gap-2">
                         <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
@@ -31,7 +34,6 @@ export function Navigation() {
                         <span className="text-sm font-semibold text-foreground tracking-tight">Vani</span>
                     </div>
                 </div>
-
                 <nav className="space-y-1 flex-1">
                     {
                         navItems.map((item) => {
@@ -55,13 +57,47 @@ export function Navigation() {
                         })
                     }
                 </nav>
-
                 <div className="mt-auto pt-4 border-t border-border/50">
                     <ThemeToggle />
                 </div>
+                <div>
+                    {
+                        session && (
+                            <div className="">
+                                <div className="mt-4 px-3 py-2 rounded-lg bg-muted flex items-center gap-3">
+                                    {
+                                        session?.user?.image ? (
+                                            <Image
+                                                src={session.user.image}
+                                                alt={session.user.name || "User Avatar"}
+                                                className="w-8 h-8 rounded-full"
+                                                width={32}
+                                                height={32}
+                                            />
+                                        ) : (
+                                            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                                <span className="text-xs text-gray-600">
+                                                    {session.user?.name ? session.user.name.charAt(0).toUpperCase() : "U"}
+                                                </span>
+                                            </div>
+                                        )
+                                    }
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-medium text-foreground">{session.user?.name}</span>
+                                        <span className="text-xs text-muted-foreground">{session.user?.email}</span>
+                                    </div>
+                                </div>
+                                <Button
+                                    onClick={() => signOut()}
+                                    className="w-full mt-4 bg-red-500 hover:bg-red-600 text-white"
+                                >
+                                    Log Out
+                                </Button>
+                            </div>
+                        )
+                    }
+                </div>
             </aside>
-
-            {/* Mobile bottom nav */}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around border-t bg-background/90 backdrop-blur-lg pb-safe">
                 {
                     navItems.map((item) => {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@repo/prisma";
-import { sendEmail } from "@/app/utils/mail";
+import { sendEmail } from "@/utils/mail";
 
 const OTP_EXPIRY_MINUTES = 10;
 

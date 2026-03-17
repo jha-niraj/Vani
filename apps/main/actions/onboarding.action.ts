@@ -2,10 +2,11 @@
 
 import prisma from "@repo/prisma";
 import { auth } from "@repo/auth";
+import type { UseCase } from "@repo/prisma/client";
 
 export interface OnboardingData {
     preferredLanguage: string;
-    useCase: string;
+    useCase: UseCase;
     consentGiven: boolean;
 }
 
@@ -19,6 +20,23 @@ export async function completeOnboarding(data: OnboardingData): Promise<Onboardi
     if (!session?.user?.id) {
         return { success: false, message: "Not authenticated." };
     }
+
+    const validUseCases: UseCase[] = [
+        "STUDENT",
+        "SALES_REP",
+        "FOUNDER",
+        "DOCTOR",
+        "JOURNALIST",
+        "FIELD_WORKER",
+        "PERSONAL_JOURNALING",
+        "LAB_RESEARCHER",
+    ];
+
+    if (!validUseCases.includes(data.useCase)) {
+        return { success: false, message: "Invalid onboarding use case." };
+    }
+
+    console.log(data);
 
     try {
         await prisma.user.update({

@@ -2,9 +2,9 @@
 
 import prisma from "@repo/prisma";
 import { auth } from "@repo/auth";
-import { uploadAudioToStorage } from "@/app/utils/storage";
-import { transcribeShortAudio } from "@/app/utils/sarvam";
-import { extractFromTranscript } from "@/app/utils/openai";
+import { uploadAudioToStorage } from "@/utils/storage";
+import { transcribeShortAudio } from "@/utils/sarvam";
+import { extractFromTranscript } from "@/utils/openai";
 
 export interface RecordingUploadResult {
     success: boolean;
@@ -64,8 +64,12 @@ export async function processRecording(formData: FormData): Promise<RecordingUpl
 
         // ── Step 3: Transcribe via Sarvam ──
         await prisma.recording.update({
-            where: { id: recording.id },
-            data: { status: "TRANSCRIBING" },
+            where: { 
+                id: recording.id 
+            },
+            data: { 
+                status: "TRANSCRIBING" 
+            },
         });
         await createProcessingEvent(recording.id, userId, "transcribing", "Transcribing audio with Sarvam AI...", 40);
 

@@ -10,6 +10,10 @@ export default async function HomePage() {
         redirect("/");
     }
 
+    if (!session.onboardingCompleted) {
+        redirect("/onboarding");
+    }
+
     // Check onboarding
     const user = await prisma.user.findUnique({
         where: { id: session.user.id },

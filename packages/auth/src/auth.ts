@@ -81,6 +81,7 @@ export const authOptions: NextAuthOptions = {
                         name: user.name || user.email || "User",
                         image: user.image || null,
                         role: user.role || "USER",
+                        onboardingCompleted: user.onboarded || false,
                     };
                 } catch (error) {
                     console.error("Email OTP authorization error:", error);
@@ -99,11 +100,28 @@ export const authOptions: NextAuthOptions = {
                 token.name = user.name;
                 token.image = user.image;
                 token.role = user.role;
+                token.onboardingCompleted = Boolean((user as { onboardingCompleted?: boolean }).onboardingCompleted);
             }
 
             // Support session updates
             if (trigger === "update" && session) {
-                return { ...token, ...session.user };
+                if (token.id) {
+                    const dbUser = await prisma.user.findUnique({
+                        where: { 
+                            id: token.id as string 
+                        },
+                        select: { 
+                            onboarded: true 
+                        },
+                    });
+                    token.onboardingCompleted = dbUser?.onboarded ?? false;
+                }
+
+                return {
+                    ...token,
+                    ...session.user,
+                    onboardingCompleted: token.onboardingCompleted,
+                };
             }
 
             return token;
@@ -117,7 +135,9 @@ export const authOptions: NextAuthOptions = {
                 session.user.name = token.name;
                 session.user.image = token.image;
                 session.user.role = token.role;
+                session.user.onboardingCompleted = Boolean(token.onboardingCompleted);
             }
+            session.onboardingCompleted = Boolean(token.onboardingCompleted);
             return session;
         },
 

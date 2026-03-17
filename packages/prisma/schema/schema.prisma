@@ -33,6 +33,17 @@ enum MessageRole {
     SYSTEM
 }
 
+enum UseCase {
+    STUDENT
+    SALES_REP
+    FOUNDER
+    DOCTOR
+    JOURNALIST
+    FIELD_WORKER
+    PERSONAL_JOURNALING
+    LAB_RESEARCHER
+}
+
 model User {
     id            String    @id @default(cuid())
     name          String?
@@ -44,9 +55,9 @@ model User {
     // Onboarding
     preferredLanguage String?
     timezone          String?
-    onboarded         Boolean @default(false)
-    consentGiven      Boolean @default(false)
-    useCase           String?
+    onboarded         Boolean  @default(false)
+    consentGiven      Boolean  @default(false)
+    useCase           UseCase? @default(STUDENT)
 
     accounts         Account[]
     sessions         Session[]

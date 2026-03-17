@@ -12,6 +12,7 @@ export type Profile = import("next-auth/core/types").Profile
 
 declare module "next-auth" {
     interface Session {
+        onboardingCompleted?: boolean
         user: {
             id: string
             email: string
@@ -19,6 +20,7 @@ declare module "next-auth" {
             image: string | null
             role: "USER" | "ADMIN"
             emailVerified?: boolean
+            onboardingCompleted?: boolean
         } & DefaultSession["user"]
     }
 
@@ -29,6 +31,7 @@ declare module "next-auth" {
         image: string | null
         role: "USER" | "ADMIN"
         emailVerified?: boolean
+        onboardingCompleted?: boolean
     }
 }
 
@@ -40,5 +43,6 @@ declare module "next-auth/jwt" {
         image: string | null
         role: "USER" | "ADMIN"
         emailVerified?: boolean
+        onboardingCompleted?: boolean
     }
 }

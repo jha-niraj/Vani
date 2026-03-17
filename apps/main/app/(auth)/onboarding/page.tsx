@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@repo/ui/components/ui/sonner";
 import {
     Mic, Globe, CheckCircle2, ArrowRight, ArrowLeft,
-    BookOpen, Briefcase, GraduationCap, Clock
+    BookOpen, Briefcase, GraduationCap, Stethoscope, Lightbulb, CheckSquare
 } from "lucide-react";
 import { completeOnboarding } from "@/actions/onboarding.action";
+import { useSession } from "@repo/auth/client";
 
 const LANGUAGES = [
     { code: "hi-IN", name: "Hindi", native: "हिन्दी" },
@@ -27,17 +28,64 @@ const LANGUAGES = [
 ];
 
 const USE_CASES = [
-    { id: "student_lectures", label: "Capture lectures & class notes", icon: GraduationCap, desc: "Record lectures and get structured notes" },
-    { id: "study_planning", label: "Study planning & to-dos", icon: BookOpen, desc: "Speak your plan, get actionable tasks" },
-    { id: "meeting_notes", label: "Meeting & project notes", icon: Briefcase, desc: "Never miss action items from meetings" },
-    { id: "personal_notes", label: "Quick personal voice notes", icon: Clock, desc: "Capture thoughts on the go" },
+    {
+        id: "STUDENT",
+        label: "Students",
+        icon: GraduationCap,
+        desc: "Listen fully, notes and tasks come automatically",
+        capabilities: [
+            "Lecture summaries with key learning points",
+            "Assignment and exam task extraction",
+            "Revision checklist generated from recordings",
+        ],
+    },
+    {
+        id: "SALES_REP",
+        label: "Sales Reps",
+        icon: Briefcase,
+        desc: "Never miss a promise or follow-up",
+        capabilities: [
+            "Call recap with commitments and owners",
+            "Follow-up tasks with priority",
+            "Objection and next-step capture",
+        ],
+    },
+    {
+        id: "FOUNDER",
+        label: "Founders",
+        icon: Lightbulb,
+        desc: "Capture ideas in motion with zero friction",
+        capabilities: [
+            "Idea notes converted into action plans",
+            "Meeting decisions and ownership extraction",
+            "Weekly strategic task rollup",
+        ],
+    },
+    {
+        id: "DOCTOR",
+        label: "Doctors",
+        icon: Stethoscope,
+        desc: "See patients, skip manual note-writing",
+        capabilities: [
+            "Visit summary and pending actions",
+            "Follow-up checklist generation",
+            "Daily patient task organizer",
+        ],
+    },
+    // Upcoming roles:
+    // { id: "JOURNALIST", label: "Journalists", icon: BookOpen, desc: "Interview and instant transcript" },
+    // { id: "FIELD_WORKER", label: "Field workers", icon: CheckSquare, desc: "Hands-free observation logging" },
+    // { id: "PERSONAL_JOURNALING", label: "Personal journaling", icon: Mic, desc: "Structured daily reflection" },
+    // { id: "LAB_RESEARCHER", label: "Lab researchers", icon: BookOpen, desc: "Record observations while working" },
 ];
 
 export default function OnboardingPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const { update } = useSession();
     const [step, setStep] = useState(0);
     const [selectedLanguage, setSelectedLanguage] = useState("");
-    const [selectedUseCase, setSelectedUseCase] = useState("");
+    const [selectedUseCase, setSelectedUseCase] = useState("STUDENT");
     const [consentGiven, setConsentGiven] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -52,15 +100,23 @@ export default function OnboardingPage() {
         try {
             const result = await completeOnboarding({
                 preferredLanguage: selectedLanguage,
-                useCase: selectedUseCase,
+                useCase: selectedUseCase as "STUDENT" | "SALES_REP" | "FOUNDER" | "DOCTOR",
                 consentGiven,
             });
 
+            if(!result.success) {
+                toast.error(result.message || "Failed to complete onboarding.");
+                return;
+            }
+
             if (result.success) {
                 toast.success("You're all set! 🎉");
-                router.replace("/home");
-            } else {
-                toast.error(result.message);
+                // Refresh JWT/session claims after onboarding update.
+                await update({
+                    onboardingCompleted: true,
+                    email: searchParams.get("email") || undefined,
+                });
+                router.push("/home");
             }
         } catch {
             toast.error("Failed to save preferences.");
@@ -188,6 +244,27 @@ export default function OnboardingPage() {
                                             ))
                                         }
                                     </div>
+                                    {
+                                        selectedUseCase && (
+                                            <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                                                <p className="text-xs uppercase tracking-wider text-slate-400 mb-2">
+                                                    What you can do with Vani
+                                                </p>
+                                                <ul className="space-y-2">
+                                                    {
+                                                        USE_CASES
+                                                            .find((u) => u.id === selectedUseCase)
+                                                            ?.capabilities.map((item) => (
+                                                                <li key={item} className="flex items-start gap-2 text-sm text-slate-300">
+                                                                    <CheckSquare className="h-4 w-4 mt-0.5 text-purple-300" />
+                                                                    <span>{item}</span>
+                                                                </li>
+                                                            ))
+                                                    }
+                                                </ul>
+                                            </div>
+                                        )
+                                    }
                                 </motion.div>
                             )
                         }

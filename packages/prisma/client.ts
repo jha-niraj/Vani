@@ -3,7 +3,13 @@ export * from "@prisma/client";
 
 // Explicitly re-export the Role enum and other types
 export { 
-    Role, Prisma
+    Role, 
+    Prisma,
+
+    UseCase,
+    RecordingStatus,
+    TaskPriority,
+    MessageRole
 } from "@prisma/client";
 
 export type { 
