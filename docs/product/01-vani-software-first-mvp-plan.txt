@@ -1,0 +1,587 @@
+VANI SOFTWARE-FIRST MVP PLAN (DETAILED)
+Version: 1.0
+Date: 2026-03-15
+Author: Niraj (student project)
+
+=================================================================
+1) PROJECT INTENT
+=================================================================
+Goal:
+Build a software-first version of a Pocket-like product before hardware.
+
+Core user action:
+Record voice -> upload -> transcribe -> extract summary/tasks/insights -> show in app.
+
+Primary target users (Phase 1):
+- Students (lectures, study plans, project meetings, reminders)
+- Indian language + Hinglish speakers
+
+Why software-first is correct:
+- Fast iteration on UX and AI quality
+- Validate "voice to value" loop before hardware complexity
+- Reuse same backend pipeline later for hardware uploads
+
+Success criteria for MVP:
+- User can record and process audio reliably
+- User gets useful transcript + summary + tasks
+- Tasks are actionable in a dedicated Tasks screen
+- End-to-end processing time acceptable for student usage
+
+
+=================================================================
+2) PRODUCT PRINCIPLES
+=================================================================
+P1. One-tap capture first. Minimal friction.
+P2. Processing transparency. Show pipeline stage to build trust.
+P3. Structured outputs. Not just transcript; actionable artifacts.
+P4. India-first language quality. Sarvam STT prioritized.
+P5. Modular architecture. Hardware can plug in with minimal backend changes.
+
+
+=================================================================
+3) USER JOURNEYS
+=================================================================
+Journey A: Quick personal note
+1. Open app
+2. Tap Record
+3. Speak for 20-40 sec
+4. Tap Stop
+5. See processing stages
+6. Read summary and extracted tasks
+7. Mark one task complete
+
+Journey B: Class lecture capture
+1. Start long recording (10-45 minutes)
+2. Upload with chunked transcription path
+3. Receive structured notes and topic tags
+4. Search transcript later by keyword
+
+Journey C: Study planning to to-do
+1. Speak weekly plan
+2. App extracts deadlines/tasks
+3. User reviews and edits tasks
+4. Optional calendar sync
+
+
+=================================================================
+4) SCREEN ARCHITECTURE (PHASED)
+=================================================================
+Phase 1 (must-have):
+1. Auth / Onboarding
+2. Home + Record
+3. Processing Status
+4. Recording Detail (Summary, Transcript, Tasks tabs)
+5. Library
+6. Tasks
+7. Settings (basic profile, language, privacy)
+
+Phase 2 (nice-to-have):
+8. Integrations (Google Calendar, Gmail draft)
+9. Ask Recording (Q&A on transcript)
+
+
+-----------------------------------------------------------------
+Screen 1: Auth / Onboarding
+-----------------------------------------------------------------
+Purpose:
+- Fast sign-in and language personalization
+
+UI content:
+- Phone/OTP login (or email OTP)
+- Preferred language selector (Hindi, English, Hinglish, Punjabi, etc.)
+- Consent checkbox for audio processing
+
+Data captured:
+- user_id
+- preferred_language
+- timezone
+- consent_version
+
+
+-----------------------------------------------------------------
+Screen 2: Home + Record
+-----------------------------------------------------------------
+Purpose:
+- Fast recording initiation
+
+UI content:
+- Large central record button
+- Recording timer
+- Input level/waveform visualization
+- Recent recordings preview (last 3)
+- Tab navigation: Record | Library | Tasks | Settings
+
+Interaction states:
+- Idle
+- Recording
+- Pause (optional, Phase 2)
+- Stop + Upload trigger
+
+
+-----------------------------------------------------------------
+Screen 3: Processing Status
+-----------------------------------------------------------------
+Purpose:
+- Show what is happening after stop
+
+Pipeline stage display example:
+- Recording saved
+- Uploading audio
+- Transcribing (Sarvam)
+- Extracting summary/tasks/tags
+- Completed
+
+UX notes:
+- Stage-based progress improves trust
+- Use SSE or polling to update status in real-time
+
+
+-----------------------------------------------------------------
+Screen 4: Recording Detail
+-----------------------------------------------------------------
+Purpose:
+- Core value display for each recording
+
+Sections:
+- Header: title, duration, date, tags
+- Tab A: Summary (3-7 bullet points)
+- Tab B: Transcript (with timestamps)
+- Tab C: Tasks (checkboxes, due-date suggestions)
+
+Phase 2 enhancements:
+- Tap transcript sentence -> jump playback timestamp
+- Ask tab (Q&A over transcript)
+
+
+-----------------------------------------------------------------
+Screen 5: Library
+-----------------------------------------------------------------
+Purpose:
+- Browse and retrieve all recordings
+
+Features:
+- Search (title/transcript)
+- Filter by tag/language/date
+- Sort by latest / longest / with pending tasks
+
+
+-----------------------------------------------------------------
+Screen 6: Tasks
+-----------------------------------------------------------------
+Purpose:
+- Unified action center across all recordings
+
+Features:
+- Group by Today / This Week / Later
+- Task completion toggle
+- Link to source recording
+- Manual task add/edit/delete
+
+
+-----------------------------------------------------------------
+Screen 7: Settings
+-----------------------------------------------------------------
+Purpose:
+- User controls and reliability settings
+
+Items:
+- Preferred language
+- Auto-delete raw audio policy (e.g., 30 days)
+- Export data option
+- Privacy and consent logs
+
+
+=================================================================
+5) END-TO-END ARCHITECTURE
+=================================================================
+Client (React Native Expo):
+- Audio recording
+- File upload
+- Status tracking
+- Display processed outputs
+
+Backend API (Node.js + Fastify/Express):
+- Auth verification
+- Recording metadata management
+- Upload endpoint
+- Job queue orchestration
+
+Async worker:
+- STT with Sarvam
+- LLM extraction (summary/tasks/tags/title)
+- Persistence to Postgres
+
+Storage:
+- Object store for audio files (Supabase Storage/R2/S3)
+
+Database:
+- Postgres (users, recordings, tasks, artifacts, integrations)
+
+Realtime channel:
+- SSE preferred (simple one-way progress stream)
+
+
+=================================================================
+6) FLOWCHARTS
+=================================================================
+Flowchart A: Product-level
+
+```mermaid
+flowchart TD
+    A[Open App] --> B[Authenticate User]
+    B --> C[Home Record Screen]
+    C --> D[Start Recording]
+    D --> E[Stop Recording]
+    E --> F[Upload Audio]
+    F --> G[Queue Processing Job]
+    G --> H[Sarvam STT]
+    H --> I[LLM Structured Extraction]
+    I --> J[Store Results in DB]
+    J --> K[Show Summary Transcript Tasks]
+    K --> L[User Edits Tasks / Search / Integrate]
+```
+
+Flowchart B: Processing pipeline internals
+
+```mermaid
+flowchart LR
+    A[Audio File] --> B{Duration <= 30s?}
+    B -->|Yes| C[Direct STT API Call]
+    B -->|No| D[Chunk Audio + Overlap]
+    D --> E[Parallel STT Calls]
+    E --> F[Stitch Transcript]
+    C --> G[Unified Transcript]
+    F --> G[Unified Transcript]
+    G --> H[Cleanup + Language Detect]
+    H --> I[LLM JSON Extraction]
+    I --> J[Validate JSON Schema]
+    J --> K[Persist Summary/Tasks/Tags]
+```
+
+
+=================================================================
+7) TECH STACK RECOMMENDATION
+=================================================================
+Mobile app:
+- React Native + Expo
+- expo-av (record/play)
+- expo-file-system
+- expo-router
+- TanStack Query
+- Zustand (or Redux Toolkit) for local UI state
+
+Backend:
+- Node.js + Fastify (or Express)
+- Zod for input/output schema validation
+- BullMQ + Redis for async jobs
+- Prisma ORM + PostgreSQL
+
+AI services:
+- STT: Sarvam (India-first language performance)
+- LLM for extraction: start with GPT-4o-mini or Claude Haiku
+
+Infra:
+- DB: Supabase Postgres (or Neon)
+- File storage: Supabase Storage / Cloudflare R2
+- Queue: Upstash Redis / Redis Cloud
+- Deploy: Railway / Render / Fly.io
+
+
+=================================================================
+8) DATA MODEL (MVP)
+=================================================================
+Table: users
+- id (uuid)
+- phone_or_email
+- preferred_language
+- timezone
+- created_at
+
+Table: recordings
+- id (uuid)
+- user_id (fk)
+- audio_url
+- duration_sec
+- language_detected
+- status (uploaded|transcribing|processing|done|failed)
+- title
+- transcript_text
+- summary_json
+- tags_json
+- created_at
+
+Table: tasks
+- id (uuid)
+- recording_id (fk)
+- user_id (fk)
+- text
+- priority (high|medium|low)
+- due_at (nullable)
+- completed (boolean)
+- source_timestamp_sec (nullable)
+- created_at
+
+Table: processing_events
+- id (uuid)
+- recording_id (fk)
+- stage
+- message
+- progress_percent
+- created_at
+
+Table: integrations (phase 2)
+- id (uuid)
+- user_id (fk)
+- provider (google_calendar|gmail)
+- access_token_ref
+- refresh_token_ref
+- scope
+- created_at
+
+
+=================================================================
+9) API DESIGN (MVP)
+=================================================================
+Auth:
+- POST /auth/login
+- POST /auth/verify-otp
+
+Recordings:
+- POST /recordings/upload
+  Input: audio file + metadata
+  Output: recording_id, status=uploaded
+
+- GET /recordings/:id
+  Output: full processed artifact
+
+- GET /recordings?cursor=...
+  Output: paginated list
+
+- GET /recordings/:id/status (SSE)
+  Output: stage updates
+
+Tasks:
+- GET /tasks
+- PATCH /tasks/:id
+- POST /tasks
+
+Search:
+- GET /search?q=...
+
+
+=================================================================
+10) AI PROCESSING DESIGN
+=================================================================
+Step 1: Audio normalization
+- Convert to stable format (mono WAV, 16kHz where needed)
+
+Step 2: STT using Sarvam
+- Short audio: direct single API call
+- Long audio: chunking with overlap + parallel calls + stitch
+
+Step 3: Transcript cleanup
+- Remove obvious artifacts
+- Preserve timestamps when available
+
+Step 4: Structured extraction in one LLM call
+- Title
+- Summary bullets
+- Tasks with priority and optional deadline hints
+- Tags
+- Sentiment/intent metadata
+
+Step 5: JSON schema validation
+- Reject malformed output
+- Retry with stricter prompt if invalid
+
+Step 6: Persist + notify app
+- Save artifacts
+- Emit progress events and completion
+
+
+=================================================================
+11) PROMPTING STRATEGY FOR EXTRACTION
+=================================================================
+Use one-shot structured JSON response to reduce cost and latency.
+
+Return schema:
+- title: string
+- summary: string[]
+- tasks: [{ text, priority, due_hint, timestamp_hint }]
+- tags: string[]
+- language_detected: string
+- confidence: number
+
+Rules:
+- No markdown output
+- Strict JSON only
+- Max task count cap (e.g., 20)
+- Keep summaries concise and factual
+
+
+=================================================================
+12) INTEGRATIONS ROADMAP (PHASE 2)
+=================================================================
+Google Calendar:
+- Convert task + due hint into event suggestions
+- User approves before event creation
+
+Gmail draft:
+- Generate follow-up email from selected recording summary
+- User edits before send
+
+Notion export (optional):
+- Push summary + transcript as a formatted note page
+
+
+=================================================================
+13) SECURITY, PRIVACY, SAFETY
+=================================================================
+Minimum controls:
+- JWT auth on all private endpoints
+- Encrypted storage at rest (platform-managed)
+- Signed URLs for audio access
+- Role checks for user-owned resources
+
+Privacy-first defaults:
+- Raw audio retention policy (e.g., 30 days)
+- Transcript retention configurable
+- "Delete recording" should remove audio + derived data
+
+Compliance mindset (learning phase):
+- Capture explicit consent
+- Keep audit trail for processing stages
+
+
+=================================================================
+14) OBSERVABILITY AND QUALITY
+=================================================================
+Track metrics:
+- Upload success rate
+- STT success/failure by language
+- Average processing latency
+- Task extraction acceptance rate (edited vs accepted)
+
+Error handling:
+- Retry transient API failures
+- Dead-letter queue for failed jobs
+- Human-readable failure states in app
+
+
+=================================================================
+15) 8-WEEK LEARNING ROADMAP
+=================================================================
+Week 1:
+- App skeleton (auth + tabs + record UI)
+
+Week 2:
+- Recording and file upload endpoint
+
+Week 3:
+- Async queue + processing status updates
+
+Week 4:
+- Sarvam STT integration (short + long path)
+
+Week 5:
+- LLM extraction + schema validation
+
+Week 6:
+- Recording Detail + Library + Search
+
+Week 7:
+- Tasks screen + edit/complete flows
+
+Week 8:
+- Polish, QA, metrics, demo preparation
+
+
+=================================================================
+16) IMPROVEMENTS OVER ORIGINAL PLAN
+=================================================================
+Improvement A:
+Add strict staged processing states and SSE updates for transparency.
+
+Improvement B:
+Introduce schema validation between LLM and DB to avoid broken UI data.
+
+Improvement C:
+Use single LLM call for all artifacts (title/summary/tasks/tags) to cut cost.
+
+Improvement D:
+Define explicit data retention/deletion policy from day one.
+
+Improvement E:
+Implement quality metrics early to guide iteration (not intuition only).
+
+
+=================================================================
+17) HARDWARE TRANSITION BLUEPRINT (LATER)
+=================================================================
+What remains same:
+- STT + LLM + storage + tasks + UI
+
+What changes:
+- Auth source for uploads
+  App mode: bearer token per user
+  Device mode: X-Device-ID mapped to user in devices table
+
+New table for device phase:
+- devices (device_id, user_id, registered_at, status)
+
+Conclusion:
+Software architecture is already hardware-ready with an auth adapter layer.
+
+
+=================================================================
+18) RISKS AND MITIGATIONS
+=================================================================
+Risk 1: Noisy audio quality
+- Mitigation: UI guidance + denoise step + mic test
+
+Risk 2: Mixed-language transcript quality
+- Mitigation: language-aware Sarvam model selection + fallback strategy
+
+Risk 3: Hallucinated tasks from LLM
+- Mitigation: confidence threshold + user confirmation on tasks
+
+Risk 4: Slow processing for long recordings
+- Mitigation: chunk parallelization + progress updates + queue scaling
+
+
+=================================================================
+19) MVP DEFINITION OF DONE
+=================================================================
+MVP is done when:
+- Auth works
+- User records and uploads from app
+- Transcript is generated for short and long recordings
+- Summary + tasks + tags appear reliably
+- Tasks are manageable in dedicated screen
+- Basic search in library works
+- Failure states are visible and recoverable
+
+
+=================================================================
+20) PROJECT NAME IDEAS + SHORT DESCRIPTIONS
+=================================================================
+1. Vani
+Description: Voice-first study companion that turns spoken thoughts into structured notes and tasks.
+
+2. Vakya
+Description: Capture your voice, get clear summaries, and never miss action items.
+
+3. BolNote
+Description: Speak naturally in Indian languages and get instant transcript + smart task extraction.
+
+4. Smriti
+Description: A memory app for students that converts lectures and ideas into usable output.
+
+5. KathaFlow
+Description: From spoken story to structured learning, tasks, and follow-ups.
+
+Recommended:
+- Vani (clean, memorable, aligned with "voice/speech" identity)
+
+
+END OF DOCUMENT

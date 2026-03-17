@@ -1,0 +1,21 @@
+model Task {
+    id                 String       @id @default(cuid())
+    userId             String
+    recordingId        String?
+    text               String
+    priority           TaskPriority @default(MEDIUM)
+    dueAt              DateTime?
+    completed          Boolean      @default(false)
+    completedAt        DateTime?
+    sourceExcerpt      String?
+    sourceTimestampSec Int?
+    createdAt          DateTime     @default(now())
+    updatedAt          DateTime     @updatedAt
+
+    user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    recording Recording? @relation(fields: [recordingId], references: [id], onDelete: SetNull)
+
+    @@index([userId, completed])
+    @@index([recordingId])
+    @@index([dueAt])
+}

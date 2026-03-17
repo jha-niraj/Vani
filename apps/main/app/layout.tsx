@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import "@repo/ui/styles/globals.css";
 import { ThemeProvider } from "@repo/ui/components/themeprovider";
-import { Geist, Space_Grotesk, Geist_Mono } from "next/font/google";
+import {
+	Geist, Space_Grotesk, Geist_Mono
+} from "next/font/google";
 import { Toaster as SonnerToaster } from "@repo/ui/components/ui/sonner";
 import { Providers } from "./providers";
 
@@ -22,40 +24,40 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
 	title: {
-		default: "The Coder'z",
-		template: "%s | The Coder'z"
+		default: "Vani",
+		template: "%s | Vani"
 	},
-	description: "The Engineering Intelligence Platform for Computer Science Students",
-	keywords: ["Learn", "Build Projects", "Computer Science", "Programming", "Coding", "Developer", "Tech Community", "Coding Resources", "Tech Articles", "Coding Tutorials"],
+	description: "Voice-first workspace that turns audio into transcripts, summaries, and tasks.",
+	keywords: ["Voice", "Transcription", "AI Notes", "Tasks", "Productivity", "Vani"],
 	authors: [{ name: "Niraj Jha" }],
 	creator: "Shunya Tech",
 	publisher: "Shunya Tech",
-	metadataBase: new URL("https://www.coderzai.xyz"),
+	metadataBase: new URL("https://vani.local"),
 	alternates: {
 		canonical: "/",
 	},
 	openGraph: {
 		type: "website",
 		locale: "en_US",
-		url: "https://www.coderzai.xyz",
-		siteName: "The Coder'z",
-		title: "The Coder'z - The Engineering Intelligence Platform for Computer Science Students",
-		description: "The Engineering Intelligence Platform for Computer Science Students",
+		url: "https://vani.local",
+		siteName: "Vani",
+		title: "Vani - Voice First Learning Workspace",
+		description: "Capture voice and get structured transcript, summaries, and tasks.",
 		images: [
 			{
 				url: "/mainlogo.jpeg",
 				width: 1024,
 				height: 1024,
-				alt: "The Coder'z - The Engineering Intelligence Platform for Computer Science Students",
+				alt: "Vani",
 			},
 		],
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "The Coder'z - The Engineering Intelligence Platform for Computer Science Students",
-		description: "The Engineering Intelligence Platform for Computer Science Students",
+		title: "Vani - Voice First Learning Workspace",
+		description: "Capture voice and get structured transcript, summaries, and tasks.",
 		images: ["/mainlogo.jpeg"],
-		creator: "@thecoderz",
+		creator: "@vaniapp",
 	},
 	icons: {
 		icon: [
@@ -90,10 +92,11 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<body className={`
-				${spaceGrotesk.className} ${geistSans.variable} ${geistMono.variable} antialiased 
-			`}>
+                ${spaceGrotesk.className} ${geistSans.variable} ${geistMono.variable} 
+                antialiased bg-background text-foreground selection:bg-primary/20
+            `}>
 				<Providers>
 					<ThemeProvider
 						attribute="class"

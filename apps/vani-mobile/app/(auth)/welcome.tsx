@@ -34,7 +34,7 @@ export default function WelcomeScreen() {
 						entering={FadeInUp.delay(400).duration(600)}
 						className="text-4xl font-bold text-amber-500 mb-1"
 					>
-						PrepSathi
+						Vani
 					</Animated.Text>
 					<Animated.Text
 						entering={FadeInUp.delay(500).duration(600)}

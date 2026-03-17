@@ -262,7 +262,6 @@ export default function QuizScreen() {
 						</Animated.View>
 					))
 				}
-
 				{
 					isAnswered && result && (
 						<Animated.View
