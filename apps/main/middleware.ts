@@ -8,7 +8,8 @@ const protectedRoutes = [
 	'/settings',
 	'/interact',
 	'/library',
-    '/tasks'
+    '/tasks',
+    '/recording'
 ]
 
 // Public routes that don't require authentication (allow exploration)
@@ -59,11 +60,6 @@ export default withAuth(
 		// Check if current path is a protected route
 		const isProtectedRoute = protectedRoutes.some(route =>
 			nextUrl.pathname.startsWith(route)
-		)
-
-		// Check if current path is a public route
-		const isPublicRoute = publicRoutes.some(route =>
-			nextUrl.pathname === route || (route !== '/' && nextUrl.pathname.startsWith(route))
 		)
 
 		// If user is not logged in and trying to access protected route

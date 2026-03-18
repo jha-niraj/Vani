@@ -2,7 +2,7 @@
 
 import prisma from "@repo/prisma";
 import { auth } from "@repo/auth";
-import { uploadAudioToStorage } from "@/utils/storage";
+import { getSignedAudioUrl, uploadAudioToStorage } from "@/utils/storage";
 import { transcribeShortAudio } from "@/utils/sarvam";
 import { extractFromTranscript } from "@/utils/openai";
 
@@ -29,6 +29,11 @@ export async function processRecording(formData: FormData): Promise<RecordingUpl
     const userId = session.user.id;
 
     try {
+        const existingRecordingsCount = await prisma.recording.count({
+            where: { userId },
+        });
+        const shouldDebugFlow = existingRecordingsCount === 0;
+
         const audioFile = formData.get("audio") as File | null;
         const durationStr = formData.get("duration") as string | null;
 
@@ -40,6 +45,16 @@ export async function processRecording(formData: FormData): Promise<RecordingUpl
         const arrayBuffer = await audioFile.arrayBuffer();
         const audioBuffer = Buffer.from(arrayBuffer);
 
+        if (shouldDebugFlow) {
+            console.log("[recording.flow] First recording pipeline started", {
+                userId,
+                fileName: audioFile.name,
+                mimeType: audioFile.type,
+                sizeBytes: audioFile.size,
+                durationSec,
+            });
+        }
+
         // ── Step 1: Upload to Supabase Storage ──
         const { storagePath, audioUrl } = await uploadAudioToStorage(
             userId,
@@ -47,6 +62,13 @@ export async function processRecording(formData: FormData): Promise<RecordingUpl
             audioFile.name || "recording.webm",
             audioFile.type || "audio/webm"
         );
+
+        if (shouldDebugFlow) {
+            console.log("[recording.flow] Storage upload completed", {
+                storagePath,
+                audioUrl,
+            });
+        }
 
         // ── Step 2: Create Recording record ──
         const recording = await prisma.recording.create({
@@ -61,6 +83,13 @@ export async function processRecording(formData: FormData): Promise<RecordingUpl
         });
 
         await createProcessingEvent(recording.id, userId, "uploaded", "Audio saved to storage", 20);
+
+        if (shouldDebugFlow) {
+            console.log("[recording.flow] Recording row created", {
+                recordingId: recording.id,
+                status: recording.status,
+            });
+        }
 
         // ── Step 3: Transcribe via Sarvam ──
         await prisma.recording.update({
@@ -80,6 +109,14 @@ export async function processRecording(formData: FormData): Promise<RecordingUpl
             const sttResult = await transcribeShortAudio(audioBuffer, audioFile.name || "recording.webm");
             transcript = sttResult.transcript;
             detectedLanguage = sttResult.languageCode;
+
+            if (shouldDebugFlow) {
+                console.log("[recording.flow] Transcription completed", {
+                    recordingId: recording.id,
+                    transcriptChars: transcript.length,
+                    detectedLanguage,
+                });
+            }
         } catch (sttError) {
             console.error("STT failed:", sttError);
             await prisma.recording.update({
@@ -116,7 +153,28 @@ export async function processRecording(formData: FormData): Promise<RecordingUpl
                 title = extraction.title;
                 summary = { bullets: extraction.summary, confidence: extraction.confidence };
                 tags = extraction.tags;
-                extractedTasks = extraction.tasks;
+                extractedTasks = extraction.tasks.filter((task) => {
+                    const normalizedText = task.text.trim();
+                    return normalizedText.length >= 4 && normalizedText.length <= 140;
+                }).map((task) => ({
+                    text: task.text.trim().replace(/\s+/g, " "),
+                    priority: task.priority,
+                    dueHint: task.dueHint,
+                    timestampHint: task.timestampHint,
+                }));
+
+                if (shouldDebugFlow) {
+                    console.log("[recording.flow] OpenAI extraction completed", {
+                        recordingId: recording.id,
+                        extractedTitle: title,
+                        summaryPoints: Array.isArray((summary as { bullets?: unknown }).bullets)
+                            ? ((summary as { bullets?: unknown[] }).bullets?.length || 0)
+                            : 0,
+                        tagsCount: tags.length,
+                        extractedTasksCount: extractedTasks.length,
+                        sampleTask: extractedTasks[0]?.text || null,
+                    });
+                }
             } catch (extractError) {
                 console.error("Extraction failed:", extractError);
                 // Non-fatal — we still have the transcript
@@ -148,9 +206,23 @@ export async function processRecording(formData: FormData): Promise<RecordingUpl
                     sourceTimestampSec: t.timestampHint,
                 })),
             });
+
+            if (shouldDebugFlow) {
+                console.log("[recording.flow] Tasks created", {
+                    recordingId: recording.id,
+                    taskCount: extractedTasks.length,
+                });
+            }
         }
 
         await createProcessingEvent(recording.id, userId, "completed", "Processing complete!", 100);
+
+        if (shouldDebugFlow) {
+            console.log("[recording.flow] First recording pipeline completed", {
+                recordingId: recording.id,
+                finalStatus: "COMPLETED",
+            });
+        }
 
         return {
             success: true,
@@ -210,6 +282,35 @@ export async function getRecordingById(id: string) {
             processingEvents: { orderBy: { createdAt: "asc" } },
         },
     });
+}
+
+/**
+ * Get a short-lived playback URL for a recording file.
+ */
+export async function getRecordingPlaybackUrl(id: string) {
+    const session = await auth();
+    if (!session?.user?.id) return null;
+
+    const recording = await prisma.recording.findFirst({
+        where: {
+            id,
+            userId: session.user.id,
+        },
+        select: {
+            storagePath: true,
+            audioUrl: true,
+        },
+    });
+
+    if (!recording) return null;
+
+    try {
+        const signedUrl = await getSignedAudioUrl(recording.storagePath, 900);
+        return signedUrl;
+    } catch (error) {
+        console.error("Failed to generate signed URL, falling back to public URL:", error);
+        return recording.audioUrl;
+    }
 }
 
 /**

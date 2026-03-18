@@ -2,7 +2,19 @@
 	"$schema": "https://turborepo.com/schema.json",
 	"ui": "tui",
 	"globalEnv": [
-		"DATABASE_URL"
+		"NODE_ENV",
+		"DATABASE_URL",
+		"NEXTAUTH_URL",
+		"NEXTAUTH_SECRET",
+		"RESEND_API_KEY",
+		"AUTH_FROM_EMAIL",
+		"SARVAM_API_KEY",
+		"OPENAI_API_KEY",
+		"SUPABASE_ACCESS_KEY_ID",
+		"SUPABASE_SECRET_ACCESS_KEY",
+		"SUPABASE_REGION",
+		"SUPABASE_STORAGE_ENDPOINT",
+		"SUPABASE_S3_BUCKET_NAME"
 	],
 	"tasks": {
 		"generate": {
@@ -20,8 +32,19 @@
 				"^build"
 			],
 			"env": [
+				"NODE_ENV",
 				"DATABASE_URL",
-				"DIRECT_URL"
+				"NEXTAUTH_URL",
+				"NEXTAUTH_SECRET",
+				"RESEND_API_KEY",
+				"AUTH_FROM_EMAIL",
+				"SARVAM_API_KEY",
+				"OPENAI_API_KEY",
+				"SUPABASE_ACCESS_KEY_ID",
+				"SUPABASE_SECRET_ACCESS_KEY",
+				"SUPABASE_REGION",
+				"SUPABASE_STORAGE_ENDPOINT",
+				"SUPABASE_S3_BUCKET_NAME"
 			],
 			"inputs": [
 				"$TURBO_DEFAULT$",
@@ -44,7 +67,22 @@
 		},
 		"dev": {
 			"cache": false,
-			"persistent": true
+			"persistent": true,
+			"env": [
+				"NODE_ENV",
+				"DATABASE_URL",
+				"NEXTAUTH_URL",
+				"NEXTAUTH_SECRET",
+				"RESEND_API_KEY",
+				"AUTH_FROM_EMAIL",
+				"SARVAM_API_KEY",
+				"OPENAI_API_KEY",
+				"SUPABASE_ACCESS_KEY_ID",
+				"SUPABASE_SECRET_ACCESS_KEY",
+				"SUPABASE_REGION",
+				"SUPABASE_STORAGE_ENDPOINT",
+				"SUPABASE_S3_BUCKET_NAME"
+			]
 		}
 	}
 }

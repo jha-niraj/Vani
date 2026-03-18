@@ -34,7 +34,6 @@ export default function RecordingClient({
     recentRecordings: RecentRecording[];
 }) {
     const [isRecording, setIsRecording] = useState(false);
-    const [isPaused, setIsPaused] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [currentStage, setCurrentStage] = useState(0);
     const durationRef = useRef(0);
@@ -103,7 +102,6 @@ export default function RecordingClient({
 
             mediaRecorder.start(250); // Collect data every 250ms
             setIsRecording(true);
-            setIsPaused(false);
 
             // Start timer
             timerRef.current = setInterval(() => {
@@ -190,7 +188,7 @@ export default function RecordingClient({
 
             mediaRecorderRef.current!.stop();
         });
-    }, [duration, updateAudioLevel]);
+    }, [router]);
 
     // Auto-stop at max duration
     useEffect(() => {
@@ -378,7 +376,7 @@ export default function RecordingClient({
                                 Recent
                             </h2>
                             <Link
-                                href="/home/library"
+                                href="/library"
                                 className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1"
                             >
                                 View all <ChevronRight className="h-3 w-3" />
@@ -394,7 +392,7 @@ export default function RecordingClient({
                                         transition={{ delay: i * 0.05 }}
                                     >
                                         <Link
-                                            href={`/home/recording/${rec.id}`}
+                                            href={`/recording/${rec.id}`}
                                             className="flex items-center gap-4 p-4 rounded-xl border bg-card hover:bg-accent/50 transition-colors group"
                                         >
                                             <div className={`p-2 rounded-lg flex-shrink-0 ${rec.status === "COMPLETED"

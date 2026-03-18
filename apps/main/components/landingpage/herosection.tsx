@@ -40,6 +40,7 @@ export function HeroSection() {
             if (response.devOtp) toast.info(`Dev OTP: ${response.devOtp}`);
         } catch (error) {
             toast.error("Something went wrong while sending OTP.");
+            console.log("OTP send error:", error);
         } finally {
             setIsLoading(false);
         }
@@ -66,6 +67,7 @@ export function HeroSection() {
             toast.error("Invalid or expired OTP.");
         } catch (error) {
             toast.error("Unable to verify OTP.");
+            console.log("OTP verify error:", error);
         } finally {
             setIsLoading(false);
         }

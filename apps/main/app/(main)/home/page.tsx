@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@repo/auth";
 import prisma from "@repo/prisma";
 import RecordingClient from "./recording-client";
+import { getRecentRecordings } from "@/actions/recording.action";
 
 export default async function HomePage() {
     const session = await auth();
@@ -24,21 +25,7 @@ export default async function HomePage() {
         redirect("/onboarding");
     }
 
-    // Fetch recent recordings
-    const recentRecordings = await prisma.recording.findMany({
-        where: { userId: session.user.id },
-        orderBy: { createdAt: "desc" },
-        take: 3,
-        select: {
-            id: true,
-            title: true,
-            durationSec: true,
-            status: true,
-            createdAt: true,
-            language: true,
-            _count: { select: { tasks: true } },
-        },
-    });
+    const recentRecordings = await getRecentRecordings(3);
 
     return <RecordingClient recentRecordings={recentRecordings} />;
 }

@@ -1,6 +1,7 @@
 import {
     S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Readable } from "stream";
 
 let s3Client: S3Client | null = null;
@@ -105,7 +106,7 @@ export async function uploadAudioToStorage(
 
     // Construct the public URL from the Supabase endpoint
     const storageEndpoint = process.env.SUPABASE_STORAGE_ENDPOINT;
-    let baseUrl = process.env.SUPABASE_URL || '';
+    let baseUrl = '';
     if (storageEndpoint) {
         try {
             const u = new URL(storageEndpoint);
@@ -143,4 +144,15 @@ export async function getAudioFromStorage(storagePath: string) {
         console.error('uploadAudioToStorage failed', err);
         throw err;
     }
+}
+
+export async function getSignedAudioUrl(storagePath: string, expiresInSec = 900): Promise<string> {
+    const command = new GetObjectCommand({
+        Bucket: BUCKET,
+        Key: storagePath,
+    });
+
+    return getSignedUrl(getS3Client(), command, {
+        expiresIn: expiresInSec,
+    });
 }

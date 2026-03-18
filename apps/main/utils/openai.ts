@@ -48,6 +48,8 @@ RULES:
 6. Max 20 tasks.
 7. Priority: assign HIGH for urgent/important, MEDIUM for normal, LOW for someday/maybe items.
 8. Due hint: if the speaker mentions a deadline or timeframe, include it as a string (e.g., "tomorrow", "next week", "March 20"). Otherwise null.
+9. Tasks must be clean and actionable: start with a verb, 4-140 characters, no trailing punctuation-only entries.
+10. If a task is ambiguous, rewrite into the clearest actionable version without inventing facts.
 
 RESPONSE SCHEMA:
     {
@@ -90,12 +92,15 @@ export async function extractFromTranscript(transcript: string): Promise<Extract
         title: parsed.title || "Untitled Recording",
         summary: Array.isArray(parsed.summary) ? parsed.summary.slice(0, 7) : [],
         tasks: Array.isArray(parsed.tasks)
-            ? parsed.tasks.slice(0, 20).map((t) => ({
-                text: t.text || "",
-                priority: (["HIGH", "MEDIUM", "LOW"].includes(t.priority) ? t.priority : "MEDIUM") as ExtractedTask["priority"],
-                dueHint: t.dueHint || null,
-                timestampHint: typeof t.timestampHint === "number" ? t.timestampHint : null,
-            }))
+            ? parsed.tasks
+                .slice(0, 20)
+                .map((t) => ({
+                    text: (t.text || "").trim().replace(/\s+/g, " "),
+                    priority: (["HIGH", "MEDIUM", "LOW"].includes(t.priority) ? t.priority : "MEDIUM") as ExtractedTask["priority"],
+                    dueHint: t.dueHint ? String(t.dueHint).trim() : null,
+                    timestampHint: typeof t.timestampHint === "number" ? t.timestampHint : null,
+                }))
+                .filter((t) => t.text.length >= 4 && t.text.length <= 140)
             : [],
         tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5) : [],
         languageDetected: parsed.languageDetected || "unknown",

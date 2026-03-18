@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@repo/ui/components/ui/sonner";
 import {
-    Mic, Globe, CheckCircle2, ArrowRight, ArrowLeft,
-    BookOpen, Briefcase, GraduationCap, Stethoscope, Lightbulb, CheckSquare
+    Mic, Globe, CheckCircle2, ArrowRight, ArrowLeft, Briefcase, 
+    GraduationCap, Stethoscope, Lightbulb, CheckSquare
 } from "lucide-react";
 import { completeOnboarding } from "@/actions/onboarding.action";
 import { useSession } from "@repo/auth/client";
