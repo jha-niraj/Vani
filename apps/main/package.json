@@ -27,6 +27,7 @@
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
         "resend": "^6.9.3",
+        "sarvamai": "^1.1.6",
         "tailwindcss": "^4.1.18"
     },
     "devDependencies": {
