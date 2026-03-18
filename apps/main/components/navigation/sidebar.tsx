@@ -25,7 +25,7 @@ export function Sidebar() {
 
     return (
         <>
-            <aside className="hidden md:flex w-56 flex-col border-r bg-card/50 backdrop-blur-sm px-3 py-5 h-screen sticky top-20">
+            <aside className="hidden md:flex w-56 flex-col border-r bg-card/50 backdrop-blur-sm px-3 py-5 h-screen sticky">
                 <div className="px-3 mb-6">
                     <div className="flex items-center gap-2">
                         <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">

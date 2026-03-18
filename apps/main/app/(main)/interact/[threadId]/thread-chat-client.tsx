@@ -239,8 +239,7 @@ export default function ThreadChatClient({
     };
 
     return (
-        // 1. Added 'w-full' here to ensure the wrapper expands fully
-        <div className="flex h-screen h-full flex-col gap-4 overflow-hidden">
+        <div className="h-[calc(100dvh-8rem)] min-h-0 flex flex-col gap-4 overflow-hidden">
             <div className="shrink-0 rounded-2xl border bg-card p-3">
                 <div className="flex items-center justify-between gap-3">
                     <div>
@@ -267,8 +266,7 @@ export default function ThreadChatClient({
             <Card className="flex-1 min-h-0 flex flex-col overflow-hidden py-0 gap-0">
                 <CardContent className="flex-1 min-h-0 p-0 flex flex-col overflow-hidden">
                     <ScrollArea className="flex-1 min-h-0 px-4 py-3 bg-background/40">
-                        {/* Ensure the list wrapper allows block-level margin-auto to work cleanly */}
-                        <div className="space-y-3 pr-2 flex flex-col">
+                        <div className="space-y-3 pr-2">
                             {
                                 messages.length === 0 ? (
                                     <div className="h-[300px] grid place-items-center text-sm text-muted-foreground text-center px-6">
@@ -281,8 +279,7 @@ export default function ThreadChatClient({
                                             initial={{ opacity: 0, y: 8 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             className={cn(
-                                                // 2. Added 'w-fit' here so bubbles wrap tightly to the text size
-                                                "w-fit max-w-[88%] rounded-2xl px-4 py-3 text-sm flex flex-col",
+                                                "max-w-[88%] rounded-2xl px-4 py-3 text-sm",
                                                 message.role === "USER"
                                                     ? "ml-auto bg-primary text-primary-foreground"
                                                     : "bg-muted"
@@ -307,10 +304,8 @@ export default function ThreadChatClient({
                         </div>
                     </ScrollArea>
                     <div className="shrink-0 border-t bg-card p-3">
-                        {/* 3. Added 'w-full' to container and 'flex-1' to Input to stretch input area */}
-                        <div className="flex items-center gap-2 w-full">
+                        <div className="flex items-center gap-2">
                             <Input
-                                className="flex-1"
                                 value={question}
                                 onChange={(event) => setQuestion(event.target.value)}
                                 onKeyDown={(event) => {

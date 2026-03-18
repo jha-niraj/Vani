@@ -36,6 +36,17 @@ export interface ExtractionResult {
     confidence: number;
 }
 
+export interface InteractTaskSuggestion {
+    text: string;
+    priority: "HIGH" | "MEDIUM" | "LOW";
+    dueHint: string | null;
+}
+
+export interface InteractAnswerResult {
+    answer: string;
+    tasks: InteractTaskSuggestion[];
+}
+
 const EXTRACTION_PROMPT = `You are an AI assistant that processes voice recording transcripts. 
 Analyze the following transcript and extract structured information.
 
@@ -114,7 +125,7 @@ export async function extractFromTranscript(transcript: string): Promise<Extract
 export async function askAboutRecordings(
     question: string,
     recordingsContext: { title: string; transcript: string; date: string }[]
-): Promise<string> {
+): Promise<InteractAnswerResult> {
     const openai = getOpenAI();
 
     const contextText = recordingsContext
@@ -123,10 +134,32 @@ export async function askAboutRecordings(
 
     const response = await openai.chat.completions.create({
         model: "gpt-4o-mini",
+        response_format: { type: "json_object" },
         messages: [
             {
                 role: "system",
-                content: `You are Vani, a helpful voice assistant. The user has made voice recordings in the past and is asking a question about them. Use the recording transcripts provided as context to answer their question accurately and helpfully. If the information isn't in the recordings, say so honestly. Be conversational and concise.`,
+                content: `You are Vani, a helpful voice assistant.
+The user asks questions grounded in their past recordings.
+
+Return ONLY valid JSON with this schema:
+{
+  "answer": "string",
+  "tasks": [
+    {
+      "text": "string",
+      "priority": "HIGH" | "MEDIUM" | "LOW",
+      "dueHint": "string | null"
+    }
+  ]
+}
+
+Rules:
+1. "answer" must be concise, accurate, and conversational.
+2. If context does not contain the answer, say that clearly.
+3. Add items to "tasks" ONLY if the user explicitly asks to add/create/remind/follow-up on tasks or if they clearly confirm an action item.
+4. If no tasks are requested, return an empty tasks array.
+5. Tasks must be actionable and 4-140 characters.
+6. Never include markdown or extra keys.`,
             },
             {
                 role: "user",
@@ -137,5 +170,48 @@ export async function askAboutRecordings(
         max_tokens: 1000,
     });
 
-    return response.choices[0]?.message?.content || "I couldn't find an answer based on your recordings.";
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+        return {
+            answer: "I couldn't find an answer based on your recordings.",
+            tasks: [],
+        };
+    }
+
+    try {
+        const parsed = JSON.parse(content) as {
+            answer?: string;
+            tasks?: Array<{ text?: string; priority?: string; dueHint?: string | null }>;
+        };
+
+        const tasks: InteractTaskSuggestion[] = Array.isArray(parsed.tasks)
+            ? parsed.tasks
+                .map((task) => {
+                    const priority: InteractTaskSuggestion["priority"] =
+                        task.priority === "HIGH" || task.priority === "LOW" || task.priority === "MEDIUM"
+                            ? task.priority
+                            : "MEDIUM";
+
+                    return {
+                        text: (task.text || "").trim().replace(/\s+/g, " "),
+                        priority,
+                        dueHint: typeof task.dueHint === "string" && task.dueHint.trim().length > 0
+                            ? task.dueHint.trim()
+                            : null,
+                    };
+                })
+                .filter((task) => task.text.length >= 4 && task.text.length <= 140)
+                .slice(0, 10)
+            : [];
+
+        return {
+            answer: (parsed.answer || "I couldn't find an answer based on your recordings.").trim(),
+            tasks,
+        };
+    } catch {
+        return {
+            answer: content,
+            tasks: [],
+        };
+    }
 }

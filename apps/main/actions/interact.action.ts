@@ -10,6 +10,7 @@ export interface InteractResponse {
     message?: string;
     answer?: string;
     threadId?: string;
+    tasksCreated?: number;
 }
 
 async function getScopedThread(threadId: string, userId: string) {
@@ -180,7 +181,8 @@ export async function askInteractQuestion(input: {
             `User: ${question}`,
         ].join("\n");
 
-        const answer = await askAboutRecordings(questionWithHistory, formattedContext);
+        const aiResult = await askAboutRecordings(questionWithHistory, formattedContext);
+        const answer = aiResult.answer;
 
         await prisma.chatMessage.create({
             data: {
@@ -190,6 +192,22 @@ export async function askInteractQuestion(input: {
                 content: answer,
             },
         });
+
+        let tasksCreated = 0;
+        if (aiResult.tasks.length > 0) {
+            const tasks = aiResult.tasks.map((task) => ({
+                userId,
+                recordingId: thread.recordingId,
+                text: task.text,
+                priority: task.priority,
+                sourceExcerpt: task.dueHint,
+            }));
+
+            await prisma.task.createMany({
+                data: tasks,
+            });
+            tasksCreated = tasks.length;
+        }
 
         await prisma.chatThread.update({
             where: { id: thread.id },
@@ -203,6 +221,7 @@ export async function askInteractQuestion(input: {
             success: true,
             answer,
             threadId: thread.id,
+            tasksCreated,
         };
     } catch (error) {
         console.error("Interact question failed:", error);
